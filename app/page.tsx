@@ -1,9 +1,14 @@
 import Link from "next/link";
-import { requireCurrentOrganization } from "@/lib/tenant";
+import { redirect } from "next/navigation";
+import { getCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 
 export default async function StorefrontHomePage() {
-    const organization = await requireCurrentOrganization();
+    const organization = await getCurrentOrganization();
+
+  if (!organization) {
+    redirect("/signup");
+  }
 
   const categories = await prisma.category.findMany({
         where: { organizationId: organization.id, displayToCustomer: true },
