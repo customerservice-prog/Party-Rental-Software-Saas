@@ -6,7 +6,7 @@ export default async function BookPage() {
     const organization = await requireCurrentOrganization();
 
   const items = await prisma.item.findMany({
-        where: { organizationId: organization.id, active: true },
+        where: { organizationId: organization.id, displayToCustomer: true },
         orderBy: { name: "asc" },
   });
 
@@ -26,8 +26,8 @@ export default async function BookPage() {
                 {items.map((item) => (
                     <div key={item.id} className="bg-white rounded-lg shadow overflow-hidden flex flex-col">
                                 <div className="h-40 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-                                  {item.imageUrl ? (
-                                      <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                                  {item.picture ? (
+                                      <img src={item.picture} alt={item.name} className="h-full w-full object-cover" />
                                     ) : (
                                       "No image"
                                     )}
@@ -36,7 +36,7 @@ export default async function BookPage() {
                                               <h2 className="font-semibold text-gray-900">{item.name}</h2>
                                               <p className="text-sm text-gray-500 mt-1 flex-1">{item.description}</p>
                                               <div className="mt-4 flex items-center justify-between">
-                                                              <span className="text-indigo-600 font-bold">${item.price.toFixed(2)}</span>
+                                                              <span className="text-indigo-600 font-bold">${item.cost.toFixed(2)}</span>
                                                               <Link
                                                                                   href={`/checkout?itemId=${item.id}`}
                                                                                   className="bg-indigo-600 text-white text-sm px-3 py-1.5 rounded-md hover:bg-indigo-700"
