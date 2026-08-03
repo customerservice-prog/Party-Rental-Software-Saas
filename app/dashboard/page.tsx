@@ -1,5 +1,6 @@
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 
 export default async function DashboardHomePage() {
     const organization = await requireCurrentOrganization();
@@ -19,6 +20,14 @@ export default async function DashboardHomePage() {
   return (
         <div>
               <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+      {itemCount === 0 && (
+        <div className="mb-6 rounded-md bg-indigo-50 border border-indigo-200 p-4 text-sm">
+          <span className="font-medium">Finish setting up your business.</span>{" "}
+          <Link href="/onboarding" className="text-indigo-600 underline">
+            Complete onboarding
+          </Link>
+        </div>
+      )}
               <div className="grid grid-cols-3 gap-4">
                 {stats.map((stat) => (
                     <div key={stat.label} className="border rounded p-4">
