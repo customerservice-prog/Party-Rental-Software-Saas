@@ -24,6 +24,7 @@ export default function CheckoutPage() {
                 email: form.get("email"),
                 phone: form.get("phone"),
                 eventDate: form.get("eventDate"),
+      eventEndDate: form.get("eventEndDate") || null,
                 deliveryAddress: form.get("deliveryAddress"),
         };
 
@@ -84,6 +85,10 @@ export default function CheckoutPage() {
                       <div>
                                 <label className="block text-sm font-medium text-gray-700">Event date</label>
                                 <input type="date" name="eventDate" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                      </div>
+                      <div>
+                                <label className="block text-sm font-medium text-gray-700">Event end date (optional)</label>
+                                <input type="date" name="eventEndDate" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
                       </div>
               
                       <div>
