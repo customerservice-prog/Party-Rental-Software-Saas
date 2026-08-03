@@ -140,7 +140,7 @@ export default function SignupPage() {
                       <button
                                   type="submit"
                                   disabled={loading}
-                                  className="w-full bg-brand-600 text-white rounded p-2 font-medium disabled:opacity
+                                  className="w-full bg-brand-600 text-white rounded p-2 font-medium disabled:opacity-50"
                                 >
                         {loading ? "Creating your account..." : "Create Account"}
                       </button>
