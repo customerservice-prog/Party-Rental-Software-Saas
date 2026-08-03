@@ -82,7 +82,7 @@ export default async function CustomerDetailPage({
                                           {new Date(order.eventDate).toLocaleDateString()}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.status}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.total.toFixed(2)}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.totalAmount.toFixed(2)}</td>
                         </tr>
                       ))}
                                 </tbody>
