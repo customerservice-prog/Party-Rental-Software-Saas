@@ -27,6 +27,8 @@ export default async function DashboardLayout({
                                 <Link href="/dashboard/inventory">Inventory</Link>
                                 <Link href="/dashboard/orders">Orders</Link>
                                 <Link href="/dashboard/customers">Customers</Link>
+              <Link href="/dashboard/deliveries">Deliveries</Link>
+              <Link href="/dashboard/reports">Reports</Link>
                         {role === "owner" && (
                       <Link href="/dashboard/settings">Settings</Link>
                                 )}
