@@ -178,6 +178,8 @@ model Order {
   updatedAt           DateTime @updatedAt
 
   items               OrderItem[]
+  deliveryAddress     String?
+  stripeSessionId     String?  @unique
 
   @@unique([organizationId, orderNumber])
 }
