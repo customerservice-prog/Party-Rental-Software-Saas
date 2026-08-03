@@ -18,6 +18,7 @@ model Organization {
   slug          String   @unique
   customDomain  String?  @unique
   planTier      String   @default("launch")
+  stripeAccountId String? @unique
   status        String   @default("active")
   trialEndsAt   DateTime?
   logoUrl       String?
