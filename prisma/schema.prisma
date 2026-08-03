@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// PLATFORM / TENANCY MODELS
+// ---------------------------------------------------------------------------
+
+// One row per rental business ("tenant") using the platform.
+model Organization {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  customDomain  String?  @unique
+  planTier      String   @default("launch")
+  status        String   @default("active")
+  trialEndsAt   DateTime?
+  logoUrl       String?
+  primaryColor  String?
+  contactEmail  String?
+  contactPhone  String?
+  address       String?
+  city          String?
+  state         String?
+  zip           String?
+  timezone      String   @default("America/New_York")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  users         User[]
+  categories    Category[]
+  items         Item[]
+  customers     Customer[]
+  drivers       Driver[]
+  orders        Order[]
+  coupons       Coupon[]
+  depositRules  DepositRule[]
+  subscription  PlatformSubscription?
+}
+
+// The tenant's own subscription to OUR platform (billing us, not their customers).
+model PlatformSubscription {
+  id               String   @id @default(cuid())
+  organizationId   String   @unique
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  planTier         String   @default("launch")
+  stripeCustomerId String?
+  stripeSubId      String?
+  status           String   @default("trialing")
+  currentPeriodEnd DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// TENANT-SCOPED BUSINESS MODELS
+// Every model below carries an organizationId so tenant data is fully isolated.
+// ---------------------------------------------------------------------------
+
+model User {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  username       String
+  password       String
+  name           String
+  role           String   @default("staff")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, username])
+}
+
+model Category {
+  id                   String   @id @default(cuid())
+  organizationId       String
+  organization         Organization @relation(fields: [organizationId], references: [id])
+  name                 String
+  slug                 String
+  description          String?
+  picture              String?
+  displayToCustomer    Boolean  @default(true)
+  sortOrder            Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  items                Item[]
+
+  @@unique([organizationId, slug])
+}
+
+model Item {
+  id                String   @id @default(cuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  categoryId        String
+  category          Category @relation(fields: [categoryId], references: [id])
+  name              String
+  slug              String
+  description       String?
+  cost              Float
+  quantity          Int      @default(1)
+  picture           String?
+  displayToCustomer Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  orderItems        OrderItem[]
+
+  @@unique([organizationId, slug])
+}
+
+model Customer {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  firstName      String
+  lastName       String
+  email          String
+  phone          String?
+  address        String?
+  city           String?
+  state          String?
+  zip            String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  orders         Order[]
+
+  @@index([organizationId, email])
+}
+
+model Driver {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  phone          String?
+  email          String?
+  isActive       Boolean  @default(true)
+  pin            String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  deliveryOrders Order[]  @relation("DeliveryDriver")
+  pickupOrders   Order[]  @relation("PickupDriver")
+
+  @@unique([organizationId, pin])
+}
+
+model Order {
+  id                  String   @id @default(cuid())
+  organizationId      String
+  organization        Organization @relation(fields: [organizationId], references: [id])
+  orderNumber         String
+  customerId          String
+  customer            Customer @relation(fields: [customerId], references: [id])
+  status              String   @default("active")
+  source              String   @default("online")
+  eventDate           DateTime
+  eventEndDate        DateTime?
+  deliveryType        String   @default("delivery")
+  deliveryFee         Float    @default(0)
+  subtotal            Float    @default(0)
+  taxAmount           Float    @default(0)
+  totalAmount         Float    @default(0)
+  amountPaid          Float    @default(0)
+  deliveryDriverId    String?
+  deliveryDriver      Driver?  @relation("DeliveryDriver", fields: [deliveryDriverId], references: [id])
+  pickupDriverId      String?
+  pickupDriver        Driver?  @relation("PickupDriver", fields: [pickupDriverId], references: [id])
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  items               OrderItem[]
+
+  @@unique([organizationId, orderNumber])
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id])
+  quantity  Int      @default(1)
+  price     Float
+  createdAt DateTime @default(now())
+}
+
+model Coupon {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  code           String
+  discountType   String   @default("percentage")
+  discountAmount Float
+  expiresAt      DateTime?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  @@unique([organizationId, code])
+}
+
+model DepositRule {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  type           String   @default("percentage")
+  amount         Float    @default(25)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+}
