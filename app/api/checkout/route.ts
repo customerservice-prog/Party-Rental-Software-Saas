@@ -100,8 +100,18 @@ export async function POST(request: NextRequest) {
             },
   });
 
+  const applicationFeeAmount = organization.stripeAccountId
+    ? Math.round(item.cost * 100 * 0.03)
+    : undefined;
+
   const session = await stripe.checkout.sessions.create({
             mode: "payment",
+    payment_intent_data: organization.stripeAccountId
+      ? {
+          application_fee_amount: applicationFeeAmount,
+          transfer_data: { destination: organization.stripeAccountId },
+        }
+      : undefined,
             payment_method_types: ["card"],
             customer_email: email,
             line_items: [
