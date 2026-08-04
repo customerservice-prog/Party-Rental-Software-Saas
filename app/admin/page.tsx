@@ -2,7 +2,8 @@ import { prisma } from "@/lib/prisma";
 
 export default async function AdminOrganizationsPage() {
     const organizations = await prisma.organization.findMany({
-          orderBy: { createdAt: "desc" },
+          where: { slug: { not: "_platform_internal" } },
+    orderBy: { createdAt: "desc" },
           include: {
                   _count: { select: { users: true, customers: true, orders: true } },
           },
