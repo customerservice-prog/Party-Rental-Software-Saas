@@ -17,11 +17,13 @@ export async function getCurrentOrganization() {
     const domain = headerList.get("x-tenant-domain");
 
   if (slug) {
-        return prisma.organization.findUnique({ where: { slug } });
+    const org = await prisma.organization.findUnique({ where: { slug } });
+    return org && org.status !== "suspended" ? org : null;
   }
 
   if (domain) {
-        return prisma.organization.findUnique({ where: { customDomain: domain } });
+    const org = await prisma.organization.findUnique({ where: { customDomain: domain } });
+    return org && org.status !== "suspended" ? org : null;
   }
 
   return null;
