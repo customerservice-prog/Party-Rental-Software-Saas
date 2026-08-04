@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
 export default async function AdminOrganizationsPage() {
@@ -27,6 +28,7 @@ export default async function AdminOrganizationsPage() {
                                                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customers</th>
                                                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orders</th>
                                                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                             </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -58,6 +60,11 @@ export default async function AdminOrganizationsPage() {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{org._count.orders}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                           {new Date(org.createdAt).toLocaleDateString()}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                          <Link href={`/admin/organizations/${org.id}`} className="text-brand-600 hover:underline">
+                                            Manage
+                                          </Link>
                                         </td>
                         </tr>
                       ))}
