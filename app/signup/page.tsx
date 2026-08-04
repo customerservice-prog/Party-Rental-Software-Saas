@@ -42,7 +42,7 @@ export default function SignupPage() {
       }
 
       const data = await res.json();
-        router.push("/login?signup=success&slug=" + data.slug);
+        router.push("/t/" + data.slug + "/login?signup=success");
   }
 
   return (
