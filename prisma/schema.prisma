@@ -219,3 +219,15 @@ model DepositRule {
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
 }
+
+
+// Records platform-admin actions taken against tenant organizations
+// (e.g. suspending a tenant, changing plan tier) for accountability.
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String?
+  action         String
+  performedBy    String
+  details        String?
+  createdAt      DateTime @default(now())
+}
