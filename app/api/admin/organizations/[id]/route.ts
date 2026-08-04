@@ -22,6 +22,7 @@ export async function GET(
     where: { id: params.id },
     include: {
       _count: { select: { users: true, customers: true, orders: true } },
+      subscription: true,
     },
   });
 
@@ -29,14 +30,19 @@ export async function GET(
     return NextResponse.json({ error: "Organization not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ organization });
+  const revenue = await prisma.order.aggregate({
+    where: { organizationId: params.id },
+    _sum: { totalAmount: true, amountPaid: true },
+  });
+
+  return NextResponse.json({ organization, revenue: revenue._sum });
 }
 
 export async function PATCH(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  await requirePlatformAdmin();
+  const session = await requirePlatformAdmin();
 
   const body = await req.json();
   const parsed = updateSchema.safeParse(body);
@@ -48,10 +54,33 @@ export async function PATCH(
     );
   }
 
+  const before = await prisma.organization.findUnique({
+    where: { id: params.id },
+  });
+
   const organization = await prisma.organization.update({
     where: { id: params.id },
     data: parsed.data,
   });
+
+  const changes: string[] = [];
+  if (before && parsed.data.status && parsed.data.status !== before.status) {
+    changes.push(`status: ${before.status} -> ${parsed.data.status}`);
+  }
+  if (before && parsed.data.planTier && parsed.data.planTier !== before.planTier) {
+    changes.push(`planTier: ${before.planTier} -> ${parsed.data.planTier}`);
+  }
+
+  if (changes.length > 0) {
+    await prisma.auditLog.create({
+      data: {
+        organizationId: organization.id,
+        action: "update_organization",
+        performedBy: (session.user as any)?.name || "platform_admin",
+        details: changes.join(", "),
+      },
+    });
+  }
 
   return NextResponse.json({ organization });
 }
