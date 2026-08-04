@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "yourplatform.com";
+
 export default function SignupPage() {
     const router = useRouter();
     const [form, setForm] = useState({
@@ -85,7 +87,7 @@ export default function SignupPage() {
                                                             required
                                                           />
                                             <span className="ml-2 text-gray-500 text-sm whitespace-nowrap">
-                                                          .ourplatform.com
+                                                          {`.${ROOT_DOMAIN}`}
                                             </span>
                                 </div>
                       </div>
