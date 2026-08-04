@@ -39,7 +39,6 @@ export const authOptions: NextAuthOptions = {
           organization = await getCurrentOrganization();
         }
 
-console.log("[LOGIN DEBUG] org resolved:", organization ? organization.slug : null, "tenantSlugSubmitted:", credentials.tenantSlug || null);
                 let user;
         if (organization) {
           user = await prisma.user.findUnique({
@@ -62,18 +61,11 @@ console.log("[LOGIN DEBUG] org resolved:", organization ? organization.slug : nu
           });
         }
 
-console.log("[LOGIN DEBUG] user found:", !!user, "username submitted:", credentials.username);
-
-if (!user && organization) {
-  const allUsers = await prisma.user.findMany({ where: { organizationId: organization.id }, select: { username: true } });
-  console.log("[LOGIN DEBUG] usernames on file for org", organization.slug, ":", allUsers.map(u => u.username).join(", "));
-}
                 if (!user) {
           return null;
         }
 
         const isValid = await bcrypt.compare(credentials.password, user.password);
-console.log("[LOGIN DEBUG] password valid:", isValid);
                 if (!isValid) {
           return null;
         }
