@@ -9,6 +9,7 @@ export default function AdminOrganizationDetailPage() {
   const id = params.id as string;
 
   const [organization, setOrganization] = useState<any>(null);
+  const [revenue, setRevenue] = useState<any>(null);
   const [status, setStatus] = useState("active");
   const [planTier, setPlanTier] = useState("launch");
   const [loading, setLoading] = useState(true);
@@ -21,6 +22,7 @@ export default function AdminOrganizationDetailPage() {
       if (res.ok) {
         const data = await res.json();
         setOrganization(data.organization);
+        setRevenue(data.revenue);
         setStatus(data.organization.status);
         setPlanTier(data.organization.planTier);
       }
@@ -60,6 +62,8 @@ export default function AdminOrganizationDetailPage() {
     return <div className="p-8">Organization not found.</div>;
   }
 
+  const sub = organization.subscription;
+
   return (
     <div className="p-8 max-w-2xl">
       <Link href="/admin" className="text-brand-600 hover:underline text-sm">
@@ -77,6 +81,18 @@ export default function AdminOrganizationDetailPage() {
         <div><span className="font-medium">Customers:</span> {organization._count.customers}</div>
         <div><span className="font-medium">Orders:</span> {organization._count.orders}</div>
         <div><span className="font-medium">Joined:</span> {new Date(organization.createdAt).toLocaleDateString()}</div>
+      </div>
+
+      <div className="bg-white shadow rounded-lg p-6 mb-6 space-y-2 text-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">Billing</h2>
+        <div><span className="font-medium">Platform Subscription Status:</span> {sub?.status || "no subscription record"}</div>
+        <div><span className="font-medium">Subscription Plan:</span> {sub?.planTier || "-"}</div>
+        <div><span className="font-medium">Current Period End:</span> {sub?.currentPeriodEnd ? new Date(sub.currentPeriodEnd).toLocaleDateString() : "-"}</div>
+        <div><span className="font-medium">Stripe Connect Account:</span> {organization.stripeAccountId ? "Connected" : "Not connected"}</div>
+        <div className="pt-2 border-t mt-2">
+          <span className="font-medium">Customer Order Revenue (Total):</span> ${(revenue?.totalAmount || 0).toFixed(2)}
+        </div>
+        <div><span className="font-medium">Customer Order Revenue (Collected):</span> ${(revenue?.amountPaid || 0).toFixed(2)}</div>
       </div>
 
       {message && (
