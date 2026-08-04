@@ -26,18 +26,27 @@ export const authOptions: NextAuthOptions = {
                             }
 
                     const organization = await getCurrentOrganization();
-                            if (!organization) {
-                                        throw new Error("No tenant could be resolved for this login");
-                            }
 
-                    const user = await prisma.user.findUnique({
-                                where: {
-                                              organizationId_username: {
-                                                              organizationId: organization.id,
-                                                              username: credentials.username,
-                                              },
-                                },
+                  let user;
+                  if (organization) {
+                    user = await prisma.user.findUnique({
+                      where: {
+                        organizationId_username: {
+                          organizationId: organization.id,
+                          username: credentials.username,
+                        },
+                      },
                     });
+                  } else {
+                    // No tenant resolved for this request (root/platform domain).
+                    // Only the platform_admin account may authenticate here.
+                    user = await prisma.user.findFirst({
+                      where: {
+                        username: credentials.username,
+                        role: "platform_admin",
+                      },
+                    });
+                  }
 
                     if (!user) {
                                 return null;
