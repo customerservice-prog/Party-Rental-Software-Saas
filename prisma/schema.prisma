@@ -29,6 +29,7 @@ model Organization {
   facebookUrl      String?
   instagramUrl     String?
   showHoursOnSite  Boolean   @default(true)
+  flatDeliveryFee  Float     @default(0)
   contactEmail     String?
   contactPhone     String?
   address          String?
