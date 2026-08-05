@@ -20,6 +20,14 @@ function serializeOrder(order: any) {
     createdAt: order.createdAt.toISOString(),
     customerName: order.customer.firstName + " " + order.customer.lastName,
     customerId: order.customerId,
+    customerEmail: order.customer.email || null,
+    customerPhone: order.customer.phone || null,
+    subtotal: order.subtotal,
+    deliveryFee: order.deliveryFee,
+    taxAmount: order.taxAmount,
+    totalAmount: order.totalAmount,
+    amountPaid: order.amountPaid,
+    contractSigned: Boolean(order.contract && order.contract.signedAt),
   };
 }
 
@@ -45,12 +53,12 @@ export default async function SchedulingPage({
     }),
     prisma.order.findMany({
       where: { organizationId: organization.id, eventDate: { gte: start, lt: end } },
-      include: { customer: true },
+      include: { customer: true, contract: true },
       orderBy: { eventDate: "asc" },
     }),
     prisma.order.findMany({
       where: { organizationId: organization.id, createdAt: { gte: start, lt: end } },
-      include: { customer: true },
+      include: { customer: true, contract: true },
       orderBy: { createdAt: "asc" },
     }),
   ]);
