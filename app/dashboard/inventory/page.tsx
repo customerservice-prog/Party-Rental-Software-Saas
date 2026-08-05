@@ -2,14 +2,14 @@
 
 import { useEffect, useState, FormEvent } from "react";
 
-function readImageFile(file, onLoaded) {
+function readImageFile(file: File | undefined | null, onLoaded: (dataUrl: string) => void) {
   if (!file) return;
   if (file.size > 3 * 1024 * 1024) {
     alert("Please choose an image smaller than 3MB.");
     return;
   }
   const reader = new FileReader();
-  reader.onload = () => onLoaded(reader.result);
+  reader.onload = () => onLoaded(reader.result as string);
   reader.readAsDataURL(file);
 }
 
