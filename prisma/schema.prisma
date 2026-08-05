@@ -54,6 +54,7 @@ model Organization {
   addons          Addon[]
   contracts       Contract[]
   tasks           Task[]
+  pages           Page[]
 }
 
 // The tenant's own subscription to OUR platform (billing us, not their customers).
@@ -350,3 +351,20 @@ model Task {
 // (Active, Active-Deliver, Active-Pickup, Sent Quotes, Canceled,
 // Orders Created) are derived from this field combined with deliveryType
 // and createdAt/eventDate.
+
+model Page {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  slug           String
+  title          String
+  navLabel       String?
+  navOrder       Int      @default(0)
+  showInNav      Boolean  @default(true)
+  isPublished    Boolean  @default(true)
+  content        String   @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, slug])
+}
