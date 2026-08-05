@@ -63,14 +63,24 @@ export default function SettingsPage() {
     detailsSubmitted?: boolean;
   }>({ connected: false });
   const [connecting, setConnecting] = useState(false);
+  const [orgSlug, setOrgSlug] = useState("");
+  const [pricing, setPricing] = useState({
+    flatDeliveryFee: "0",
+    depositType: "percentage",
+    depositAmount: "25",
+    depositActive: true,
+  });
+  const [pricingMessage, setPricingMessage] = useState("");
+  const [savingPricing, setSavingPricing] = useState(false);
 
   useEffect(() => {
     async function load() {
-      const [orgRes, stripeRes, hoursRes, closedRes] = await Promise.all([
+      const [orgRes, stripeRes, hoursRes, closedRes, depositRes] = await Promise.all([
         fetch("/api/organizations"),
         fetch("/api/stripe/connect"),
         fetch("/api/business-hours"),
         fetch("/api/closed-dates"),
+        fetch("/api/deposit-rules"),
       ]);
       if (orgRes.ok) {
         const { organization } = await orgRes.json();
@@ -95,6 +105,8 @@ export default function SettingsPage() {
           showHoursOnSite:
             organization.showHoursOnSite === undefined ? true : organization.showHoursOnSite,
         });
+        setOrgSlug(organization.slug || "");
+        setPricing((prev) => ({ ...prev, flatDeliveryFee: String(organization.flatDeliveryFee || 0) }));
       }
       if (stripeRes.ok) {
         setStripeStatus(await stripeRes.json());
@@ -118,6 +130,17 @@ export default function SettingsPage() {
       if (closedRes.ok) {
         const { closedDates: rows } = await closedRes.json();
         setClosedDates(rows);
+      }
+      if (depositRes.ok) {
+        const { rule } = await depositRes.json();
+        if (rule) {
+          setPricing((prev) => ({
+            ...prev,
+            depositType: rule.type,
+            depositAmount: String(rule.amount),
+            depositActive: rule.isActive,
+          }));
+        }
       }
       setLoading(false);
     }
@@ -152,11 +175,42 @@ export default function SettingsPage() {
         body: JSON.stringify(site),
       });
       if (!res.ok) throw new Error("Failed to save website settings");
-      setSiteMessage("Website updated. View it live at /book.");
+      setSiteMessage("Website updated. View it live using the link above.");
     } catch (e: any) {
       setSiteMessage(e.message || "Something went wrong");
     } finally {
       setSavingSite(false);
+    }
+  }
+
+  async function handleSavePricing() {
+    setSavingPricing(true);
+    setPricingMessage("");
+    try {
+      const fee = parseFloat(pricing.flatDeliveryFee) || 0;
+      const depositAmt = parseFloat(pricing.depositAmount) || 0;
+      const [orgRes, depositRes] = await Promise.all([
+        fetch("/api/organizations", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ flatDeliveryFee: fee }),
+        }),
+        fetch("/api/deposit-rules", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: pricing.depositType,
+            amount: depositAmt,
+            isActive: pricing.depositActive,
+          }),
+        }),
+      ]);
+      if (!orgRes.ok || !depositRes.ok) throw new Error("Failed to save pricing settings");
+      setPricingMessage("Delivery fee and deposit rule saved.");
+    } catch (e: any) {
+      setPricingMessage(e.message || "Something went wrong");
+    } finally {
+      setSavingPricing(false);
     }
   }
 
@@ -323,7 +377,7 @@ export default function SettingsPage() {
         <div className="flex items-center justify-between mb-4">
           <h2 className={sectionTitleClass + " mb-0"}>Website / Site Builder</h2>
           <a
-            href="/book"
+            href={orgSlug ? "/t/" + orgSlug + "/book" : "/book"}
             target="_blank"
             rel="noreferrer"
             className="text-sm text-indigo-600 hover:underline"
@@ -391,6 +445,55 @@ export default function SettingsPage() {
         </label>
         <button disabled={savingSite} onClick={handleSaveSite} className={buttonClass}>
           {savingSite ? "Saving..." : "Save Website"}
+        </button>
+      </div>
+
+      <div className={sectionClass}>
+        <h2 className={sectionTitleClass}>Delivery &amp; Deposit</h2>
+        {pricingMessage && <p className="mb-4 text-sm text-green-700">{pricingMessage}</p>}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <label className={labelClass}>
+            <span className={labelTextClass}>Flat delivery fee ($)</span>
+            <input
+              value={pricing.flatDeliveryFee}
+              onChange={(e) => setPricing({ ...pricing, flatDeliveryFee: e.target.value })}
+              className={inputClass}
+            />
+          </label>
+          <label className={labelClass}>
+            <span className={labelTextClass}>Deposit type</span>
+            <select
+              value={pricing.depositType}
+              onChange={(e) => setPricing({ ...pricing, depositType: e.target.value })}
+              className={inputClass}
+            >
+              <option value="percentage">Percentage of total</option>
+              <option value="flat">Flat amount</option>
+            </select>
+          </label>
+          <label className={labelClass}>
+            <span className={labelTextClass}>
+              Deposit amount {pricing.depositType === "percentage" ? "(%)" : "($)"}
+            </span>
+            <input
+              value={pricing.depositAmount}
+              onChange={(e) => setPricing({ ...pricing, depositAmount: e.target.value })}
+              className={inputClass}
+            />
+          </label>
+        </div>
+        <label className="flex items-center gap-2 mb-6">
+          <input
+            type="checkbox"
+            checked={pricing.depositActive}
+            onChange={(e) => setPricing({ ...pricing, depositActive: e.target.checked })}
+          />
+          <span className="text-sm">
+            Require a deposit at booking (if off, customers pay the full amount online)
+          </span>
+        </label>
+        <button disabled={savingPricing} onClick={handleSavePricing} className={buttonClass}>
+          {savingPricing ? "Saving..." : "Save Delivery & Deposit"}
         </button>
       </div>
 
