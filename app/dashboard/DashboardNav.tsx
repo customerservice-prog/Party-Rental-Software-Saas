@@ -99,6 +99,14 @@ function NavIcon({ name, className }: { name: string; className?: string }) {
       </svg>
     );
   }
+  if (name === "check") {
+    return (
+      <svg {...common}>
+        <rect x="3" y="3" width="18" height="18" rx="3" />
+        <path d="M8 12l3 3 5-6" />
+      </svg>
+    );
+  }
   return null;
 }
 
@@ -111,6 +119,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/deliveries", label: "Deliveries", icon: "truck" },
   { href: "/dashboard/reports", label: "Reports", icon: "chart" },
   { href: "/dashboard/pages", label: "Website Pages", icon: "file" },
+  { href: "/dashboard/tasks", label: "Tasks", icon: "check" },
 ];
 
 export default function DashboardNav({ showSettings }: { showSettings: boolean }) {
