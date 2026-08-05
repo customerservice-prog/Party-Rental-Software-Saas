@@ -37,3 +37,22 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ closedDate }, { status: 201 });
 }
+
+export async function DELETE(req: NextRequest) {
+  const organization = await requireCurrentOrganization();
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+
+  if (!id) {
+    return NextResponse.json({ error: "id is required" }, { status: 400 });
+  }
+
+  const existing = await prisma.closedDate.findUnique({ where: { id } });
+  if (!existing || existing.organizationId !== organization.id) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  await prisma.closedDate.delete({ where: { id } });
+
+  return NextResponse.json({ success: true });
+}
