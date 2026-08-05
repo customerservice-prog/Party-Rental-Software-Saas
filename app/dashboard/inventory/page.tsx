@@ -21,6 +21,14 @@ type Category = {
   displayToCustomer: boolean;
 };
 
+type Addon = {
+  id: string;
+  itemId: string;
+  name: string;
+  price: number;
+  isRequired: boolean;
+};
+
 type ItemFormState = {
   name: string;
   description: string;
@@ -28,6 +36,12 @@ type ItemFormState = {
   quantity: string;
   picture: string;
   displayToCustomer: boolean;
+};
+
+type AddonFormState = {
+  name: string;
+  price: string;
+  isRequired: boolean;
 };
 
 const emptyItemForm: ItemFormState = {
@@ -39,9 +53,12 @@ const emptyItemForm: ItemFormState = {
   displayToCustomer: true,
 };
 
+const emptyAddonForm: AddonFormState = { name: "", price: "", isRequired: false };
+
 export default function InventoryPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<Item[]>([]);
+  const [addons, setAddons] = useState<Addon[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
@@ -50,11 +67,15 @@ export default function InventoryPage() {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<ItemFormState | null>(null);
 
+  const [expandedAddonItemId, setExpandedAddonItemId] = useState<string | null>(null);
+  const [addonForms, setAddonForms] = useState<Record<string, AddonFormState>>({});
+
   async function load() {
     setLoading(true);
-    const [catRes, itemRes] = await Promise.all([
+    const [catRes, itemRes, addonRes] = await Promise.all([
       fetch("/api/categories"),
       fetch("/api/items"),
+      fetch("/api/addons"),
     ]);
     if (catRes.ok) {
       const data = await catRes.json();
@@ -63,6 +84,10 @@ export default function InventoryPage() {
     if (itemRes.ok) {
       const data = await itemRes.json();
       setItems(data.items);
+    }
+    if (addonRes.ok) {
+      const data = await addonRes.json();
+      setAddons(data.addons);
     }
     setLoading(false);
   }
@@ -77,6 +102,14 @@ export default function InventoryPage() {
 
   function setItemFormFor(categoryId: string, next: ItemFormState) {
     setItemForms((prev) => ({ ...prev, [categoryId]: next }));
+  }
+
+  function addonFormFor(itemId: string): AddonFormState {
+    return addonForms[itemId] || emptyAddonForm;
+  }
+
+  function setAddonFormFor(itemId: string, next: AddonFormState) {
+    setAddonForms((prev) => ({ ...prev, [itemId]: next }));
   }
 
   async function addCategory(e: FormEvent<HTMLFormElement>) {
@@ -191,6 +224,35 @@ export default function InventoryPage() {
     load();
   }
 
+  async function addAddon(itemId: string, e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = addonFormFor(itemId);
+    const price = parseFloat(form.price);
+    if (!form.name.trim() || Number.isNaN(price)) return;
+    const res = await fetch("/api/addons", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId, name: form.name, price, isRequired: form.isRequired }),
+    });
+    if (res.ok) {
+      setAddonFormFor(itemId, emptyAddonForm);
+      setMessage("Add-on added.");
+      load();
+    } else {
+      setMessage("Could not add add-on.");
+    }
+  }
+
+  async function deleteAddon(id: string) {
+    if (!confirm("Delete this add-on?")) return;
+    const res = await fetch("/api/addons?id=" + id, { method: "DELETE" });
+    if (res.ok) {
+      load();
+    } else {
+      setMessage("Could not delete add-on.");
+    }
+  }
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -261,8 +323,10 @@ export default function InventoryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {categoryItems.map((item) =>
-                    editingItemId === item.id && editForm ? (
+                  {categoryItems.map((item) => {
+                    const itemAddons = addons.filter((a) => a.itemId === item.id);
+                    const addonForm = addonFormFor(item.id);
+                    return editingItemId === item.id && editForm ? (
                       <tr key={item.id} className="border-b last:border-0">
                         <td className="py-2" colSpan={6}>
                           <div className="grid grid-cols-1 md:grid-cols-6 gap-2 items-center">
@@ -319,35 +383,107 @@ export default function InventoryPage() {
                         </td>
                       </tr>
                     ) : (
-                      <tr key={item.id} className="border-b last:border-0">
-                        <td className="py-1">
-                          {item.picture ? (
-                            <img src={item.picture} alt={item.name} className="h-10 w-10 object-cover rounded" />
-                          ) : (
-                            <span className="text-gray-400 text-xs">No image</span>
-                          )}
-                        </td>
-                        <td className="py-1">{item.name}</td>
-                        <td className="py-1">${item.cost.toFixed(2)}</td>
-                        <td className="py-1">{item.quantity}</td>
-                        <td className="py-1">
-                          <input
-                            type="checkbox"
-                            checked={item.displayToCustomer}
-                            onChange={() => toggleVisible(item)}
-                          />
-                        </td>
-                        <td className="py-1 space-x-2">
-                          <button onClick={() => startEdit(item)} className="text-purple-700 hover:underline">
-                            Edit
-                          </button>
-                          <button onClick={() => deleteItem(item.id)} className="text-red-600 hover:underline">
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  )}
+                      <>
+                        <tr key={item.id} className="border-b last:border-0">
+                          <td className="py-1">
+                            {item.picture ? (
+                              <img src={item.picture} alt={item.name} className="h-10 w-10 object-cover rounded" />
+                            ) : (
+                              <span className="text-gray-400 text-xs">No image</span>
+                            )}
+                          </td>
+                          <td className="py-1">{item.name}</td>
+                          <td className="py-1">${item.cost.toFixed(2)}</td>
+                          <td className="py-1">{item.quantity}</td>
+                          <td className="py-1">
+                            <input
+                              type="checkbox"
+                              checked={item.displayToCustomer}
+                              onChange={() => toggleVisible(item)}
+                            />
+                          </td>
+                          <td className="py-1 space-x-2">
+                            <button onClick={() => startEdit(item)} className="text-purple-700 hover:underline">
+                              Edit
+                            </button>
+                            <button onClick={() => deleteItem(item.id)} className="text-red-600 hover:underline">
+                              Delete
+                            </button>
+                            <button
+                              onClick={() =>
+                                setExpandedAddonItemId(expandedAddonItemId === item.id ? null : item.id)
+                              }
+                              className="text-indigo-700 hover:underline"
+                            >
+                              Add-ons ({itemAddons.length})
+                            </button>
+                          </td>
+                        </tr>
+                        {expandedAddonItemId === item.id && (
+                          <tr key={item.id + "-addons"} className="border-b last:border-0 bg-indigo-50">
+                            <td colSpan={6} className="py-3 px-2">
+                              <div className="text-xs font-semibold text-gray-600 mb-2">
+                                Add-ons for {item.name}
+                              </div>
+                              {itemAddons.length === 0 && (
+                                <p className="text-xs text-gray-400 mb-2">No add-ons yet.</p>
+                              )}
+                              <ul className="space-y-1 mb-3">
+                                {itemAddons.map((addon) => (
+                                  <li key={addon.id} className="flex items-center justify-between text-sm">
+                                    <span>
+                                      {addon.name} - ${addon.price.toFixed(2)}
+                                      {addon.isRequired ? " (required)" : ""}
+                                    </span>
+                                    <button
+                                      onClick={() => deleteAddon(addon.id)}
+                                      className="text-red-600 hover:underline text-xs"
+                                    >
+                                      Remove
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                              <form
+                                onSubmit={(e) => addAddon(item.id, e)}
+                                className="grid grid-cols-1 md:grid-cols-4 gap-2"
+                              >
+                                <input
+                                  className="border rounded px-2 py-1"
+                                  placeholder="Add-on name"
+                                  value={addonForm.name}
+                                  onChange={(e) =>
+                                    setAddonFormFor(item.id, { ...addonForm, name: e.target.value })
+                                  }
+                                />
+                                <input
+                                  className="border rounded px-2 py-1"
+                                  placeholder="Price"
+                                  value={addonForm.price}
+                                  onChange={(e) =>
+                                    setAddonFormFor(item.id, { ...addonForm, price: e.target.value })
+                                  }
+                                />
+                                <label className="flex items-center gap-2 text-sm">
+                                  <input
+                                    type="checkbox"
+                                    checked={addonForm.isRequired}
+                                    onChange={(e) =>
+                                      setAddonFormFor(item.id, { ...addonForm, isRequired: e.target.checked })
+                                    }
+                                  />
+                                  Required
+                                </label>
+                                <button className="bg-indigo-600 text-white rounded px-3 py-1 text-sm" type="submit">
+                                  Add
+                                </button>
+                              </form>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })}
                   {categoryItems.length === 0 && (
                     <tr>
                       <td colSpan={6} className="py-2 text-gray-400 text-sm">
