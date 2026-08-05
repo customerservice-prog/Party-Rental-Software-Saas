@@ -89,6 +89,16 @@ function NavIcon({ name, className }: { name: string; className?: string }) {
       </svg>
     );
   }
+  if (name === "file") {
+    return (
+      <svg {...common}>
+        <path d="M6 2h9l5 5v15H6z" />
+        <path d="M15 2v5h5" />
+        <line x1="9" y1="13" x2="15" y2="13" />
+        <line x1="9" y1="17" x2="15" y2="17" />
+      </svg>
+    );
+  }
   return null;
 }
 
@@ -100,6 +110,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/customers", label: "Customers", icon: "users" },
   { href: "/dashboard/deliveries", label: "Deliveries", icon: "truck" },
   { href: "/dashboard/reports", label: "Reports", icon: "chart" },
+  { href: "/dashboard/pages", label: "Website Pages", icon: "file" },
 ];
 
 export default function DashboardNav({ showSettings }: { showSettings: boolean }) {
