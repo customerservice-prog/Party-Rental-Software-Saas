@@ -22,6 +22,10 @@ export async function POST(request: NextRequest) {
   const quantity =
     typeof body.quantity === "number" && body.quantity > 0 ? Math.floor(body.quantity) : 1;
 
+  const requestedAddonIds: string[] = Array.isArray(body.addonIds)
+    ? body.addonIds.filter((id: unknown) => typeof id === "string")
+    : [];
+
   if (!itemId || !firstName || !lastName || !email || !eventDate || !deliveryAddress) {
     return NextResponse.json({ error: "Missing required booking details" }, { status: 400 });
   }
@@ -36,6 +40,14 @@ export async function POST(request: NextRequest) {
   if (!item) {
     return NextResponse.json({ error: "Item not found" }, { status: 404 });
   }
+
+  const itemAddons = await prisma.addon.findMany({
+    where: { organizationId: organization.id, itemId: item.id },
+  });
+  const selectedAddons = itemAddons.filter(
+    (addon) => addon.isRequired || requestedAddonIds.includes(addon.id)
+  );
+  const addonsTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
 
   const rangeStart = new Date(eventDate);
   const rangeEnd = eventEndDate ? new Date(eventEndDate) : null;
@@ -59,7 +71,7 @@ export async function POST(request: NextRequest) {
 
   const subtotal = item.cost * quantity;
   const deliveryFee = organization.flatDeliveryFee || 0;
-  const totalAmount = subtotal + deliveryFee;
+  const totalAmount = subtotal + deliveryFee + addonsTotal;
 
   const depositRule = await prisma.depositRule.findFirst({
     where: { organizationId: organization.id, isActive: true },
@@ -96,6 +108,13 @@ export async function POST(request: NextRequest) {
           },
         ],
       },
+      orderAddons: {
+        create: selectedAddons.map((addon) => ({
+          addonId: addon.id,
+          name: addon.name,
+          price: addon.price,
+        })),
+      },
     },
   });
 
@@ -121,6 +140,7 @@ export async function POST(request: NextRequest) {
     : undefined;
 
   const depositLabel = depositRule && depositAmount < totalAmount ? " (deposit)" : "";
+  const addonsLabel = selectedAddons.length > 0 ? ` + ${selectedAddons.length} add-on${selectedAddons.length > 1 ? "s" : ""}` : "";
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -137,7 +157,7 @@ export async function POST(request: NextRequest) {
         {
           price_data: {
             currency: "usd",
-            product_data: { name: `${item.name} x${quantity}${depositLabel}` },
+            product_data: { name: `${item.name} x${quantity}${addonsLabel}${depositLabel}` },
             unit_amount: Math.round(depositAmount * 100),
           },
           quantity: 1,
