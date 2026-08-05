@@ -1,5 +1,16 @@
 "use client";
 
+function readImageFile(file: File | undefined | null, onLoaded: (dataUrl: string) => void) {
+  if (!file) return;
+  if (file.size > 3 * 1024 * 1024) {
+    alert("Please choose an image smaller than 3MB.");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => onLoaded(reader.result as string);
+  reader.readAsDataURL(file);
+}
+
 import { useEffect, useState } from "react";
 
 const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -358,6 +369,12 @@ export default function SettingsPage() {
             onChange={(e) => setProfile({ ...profile, logoUrl: e.target.value })}
             className={inputClass}
           />
+          <input
+            type="file"
+            accept="image/*"
+            className="mt-1 text-xs"
+            onChange={(e) => readImageFile(e.target.files?.[0], (dataUrl) => setProfile({ ...profile, logoUrl: dataUrl }))}
+          />
         </label>
         <label className="block mb-6">
           <span className={labelTextClass}>Primary color</span>{" "}
@@ -406,6 +423,12 @@ export default function SettingsPage() {
             onChange={(e) => setSite({ ...site, heroImageUrl: e.target.value })}
             placeholder="https://..."
             className={inputClass}
+          />
+          <input
+            type="file"
+            accept="image/*"
+            className="mt-1 text-xs"
+            onChange={(e) => readImageFile(e.target.files?.[0], (dataUrl) => setSite({ ...site, heroImageUrl: dataUrl }))}
           />
         </label>
         <label className={labelClass}>
