@@ -42,6 +42,11 @@ model Organization {
   coupons       Coupon[]
   depositRules  DepositRule[]
   subscription  PlatformSubscription?
+  businessHours BusinessHours[]
+  closedDates   ClosedDate[]
+  addons        Addon[]
+  contracts     Contract[]
+  tasks         Task[]
 }
 
 // The tenant's own subscription to OUR platform (billing us, not their customers).
@@ -112,6 +117,7 @@ model Item {
   updatedAt         DateTime @updatedAt
 
   orderItems        OrderItem[]
+  addons        Addon[]
 
   @@unique([organizationId, slug])
 }
@@ -132,6 +138,7 @@ model Customer {
   updatedAt      DateTime @updatedAt
 
   orders         Order[]
+  tasks         Task[]
 
   @@index([organizationId, email])
 }
@@ -181,6 +188,8 @@ model Order {
   items               OrderItem[]
   deliveryAddress     String?
   stripeSessionId     String?  @unique
+  contract      Contract?
+  tasks         Task[]
 
   @@unique([organizationId, orderNumber])
 }
@@ -231,3 +240,95 @@ model AuditLog {
   details        String?
   createdAt      DateTime @default(now())
 }
+
+// ---------------------------------------------------------------------------
+// SCHEDULING / CALENDAR SUPPORT
+// ---------------------------------------------------------------------------
+
+// Weekly operating hours per organization, used to render the booking
+// calendar's default open/closed state for each day of the week.
+model BusinessHours {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  dayOfWeek      Int
+  isClosed       Boolean      @default(false)
+  openTime       String?
+  closeTime      String?
+
+  @@unique([organizationId, dayOfWeek])
+}
+
+
+// Specific closed dates / holidays that override BusinessHours for a
+// single day (e.g. Thanksgiving, a snow day, an owner-declared day off).
+model ClosedDate {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  date           DateTime
+  note           String?
+  createdAt      DateTime     @default(now())
+
+  @@unique([organizationId, date])
+}
+
+
+// Optional add-ons a customer can attach to a rented Item (e.g. a generator
+// with a tent, linens with a table). Priced and toggled per organization.
+model Addon {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  itemId         String
+  item           Item         @relation(fields: [itemId], references: [id])
+  name           String
+  price          Float        @default(0)
+  isRequired     Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+
+// Digital rental contract tied to a single Order. Tracks whether the
+// customer has signed yet, mirroring the "Signed / Unsigned" contract
+// views seen in comparable rental platforms.
+model Contract {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  orderId        String       @unique
+  order          Order        @relation(fields: [orderId], references: [id])
+  templateVersion String      @default("v1")
+  signedAt       DateTime?
+  signatureName  String?
+  signatureIp    String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+
+// Simple per-organization to-do items, optionally linked to a Customer or
+// Order, backing the dashboard "Tasks" widget.
+model Task {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  title          String
+  isDone         Boolean      @default(false)
+  dueDate        DateTime?
+  assignedTo     String?
+  customerId     String?
+  customer       Customer?    @relation(fields: [customerId], references: [id])
+  orderId        String?
+  order          Order?       @relation(fields: [orderId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+// NOTE: Order.status is a free-form String for flexibility, but the
+// application should treat it as one of: "quote" | "incomplete" | "active"
+// | "canceled" | "completed". The booking calendar's filter tabs
+// (Active, Active-Deliver, Active-Pickup, Sent Quotes, Canceled,
+// Orders Created) are derived from this field combined with deliveryType
+// and createdAt/eventDate.
