@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
+import StorefrontNav from "./StorefrontNav";
 
 export default async function StorefrontHomePage() {
     const organization = await getCurrentOrganization();
@@ -17,6 +18,7 @@ export default async function StorefrontHomePage() {
 
   return (
         <div>
+              <StorefrontNav organizationId={organization.id} activeSlug="" />
               <section className="bg-brand-50 py-16 px-4 text-center">
                       <h1 className="text-3xl font-bold mb-4">
                                 Party & Event Rentals from {organization.name}
