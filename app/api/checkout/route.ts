@@ -112,44 +112,56 @@ export async function POST(request: NextRequest) {
     },
   });
 
+  const proto = request.headers.get("x-forwarded-proto") || "https";
+  const host = request.headers.get("host");
+  const origin = process.env.NEXT_PUBLIC_APP_URL || `${proto}://${host}`;
+
   const applicationFeeAmount = organization.stripeAccountId
     ? Math.round(depositAmount * 100 * 0.03)
     : undefined;
 
   const depositLabel = depositRule && depositAmount < totalAmount ? " (deposit)" : "";
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    payment_intent_data: organization.stripeAccountId
-      ? {
-          application_fee_amount: applicationFeeAmount,
-          transfer_data: { destination: organization.stripeAccountId },
-        }
-      : undefined,
-    payment_method_types: ["card"],
-    customer_email: email,
-    line_items: [
-      {
-        price_data: {
-          currency: "usd",
-          product_data: { name: `${item.name} x${quantity}${depositLabel}` },
-          unit_amount: Math.round(depositAmount * 100),
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_intent_data: organization.stripeAccountId
+        ? {
+            application_fee_amount: applicationFeeAmount,
+            transfer_data: { destination: organization.stripeAccountId },
+          }
+        : undefined,
+      payment_method_types: ["card"],
+      customer_email: email,
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: { name: `${item.name} x${quantity}${depositLabel}` },
+            unit_amount: Math.round(depositAmount * 100),
+          },
+          quantity: 1,
         },
-        quantity: 1,
+      ],
+      success_url: `${origin}/checkout/success?orderId=${order.id}`,
+      cancel_url: `${origin}/checkout?itemId=${item.id}`,
+      metadata: {
+        orderId: order.id,
+        organizationId: organization.id,
       },
-    ],
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?orderId=${order.id}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout?itemId=${item.id}`,
-    metadata: {
-      orderId: order.id,
-      organizationId: organization.id,
-    },
-  });
+    });
 
-  await prisma.order.update({
-    where: { id: order.id },
-    data: { stripeSessionId: session.id },
-  });
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { stripeSessionId: session.id },
+    });
 
-  return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Payment setup failed";
+    return NextResponse.json(
+      { error: "Your booking was saved, but payment setup failed: " + message, orderId: order.id },
+      { status: 502 }
+    );
+  }
 }
