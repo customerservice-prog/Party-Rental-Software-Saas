@@ -1,8 +1,8 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { requireCurrentOrganization } from "@/lib/tenant";
+import DashboardNav from "./DashboardNav";
 
 export default async function DashboardLayout({
   children,
@@ -19,23 +19,29 @@ export default async function DashboardLayout({
   const role = (session.user as any).role;
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-56 border-r p-4 space-y-2">
-        <div className="font-bold mb-4">{organization.name}</div>
-        <nav className="flex flex-col space-y-1 text-sm">
-          <Link href="/dashboard">Home</Link>
-          <Link href="/dashboard/scheduling">Scheduling</Link>
-          <Link href="/dashboard/inventory">Inventory</Link>
-          <Link href="/dashboard/orders">Orders</Link>
-          <Link href="/dashboard/customers">Customers</Link>
-          <Link href="/dashboard/deliveries">Deliveries</Link>
-          <Link href="/dashboard/reports">Reports</Link>
-          {role === "owner" && (
-            <Link href="/dashboard/settings">Settings</Link>
-          )}
-        </nav>
-      </aside>
-      <div className="flex-1 p-6">{children}</div>
+    <div className="flex min-h-screen flex-col">
+      <header className="bg-indigo-600 text-white px-6 py-3 flex items-center gap-3 shadow">
+        <svg
+          className="w-6 h-6"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M3 21l1.5-9h15L21 21" />
+          <path d="M4.5 12l2-7h11l2 7" />
+          <path d="M12 5V2" />
+        </svg>
+        <span className="font-semibold text-lg">{organization.name}</span>
+      </header>
+      <div className="flex flex-1">
+        <aside className="w-56 border-r p-4 bg-white">
+          <DashboardNav showSettings={role === "owner"} />
+        </aside>
+        <div className="flex-1 p-6 bg-gray-50">{children}</div>
+      </div>
     </div>
   );
 }
