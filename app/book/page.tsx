@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
+import StorefrontNav from "../StorefrontNav";
 
 const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -24,6 +25,7 @@ export default async function BookPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <StorefrontNav organizationId={organization.id} activeSlug="book" />
       <header
         className="text-white"
         style={{ backgroundColor: accent }}
