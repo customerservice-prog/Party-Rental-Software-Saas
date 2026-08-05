@@ -10,6 +10,13 @@ type ItemInfo = {
   picture: string | null;
 };
 
+type AddonInfo = {
+  id: string;
+  name: string;
+  price: number;
+  isRequired: boolean;
+};
+
 function CheckoutForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -18,6 +25,8 @@ function CheckoutForm() {
   const [item, setItem] = useState<ItemInfo | null>(null);
   const [flatDeliveryFee, setFlatDeliveryFee] = useState(0);
   const [depositInfo, setDepositInfo] = useState<{ type: string; amount: number; isActive: boolean } | null>(null);
+  const [addons, setAddons] = useState<AddonInfo[]>([]);
+  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [agree, setAgree] = useState(false);
   const [signatureName, setSignatureName] = useState("");
@@ -28,10 +37,11 @@ function CheckoutForm() {
   useEffect(() => {
     if (!itemId) return;
     (async () => {
-      const [itemRes, orgRes, depositRes] = await Promise.all([
+      const [itemRes, orgRes, depositRes, addonsRes] = await Promise.all([
         fetch("/api/items?id=" + itemId),
         fetch("/api/organizations"),
         fetch("/api/deposit-rules"),
+        fetch("/api/addons?itemId=" + itemId),
       ]);
       if (itemRes.ok) {
         const data = await itemRes.json();
@@ -45,11 +55,26 @@ function CheckoutForm() {
         const data = await depositRes.json();
         if (data.rule) setDepositInfo(data.rule);
       }
+      if (addonsRes.ok) {
+        const data = await addonsRes.json();
+        const list: AddonInfo[] = data.addons || [];
+        setAddons(list);
+        setSelectedAddonIds(list.filter((a) => a.isRequired).map((a) => a.id));
+      }
     })();
   }, [itemId]);
 
+  function toggleAddon(id: string) {
+    setSelectedAddonIds((prev) =>
+      prev.includes(id) ? prev.filter((existing) => existing !== id) : [...prev, id]
+    );
+  }
+
   const subtotal = item ? item.cost * quantity : 0;
-  const total = subtotal + flatDeliveryFee;
+  const addonsTotal = addons
+    .filter((a) => selectedAddonIds.includes(a.id))
+    .reduce((sum, a) => sum + a.price, 0);
+  const total = subtotal + flatDeliveryFee + addonsTotal;
   const depositDue =
     depositInfo && depositInfo.isActive
       ? depositInfo.type === "flat"
@@ -77,6 +102,7 @@ function CheckoutForm() {
     const payload = {
       itemId,
       quantity,
+      addonIds: selectedAddonIds,
       firstName: form.get("firstName"),
       lastName: form.get("lastName"),
       email: form.get("email"),
@@ -138,6 +164,31 @@ function CheckoutForm() {
         </div>
       )}
 
+      {addons.length > 0 && (
+        <div className="bg-white shadow rounded-lg p-4 mb-6">
+          <div className="font-semibold text-gray-900 mb-2">Add-ons</div>
+          <div className="space-y-2">
+            {addons.map((addon) => (
+              <label key={addon.id} className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedAddonIds.includes(addon.id)}
+                    disabled={addon.isRequired}
+                    onChange={() => toggleAddon(addon.id)}
+                  />
+                  <span>
+                    {addon.name}
+                    {addon.isRequired ? <span className="text-gray-400"> (required)</span> : null}
+                  </span>
+                </span>
+                <span className="text-gray-600">${addon.price.toFixed(2)}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
       {error && (
         <div className="mb-4 p-3 rounded-md bg-red-50 text-red-700 text-sm">{error}</div>
       )}
@@ -182,6 +233,9 @@ function CheckoutForm() {
 
         <div className="border-t pt-4 space-y-1 text-sm">
           <div className="flex justify-between"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
+          {addonsTotal > 0 && (
+            <div className="flex justify-between"><span>Add-ons</span><span>${addonsTotal.toFixed(2)}</span></div>
+          )}
           <div className="flex justify-between"><span>Delivery fee</span><span>${flatDeliveryFee.toFixed(2)}</span></div>
           <div className="flex justify-between font-semibold"><span>Total</span><span>${total.toFixed(2)}</span></div>
           <div className="flex justify-between text-indigo-700 font-semibold"><span>Due today (deposit)</span><span>${depositDue.toFixed(2)}</span></div>
