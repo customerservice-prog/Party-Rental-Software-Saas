@@ -193,6 +193,7 @@ model Order {
   updatedAt        DateTime @updatedAt
 
   items            OrderItem[]
+  orderAddons      OrderAddon[]
   deliveryAddress  String?
   stripeSessionId  String?  @unique
   contract         Contract?
@@ -291,6 +292,21 @@ model Addon {
   isRequired     Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  orderAddons    OrderAddon[]
+}
+
+// Snapshot of an Addon selected on a specific Order, preserving the name and
+// price at the time of booking even if the underlying Addon is later edited.
+model OrderAddon {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  addonId   String
+  addon     Addon    @relation(fields: [addonId], references: [id])
+  name      String
+  price     Float
+  createdAt DateTime @default(now())
 }
 
 // Digital rental contract tied to a single Order. Tracks whether the
