@@ -41,3 +41,50 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ task }, { status: 201 });
 }
+
+export async function PATCH(req: NextRequest) {
+  const organization = await requireCurrentOrganization();
+  const body = await req.json();
+
+  if (!body.id || typeof body.id !== "string") {
+    return NextResponse.json({ error: "Task id is required" }, { status: 400 });
+  }
+
+  const existing = await prisma.task.findFirst({
+    where: { id: body.id, organizationId: organization.id },
+  });
+  if (!existing) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
+
+  const data: Record<string, unknown> = {};
+  if (typeof body.title === "string") data.title = body.title;
+  if (typeof body.isDone === "boolean") data.isDone = body.isDone;
+  if (typeof body.assignedTo === "string") data.assignedTo = body.assignedTo;
+  if (body.dueDate !== undefined) data.dueDate = body.dueDate ? new Date(body.dueDate) : null;
+
+  const task = await prisma.task.update({ where: { id: body.id }, data });
+
+  return NextResponse.json({ task });
+}
+
+export async function DELETE(req: NextRequest) {
+  const organization = await requireCurrentOrganization();
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+
+  if (!id) {
+    return NextResponse.json({ error: "Task id is required" }, { status: 400 });
+  }
+
+  const existing = await prisma.task.findFirst({
+    where: { id, organizationId: organization.id },
+  });
+  if (!existing) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
+
+  await prisma.task.delete({ where: { id } });
+
+  return NextResponse.json({ success: true });
+}
