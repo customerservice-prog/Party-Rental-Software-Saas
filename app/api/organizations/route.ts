@@ -29,7 +29,7 @@ export async function PATCH(req: NextRequest) {
     "instagramUrl",
   ];
 
-  const data: Record<string, string | boolean> = {};
+  const data: Record<string, string | boolean | number> = {};
   for (const field of allowedStringFields) {
     if (typeof body[field] === "string") {
       data[field] = body[field];
@@ -37,6 +37,9 @@ export async function PATCH(req: NextRequest) {
   }
   if (typeof body.showHoursOnSite === "boolean") {
     data.showHoursOnSite = body.showHoursOnSite;
+  }
+  if (typeof body.flatDeliveryFee === "number" && !Number.isNaN(body.flatDeliveryFee)) {
+    data.flatDeliveryFee = body.flatDeliveryFee;
   }
 
   const updated = await prisma.organization.update({
