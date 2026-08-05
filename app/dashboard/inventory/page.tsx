@@ -2,6 +2,17 @@
 
 import { useEffect, useState, FormEvent } from "react";
 
+function readImageFile(file, onLoaded) {
+  if (!file) return;
+  if (file.size > 3 * 1024 * 1024) {
+    alert("Please choose an image smaller than 3MB.");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => onLoaded(reader.result);
+  reader.readAsDataURL(file);
+}
+
 type Item = {
   id: string;
   categoryId: string;
@@ -285,6 +296,12 @@ export default function InventoryPage() {
             value={newCategory.picture}
             onChange={(e) => setNewCategory({ ...newCategory, picture: e.target.value })}
           />
+          <input
+            type="file"
+            accept="image/*"
+            className="text-xs"
+            onChange={(e) => readImageFile(e.target.files && e.target.files[0], (dataUrl) => setNewCategory({ ...newCategory, picture: dataUrl }))}
+          />
           <button className="bg-purple-600 text-white rounded px-4 py-2" type="submit">
             Add Category
           </button>
@@ -359,6 +376,12 @@ export default function InventoryPage() {
                               value={editForm.picture}
                               onChange={(e) => setEditForm({ ...editForm, picture: e.target.value })}
                               placeholder="Picture URL"
+                            />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="text-xs"
+                              onChange={(e) => readImageFile(e.target.files && e.target.files[0], (dataUrl) => setEditForm({ ...editForm, picture: dataUrl }))}
                             />
                             <div className="flex gap-2">
                               <button
@@ -527,6 +550,12 @@ export default function InventoryPage() {
                   placeholder="Picture URL"
                   value={form.picture}
                   onChange={(e) => setItemFormFor(category.id, { ...form, picture: e.target.value })}
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="text-xs"
+                  onChange={(e) => readImageFile(e.target.files && e.target.files[0], (dataUrl) => setItemFormFor(category.id, { ...form, picture: dataUrl }))}
                 />
                 <button className="bg-purple-600 text-white rounded px-3 py-1 text-sm" type="submit">
                   Add Item
