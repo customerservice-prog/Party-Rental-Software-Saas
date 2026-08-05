@@ -14,11 +14,13 @@ export async function GET(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   const { searchParams } = new URL(req.url);
   const categoryId = searchParams.get("categoryId");
+  const id = searchParams.get("id");
 
   const items = await prisma.item.findMany({
     where: {
       organizationId: organization.id,
       ...(categoryId ? { categoryId } : {}),
+      ...(id ? { id } : {}),
     },
     include: { category: true },
     orderBy: { name: "asc" },
