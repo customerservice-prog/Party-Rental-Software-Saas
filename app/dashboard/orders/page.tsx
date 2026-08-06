@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 
@@ -33,7 +34,11 @@ export default async function OrdersPage() {
                       <tbody>
                         {orders.map((order) => (
                       <tr key={order.id} className="border-b last:border-0">
-                                    <td className="py-2 px-3">{order.orderNumber}</td>
+                                    <td className="py-2 px-3">
+                      <Link href={"/dashboard/orders/" + order.id} className="text-brand-600 hover:underline">
+                        {order.orderNumber}
+                      </Link>
+                    </td>
                                     <td className="py-2 px-3">
                                       {order.customer.firstName} {order.customer.lastName}
                                     </td>
