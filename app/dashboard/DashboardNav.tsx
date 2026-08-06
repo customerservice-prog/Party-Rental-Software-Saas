@@ -145,6 +145,7 @@ export default function DashboardNav({ showSettings }: { showSettings: boolean }
   const items = showSettings
     ? [
         ...NAV_ITEMS,
+      { href: "/dashboard/drivers", label: "Drivers", icon: "truck" },
         { href: "/dashboard/staff", label: "Staff", icon: "shield" },
         { href: "/dashboard/settings", label: "Settings", icon: "gear" },
       ]
