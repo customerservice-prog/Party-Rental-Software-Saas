@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
+import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
@@ -20,6 +21,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const organization = await requireCurrentOrganization();
+  try {
+    await requireStaffSession(organization.id);
+  } catch (err) {
+    return authzErrorResponse(err);
+  }
   const body = await req.json();
 
   if (!body.itemId || typeof body.itemId !== "string") {
@@ -52,6 +58,11 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const organization = await requireCurrentOrganization();
+  try {
+    await requireStaffSession(organization.id);
+  } catch (err) {
+    return authzErrorResponse(err);
+  }
   const body = await req.json();
 
   if (!body.id || typeof body.id !== "string") {
@@ -77,6 +88,11 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const organization = await requireCurrentOrganization();
+  try {
+    await requireStaffSession(organization.id);
+  } catch (err) {
+    return authzErrorResponse(err);
+  }
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 
