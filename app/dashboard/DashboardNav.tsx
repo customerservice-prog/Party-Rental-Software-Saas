@@ -115,6 +115,14 @@ function NavIcon({ name, className }: { name: string; className?: string }) {
       </svg>
     );
   }
+  if (name === "shield") {
+    return (
+      <svg {...common}>
+        <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" />
+        <path d="M9 12l2 2 4-4" />
+      </svg>
+    );
+  }
   return null;
 }
 
@@ -135,7 +143,11 @@ export default function DashboardNav({ showSettings }: { showSettings: boolean }
   const pathname = usePathname();
 
   const items = showSettings
-    ? [...NAV_ITEMS, { href: "/dashboard/settings", label: "Settings", icon: "gear" }]
+    ? [
+        ...NAV_ITEMS,
+        { href: "/dashboard/staff", label: "Staff", icon: "shield" },
+        { href: "/dashboard/settings", label: "Settings", icon: "gear" },
+      ]
     : NAV_ITEMS;
 
   return (
