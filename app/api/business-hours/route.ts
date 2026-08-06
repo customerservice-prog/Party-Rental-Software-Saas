@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
+import { requireStaffSession, requireOwnerSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   const organization = await requireCurrentOrganization();
+  try {
+    await requireStaffSession(organization.id);
+  } catch (err) {
+    return authzErrorResponse(err);
+  }
 
   const businessHours = await prisma.businessHours.findMany({
     where: { organizationId: organization.id },
@@ -15,6 +21,11 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const organization = await requireCurrentOrganization();
+  try {
+    await requireOwnerSession(organization.id);
+  } catch (err) {
+    return authzErrorResponse(err);
+  }
   const body = await req.json();
 
   if (typeof body.dayOfWeek !== "number" || body.dayOfWeek < 0 || body.dayOfWeek > 6) {
