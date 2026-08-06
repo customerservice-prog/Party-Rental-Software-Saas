@@ -25,6 +25,7 @@ export async function PATCH(req: NextRequest) {
     "tagline",
     "heroImageUrl",
     "aboutText",
+    "contractTerms",
     "facebookUrl",
     "instagramUrl",
   ];
