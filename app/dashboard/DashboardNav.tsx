@@ -107,6 +107,14 @@ function NavIcon({ name, className }: { name: string; className?: string }) {
       </svg>
     );
   }
+  if (name === "tag") {
+    return (
+      <svg {...common}>
+        <path d="M20.59 13.41L11 3.83A2 2 0 0 0 9.59 3.17L4 3a1 1 0 0 0-1 1l.17 5.59a2 2 0 0 0 .66 1.42l9.58 9.58a2 2 0 0 0 2.83 0l4.35-4.35a2 2 0 0 0 0-2.83z" />
+        <circle cx="7.5" cy="7.5" r="1.2" />
+      </svg>
+    );
+  }
   return null;
 }
 
@@ -120,6 +128,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/reports", label: "Reports", icon: "chart" },
   { href: "/dashboard/pages", label: "Website Pages", icon: "file" },
   { href: "/dashboard/tasks", label: "Tasks", icon: "check" },
+  { href: "/dashboard/coupons", label: "Coupons", icon: "tag" },
 ];
 
 export default function DashboardNav({ showSettings }: { showSettings: boolean }) {
