@@ -137,10 +137,20 @@ export default async function OrderDetailPage({
       <div className="bg-white shadow rounded-lg p-5 mb-6">
         <h2 className="font-semibold text-gray-900 mb-2">Contract</h2>
         {order.contract?.signedAt ? (
-          <p className="text-sm text-green-700">
-            Signed by {order.contract.signatureName} on{" "}
-            {order.contract.signedAt.toDateString()}
-          </p>
+          <div>
+            <p className="text-sm text-green-700">
+              Signed by {order.contract.signatureName} on{" "}
+              {order.contract.signedAt.toDateString()}
+            </p>
+            {order.contract.contractText && (
+              <details className="mt-2">
+                <summary className="text-sm text-indigo-600 cursor-pointer">View signed contract text</summary>
+                <div className="mt-1 max-h-48 overflow-y-auto rounded-md border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600 whitespace-pre-wrap">
+                  {order.contract.contractText}
+                </div>
+              </details>
+            )}
+          </div>
         ) : (
           <p className="text-sm text-gray-500">Not signed yet.</p>
         )}
