@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
+import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
 export async function PATCH(
@@ -7,6 +8,11 @@ export async function PATCH(
   { params }: { params: { id: string } }
   ) {
     const organization = await requireCurrentOrganization();
+    try {
+      await requireStaffSession(organization.id);
+    } catch (err) {
+      return authzErrorResponse(err);
+    }
     const body = await request.json();
     const { driverId } = body;
 
