@@ -26,6 +26,7 @@ model Organization {
   tagline          String?
   heroImageUrl     String?
   aboutText        String?
+  contractTerms    String?
   facebookUrl      String?
   instagramUrl     String?
   showHoursOnSite  Boolean   @default(true)
@@ -320,6 +321,7 @@ model Contract {
   orderId         String    @unique
   order           Order     @relation(fields: [orderId], references: [id])
   templateVersion String    @default("v1")
+  contractText    String?
   signedAt        DateTime?
   signatureName   String?
   signatureIp     String?
