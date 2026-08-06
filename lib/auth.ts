@@ -84,6 +84,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = (user as any).role;
         token.organizationId = (user as any).organizationId;
+        token.id = (user as any).id;
       }
       return token;
     },
@@ -91,6 +92,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as any).role = token.role;
         (session.user as any).organizationId = token.organizationId;
+        (session.user as any).id = token.id;
       }
       return session;
     },
