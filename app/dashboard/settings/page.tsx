@@ -40,6 +40,7 @@ export default function SettingsPage() {
     timezone: "America/New_York",
     logoUrl: "",
     primaryColor: "#7c3aed",
+    contractTerms: "",
   });
   const [site, setSite] = useState({
     tagline: "",
@@ -106,6 +107,7 @@ export default function SettingsPage() {
           timezone: organization.timezone || "America/New_York",
           logoUrl: organization.logoUrl || "",
           primaryColor: organization.primaryColor || "#7c3aed",
+          contractTerms: organization.contractTerms || "",
         });
         setSite({
           tagline: organization.tagline || "",
@@ -385,6 +387,17 @@ export default function SettingsPage() {
           />
         </label>
 
+        <label className={labelClass}>
+          <span className={labelTextClass}>Rental agreement / contract terms</span>
+          <textarea
+            value={profile.contractTerms}
+            onChange={(e) => setProfile({ ...profile, contractTerms: e.target.value })}
+            rows={5}
+            placeholder="Shown to customers at checkout when they sign the rental contract. Leave blank to use the default terms."
+            className={inputClass}
+          />
+        </label>
+
         <button disabled={saving} onClick={handleSave} className={buttonClass}>
           {saving ? "Saving..." : "Save Settings"}
         </button>
@@ -585,7 +598,7 @@ export default function SettingsPage() {
             <li key={d.id} className="flex items-center justify-between py-2 text-sm">
               <span>
                 {new Date(d.date).toLocaleDateString()}
-                {d.note ? " — " + d.note : ""}
+                {d.note ? " â " + d.note : ""}
               </span>
               <button
                 onClick={() => handleRemoveClosedDate(d.id)}
