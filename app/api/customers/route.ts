@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
+import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
     const organization = await requireCurrentOrganization();
+    try {
+        await requireStaffSession(organization.id);
+    } catch (err) {
+        return authzErrorResponse(err);
+    }
 
   const customers = await prisma.customer.findMany({
         where: { organizationId: organization.id },
@@ -15,6 +21,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
     const organization = await requireCurrentOrganization();
+    try {
+        await requireStaffSession(organization.id);
+    } catch (err) {
+        return authzErrorResponse(err);
+    }
     const body = await request.json();
 
   const { firstName, lastName, email, phone, address } = body;
