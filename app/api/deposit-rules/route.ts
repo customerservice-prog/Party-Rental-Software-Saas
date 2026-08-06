@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
+import { requireOwnerSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -13,6 +14,11 @@ export async function GET() {
 
 export async function PUT(req: NextRequest) {
   const organization = await requireCurrentOrganization();
+  try {
+    await requireOwnerSession(organization.id);
+  } catch (err) {
+    return authzErrorResponse(err);
+  }
   const body = await req.json();
 
   const type = body.type === "flat" ? "flat" : "percentage";
