@@ -17,6 +17,9 @@ type AddonInfo = {
   isRequired: boolean;
 };
 
+const DEFAULT_CONTRACT_TERMS =
+  "By signing below, you agree to be financially responsible for all rented items for the duration of the rental period, to use the equipment safely and as intended, and to pay any repair or replacement costs for damage beyond normal wear and tear. Deposits are non-refundable if the reservation is cancelled within 7 days of the event date.";
+
 function CheckoutForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -34,6 +37,7 @@ function CheckoutForm() {
   const [quantity, setQuantity] = useState(1);
   const [agree, setAgree] = useState(false);
   const [signatureName, setSignatureName] = useState("");
+  const [contractTerms, setContractTerms] = useState("");
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -54,6 +58,7 @@ function CheckoutForm() {
       if (orgRes.ok) {
         const data = await orgRes.json();
         setFlatDeliveryFee(data.organization?.flatDeliveryFee || 0);
+        if (data.organization?.contractTerms) setContractTerms(data.organization.contractTerms);
       }
       if (depositRes.ok) {
         const data = await depositRes.json();
@@ -303,6 +308,13 @@ function CheckoutForm() {
           {balanceDue > 0 && (
             <div className="flex justify-between text-gray-500"><span>Balance due later</span><span>${balanceDue.toFixed(2)}</span></div>
           )}
+        </div>
+
+        <div className="border-t pt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Rental Agreement</label>
+          <div className="mt-1 max-h-40 overflow-y-auto rounded-md border border-gray-300 bg-gray-50 p-3 text-xs text-gray-600 whitespace-pre-wrap">
+            {contractTerms || DEFAULT_CONTRACT_TERMS}
+          </div>
         </div>
 
         <div className="border-t pt-4">
