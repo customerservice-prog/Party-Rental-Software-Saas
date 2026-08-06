@@ -139,6 +139,9 @@ export async function POST(request: NextRequest) {
   const forwardedFor = request.headers.get("x-forwarded-for");
   const signatureIp = forwardedFor ? forwardedFor.split(",")[0].trim() : null;
 
+  const DEFAULT_CONTRACT_TERMS =
+    "By signing below, you agree to be financially responsible for all rented items for the duration of the rental period, to use the equipment safely and as intended, and to pay any repair or replacement costs for damage beyond normal wear and tear. Deposits are non-refundable if the reservation is cancelled within 7 days of the event date.";
+
   await prisma.contract.create({
     data: {
       organizationId: organization.id,
@@ -146,6 +149,7 @@ export async function POST(request: NextRequest) {
       signedAt: new Date(),
       signatureName,
       signatureIp,
+      contractText: organization.contractTerms || DEFAULT_CONTRACT_TERMS,
     },
   });
 
