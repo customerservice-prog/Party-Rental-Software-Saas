@@ -27,6 +27,10 @@ function CheckoutForm() {
   const [depositInfo, setDepositInfo] = useState<{ type: string; amount: number; isActive: boolean } | null>(null);
   const [addons, setAddons] = useState<AddonInfo[]>([]);
   const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountType: string; discountAmount: number } | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [couponChecking, setCouponChecking] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [agree, setAgree] = useState(false);
   const [signatureName, setSignatureName] = useState("");
@@ -74,7 +78,13 @@ function CheckoutForm() {
   const addonsTotal = addons
     .filter((a) => selectedAddonIds.includes(a.id))
     .reduce((sum, a) => sum + a.price, 0);
-  const total = subtotal + flatDeliveryFee + addonsTotal;
+  const preDiscountTotal = subtotal + flatDeliveryFee + addonsTotal;
+  const couponDiscount = appliedCoupon
+    ? appliedCoupon.discountType === "fixed"
+      ? Math.min(appliedCoupon.discountAmount, preDiscountTotal)
+      : Math.round(preDiscountTotal * (appliedCoupon.discountAmount / 100) * 100) / 100
+    : 0;
+  const total = Math.max(0, preDiscountTotal - couponDiscount);
   const depositDue =
     depositInfo && depositInfo.isActive
       ? depositInfo.type === "flat"
@@ -82,6 +92,28 @@ function CheckoutForm() {
         : Math.round(total * (depositInfo.amount / 100) * 100) / 100
       : total;
   const balanceDue = total - depositDue;
+
+  async function handleApplyCoupon() {
+    setCouponError("");
+    if (!couponInput.trim()) return;
+    setCouponChecking(true);
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponInput }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAppliedCoupon(null);
+        setCouponError(data.error || "Invalid coupon code");
+        return;
+      }
+      setAppliedCoupon(data);
+    } finally {
+      setCouponChecking(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -111,6 +143,7 @@ function CheckoutForm() {
       eventEndDate: form.get("eventEndDate") || null,
       deliveryAddress: form.get("deliveryAddress"),
       signatureName,
+      couponCode: appliedCoupon ? appliedCoupon.code : undefined,
     };
 
     try {
@@ -231,12 +264,40 @@ function CheckoutForm() {
           <input name="deliveryAddress" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
         </div>
 
+        <div className="mb-3">
+          <div className="flex gap-2">
+            <input
+              className="flex-1 rounded-md border-gray-300 shadow-sm text-sm"
+              placeholder="Coupon code"
+              value={couponInput}
+              onChange={(e) => setCouponInput(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={handleApplyCoupon}
+              disabled={couponChecking}
+              className="border rounded px-3 py-1 text-sm"
+            >
+              {couponChecking ? "Checking..." : "Apply"}
+            </button>
+          </div>
+          {couponError && <p className="text-xs text-red-600 mt-1">{couponError}</p>}
+          {appliedCoupon && (
+            <p className="text-xs text-green-700 mt-1">
+              Coupon {appliedCoupon.code} applied!
+            </p>
+          )}
+        </div>
+
         <div className="border-t pt-4 space-y-1 text-sm">
           <div className="flex justify-between"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
           {addonsTotal > 0 && (
             <div className="flex justify-between"><span>Add-ons</span><span>${addonsTotal.toFixed(2)}</span></div>
           )}
           <div className="flex justify-between"><span>Delivery fee</span><span>${flatDeliveryFee.toFixed(2)}</span></div>
+          {couponDiscount > 0 && (
+            <div className="flex justify-between text-green-700"><span>Coupon discount</span><span>-${couponDiscount.toFixed(2)}</span></div>
+          )}
           <div className="flex justify-between font-semibold"><span>Total</span><span>${total.toFixed(2)}</span></div>
           <div className="flex justify-between text-indigo-700 font-semibold"><span>Due today (deposit)</span><span>${depositDue.toFixed(2)}</span></div>
           {balanceDue > 0 && (
