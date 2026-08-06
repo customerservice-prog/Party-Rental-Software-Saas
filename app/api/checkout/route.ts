@@ -71,7 +71,25 @@ export async function POST(request: NextRequest) {
 
   const subtotal = item.cost * quantity;
   const deliveryFee = organization.flatDeliveryFee || 0;
-  const totalAmount = subtotal + deliveryFee + addonsTotal;
+
+  let couponDiscount = 0;
+  const couponCode = typeof body.couponCode === "string" ? body.couponCode.trim().toUpperCase() : "";
+  if (couponCode) {
+    const coupon = await prisma.coupon.findFirst({
+      where: { organizationId: organization.id, code: couponCode },
+    });
+    const isExpired = coupon?.expiresAt ? coupon.expiresAt < new Date() : false;
+    if (!coupon || !coupon.isActive || isExpired) {
+      return NextResponse.json({ error: "That coupon code is invalid or has expired" }, { status: 400 });
+    }
+    const preDiscountTotal = subtotal + deliveryFee + addonsTotal;
+    couponDiscount =
+      coupon.discountType === "fixed"
+        ? Math.min(coupon.discountAmount, preDiscountTotal)
+        : Math.round(preDiscountTotal * (coupon.discountAmount / 100) * 100) / 100;
+  }
+
+  const totalAmount = Math.max(0, subtotal + deliveryFee + addonsTotal - couponDiscount);
 
   const depositRule = await prisma.depositRule.findFirst({
     where: { organizationId: organization.id, isActive: true },
