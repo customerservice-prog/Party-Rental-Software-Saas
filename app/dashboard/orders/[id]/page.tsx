@@ -4,6 +4,7 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import AssignDriverSelect from "../../deliveries/assign-driver-select";
 import OrderTasks from "./OrderTasks";
+import OrderStatusSelect from "./OrderStatusSelect";
 
 export default async function OrderDetailPage({
   params,
@@ -44,9 +45,7 @@ export default async function OrderDetailPage({
 
       <div className="flex items-center justify-between mt-3 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Order {order.orderNumber}</h1>
-        <span className="capitalize bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
-          {order.status}
-        </span>
+        <OrderStatusSelect orderId={order.id} currentStatus={order.status} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
