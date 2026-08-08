@@ -1,6 +1,7 @@
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import AssignDriverSelect from "./assign-driver-select";
+import Link from "next/link";
 
 export default async function DeliveriesPage() {
     const organization = await requireCurrentOrganization();
@@ -19,7 +20,10 @@ export default async function DeliveriesPage() {
 
   return (
         <div className="p-8">
-              <h1 className="text-2xl font-bold text-gray-900 mb-6">Deliveries & Routing</h1>
+              <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Deliveries & Routing</h1>
+        <Link href="/dashboard/deliveries/packing-list" className="bg-blue-600 hover:bg-blue-700 text-white rounded px-4 py-2 text-sm font-medium">Print Packing List</Link>
+      </div>
         
               <div className="bg-white shadow rounded-lg overflow-hidden">
                       <table className="min-w-full divide-y divide-gray-200">
@@ -49,7 +53,7 @@ export default async function DeliveriesPage() {
                                           {order.customer.firstName} {order.customer.lastName}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                          {order.deliveryAddress || order.customer.address || "—"}
+                                          {order.deliveryAddress || order.customer.address || "â"}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.status}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
