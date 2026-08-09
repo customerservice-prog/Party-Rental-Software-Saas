@@ -14,7 +14,10 @@ export default async function OrdersPage() {
 
   return (
         <div>
-              <h1 className="text-2xl font-bold mb-6">Orders</h1>
+              <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Orders</h1>
+        <Link href="/dashboard/orders/new" className="bg-blue-600 hover:bg-blue-700 text-white rounded px-4 py-2 text-sm font-medium">New Order</Link>
+      </div>
         
           {orders.length === 0 && (
                   <p className="text-gray-500">No orders yet.</p>
