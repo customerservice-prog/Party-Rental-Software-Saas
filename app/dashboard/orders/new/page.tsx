@@ -35,7 +35,7 @@ export default function NewOrderPage() {
       .catch(() => setCustomers([]));
     fetch("/api/items")
       .then((r) => (r.ok ? r.json() : []))
-      .then((data) => setItems(Array.isArray(data) ? data : []))
+      .then((data) => setItems(Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : []))
       .catch(() => setItems([]));
   }, []);
 
