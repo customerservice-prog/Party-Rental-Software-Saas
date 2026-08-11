@@ -146,6 +146,7 @@ model Customer {
   state          String?
   zip            String?
   leadSource     String   @default("other")
+  notes          String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
