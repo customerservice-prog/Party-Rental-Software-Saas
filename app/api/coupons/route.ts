@@ -17,8 +17,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const organization = await requireCurrentOrganization();
+  let session;
   try {
-    const session = await requireOwnerSession(organization.id);
+    session = await requireOwnerSession(organization.id);
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -92,8 +93,9 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const organization = await requireCurrentOrganization();
+  let session;
   try {
-    const session = await requireOwnerSession(organization.id);
+    session = await requireOwnerSession(organization.id);
   } catch (err) {
     return authzErrorResponse(err);
   }
