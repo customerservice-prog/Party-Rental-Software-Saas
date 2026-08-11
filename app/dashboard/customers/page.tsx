@@ -40,14 +40,28 @@ export default async function CustomersPage({
                       </Link>
               </div>
         
-              <form method="get" className="mb-4">
+              <form method="get" className="mb-4 flex gap-2 max-w-md">
                 <input
                   type="text"
                   name="q"
                   defaultValue={q}
                   placeholder="Search by name, email, or phone"
-                  className="w-full max-w-md border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
+                <button
+                  type="submit"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700"
+                >
+                  Search
+                </button>
+                {q ? (
+                  <a
+                    href="/dashboard/customers"
+                    className="px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300"
+                  >
+                    Clear
+                  </a>
+                ) : null}
               </form>
               <div className="bg-white shadow rounded-lg overflow-hidden">
                       <table className="min-w-full divide-y divide-gray-200">
