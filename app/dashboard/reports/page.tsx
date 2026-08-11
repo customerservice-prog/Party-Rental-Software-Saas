@@ -1,16 +1,33 @@
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 
-export default async function ReportsPage() {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: { from?: string; to?: string };
+}) {
     const organization = await requireCurrentOrganization();
+
+  const fromParam = typeof searchParams.from === "string" ? searchParams.from : "";
+  const toParam = typeof searchParams.to === "string" ? searchParams.to : "";
+  const dateFilter: { gte?: Date; lte?: Date } = {};
+  const fromDate = fromParam ? new Date(fromParam) : null;
+  if (fromDate && !isNaN(fromDate.getTime())) dateFilter.gte = fromDate;
+  const toDate = toParam ? new Date(toParam) : null;
+  if (toDate && !isNaN(toDate.getTime())) {
+    toDate.setHours(23, 59, 59, 999);
+    dateFilter.lte = toDate;
+  }
+  const hasDateFilter = dateFilter.gte !== undefined || dateFilter.lte !== undefined;
+  const dateWhere = hasDateFilter ? { createdAt: dateFilter } : {};
 
   const [orderStats, orderCount, topItems, statusGroups, openOrders] = await Promise.all([
         prisma.order.aggregate({
-                where: { organizationId: organization.id, status: { not: "cancelled" } },
+                where: { organizationId: organization.id, status: { not: "cancelled" }, ...dateWhere },
                 _sum: { totalAmount: true, amountPaid: true },
         }),
         prisma.order.count({
-                where: { organizationId: organization.id },
+                where: { organizationId: organization.id, ...dateWhere },
         }),
         prisma.orderItem.groupBy({
                 by: ["itemId"],
@@ -21,11 +38,11 @@ export default async function ReportsPage() {
         }),
         prisma.order.groupBy({
           by: ["status"],
-          where: { organizationId: organization.id },
+          where: { organizationId: organization.id, ...dateWhere },
           _count: { _all: true },
         }),
         prisma.order.findMany({
-          where: { organizationId: organization.id, status: { not: "cancelled" } },
+          where: { organizationId: organization.id, status: { not: "cancelled" }, ...dateWhere },
           include: { customer: true },
           orderBy: { eventDate: "asc" },
         }),
@@ -70,7 +87,7 @@ export default async function ReportsPage() {
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <h1>Reports &amp; Analytics</h1>
                   <a
-                    href="/api/reports/export"
+                    href={`/api/reports/export${(fromParam || toParam) ? `?from=${encodeURIComponent(fromParam)}&to=${encodeURIComponent(toParam)}` : ""}`}
                     style={{
                       border: "1px solid #ddd",
                       borderRadius: 6,
@@ -83,6 +100,43 @@ export default async function ReportsPage() {
                     Export CSV
                   </a>
                 </div>
+        <form
+          method="get"
+          style={{ display: "flex", gap: 8, alignItems: "flex-end", margin: "16px 0" }}
+        >
+          <div>
+            <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>From</div>
+            <input
+              type="date"
+              name="from"
+              defaultValue={fromParam}
+              style={{ border: "1px solid #ddd", borderRadius: 6, padding: "6px 10px", fontSize: 14 }}
+            />
+          </div>
+          <div>
+            <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>To</div>
+            <input
+              type="date"
+              name="to"
+              defaultValue={toParam}
+              style={{ border: "1px solid #ddd", borderRadius: 6, padding: "6px 10px", fontSize: 14 }}
+            />
+          </div>
+          <button
+            type="submit"
+            style={{ border: "1px solid #2563eb", background: "#2563eb", color: "#fff", borderRadius: 6, padding: "8px 16px", fontSize: 14, cursor: "pointer" }}
+          >
+            Apply
+          </button>
+          {hasDateFilter && (
+            <a
+              href="/dashboard/reports"
+              style={{ padding: "8px 12px", fontSize: 14, color: "#6b7280", textDecoration: "none" }}
+            >
+              Clear
+            </a>
+          )}
+        </form>
         
               <div style={{ display: "flex", gap: 16, margin: "20px 0" }}>
                       <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 16, flex: 1 }}>
