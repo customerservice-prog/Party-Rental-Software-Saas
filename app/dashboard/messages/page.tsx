@@ -68,6 +68,20 @@ export default function MessagesPage() {
     loadAll();
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const to = params.get("to");
+    const name = params.get("name");
+    const cid = params.get("customerId");
+    const ch = params.get("channel");
+    const subj = params.get("subject");
+    if (to) setToAddress(to);
+    if (name) setToName(name);
+    if (cid) setCustomerId(cid);
+    if (ch === "sms" || ch === "email") setChannel(ch);
+    if (subj) setSubject(subj);
+  }, []);
+
   function onSelectCustomer(id: string) {
     setCustomerId(id);
     const c = customers.find((x) => x.id === id);
