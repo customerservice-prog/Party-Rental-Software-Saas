@@ -71,8 +71,9 @@ export async function DELETE(
   { params }: { params: { id: string } }
   ) {
     const organization = await requireCurrentOrganization();
+    let session;
     try {
-          const session = await requireOwnerSession(organization.id);
+          session = await requireOwnerSession(organization.id);
     } catch (err) {
           return authzErrorResponse(err);
     }
