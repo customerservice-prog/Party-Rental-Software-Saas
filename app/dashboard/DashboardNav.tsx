@@ -148,6 +148,7 @@ export default function DashboardNav({ showSettings }: { showSettings: boolean }
       { href: "/dashboard/drivers", label: "Drivers", icon: "truck" },
         { href: "/dashboard/staff", label: "Staff", icon: "shield" },
         { href: "/dashboard/activity", label: "Activity Log", icon: "clipboard" },
+        { href: "/dashboard/message-templates", label: "Message Templates", icon: "mail" },
         { href: "/dashboard/settings", label: "Settings", icon: "gear" },
       ]
     : NAV_ITEMS;
