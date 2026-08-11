@@ -20,6 +20,7 @@ export default function NewCustomerPage() {
                 email: form.get("email"),
                 phone: form.get("phone"),
                 address: form.get("address"),
+                leadSource: form.get("leadSource"),
         };
 
       try {
@@ -96,6 +97,21 @@ export default function NewCustomerPage() {
                                               name="address"
                                               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
                                             />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Lead source</label>
+                        <select
+                          name="leadSource"
+                          defaultValue="other"
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                        >
+                          <option value="referral">Referral</option>
+                          <option value="google">Google / Search</option>
+                          <option value="social">Social Media</option>
+                          <option value="repeat">Repeat Customer</option>
+                          <option value="event">Event / Show</option>
+                          <option value="other">Other</option>
+                        </select>
                       </div>
               
                       <button
