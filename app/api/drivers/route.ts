@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { requireStaffSession, requireOwnerSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/audit";
 
 // Driver roster management. Any signed-in staff or owner login can view the
 // driver list (needed to assign drivers to deliveries on the Deliveries
@@ -30,7 +31,7 @@ function randomPin() {
 export async function POST(req: NextRequest) {
     const organization = await requireCurrentOrganization();
     try {
-          await requireOwnerSession(organization.id);
+          const session = await requireOwnerSession(organization.id);
     } catch (err) {
           return authzErrorResponse(err);
     }
@@ -82,5 +83,11 @@ export async function POST(req: NextRequest) {
         },
   });
 
+  await logActivity({
+    organizationId: organization.id,
+    performedBy: session.id,
+    action: "Added driver",
+    details: driver.name,
+  });
   return NextResponse.json({ driver }, { status: 201 });
 }
