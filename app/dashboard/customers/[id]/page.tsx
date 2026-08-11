@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
+import DeleteCustomerButton from "@/app/dashboard/customers/DeleteCustomerButton";
 
 export default async function CustomerDetailPage({
     params,
@@ -44,10 +45,17 @@ export default async function CustomerDetailPage({
                                             <span className="font-medium text-gray-500">Address:</span> {customer.address}
                                 </div>
                                 <div>
+                                            <span className="font-medium text-gray-500">Lead source:</span> {customer.leadSource}
+                                </div>
+                                <div>
                                             <span className="font-medium text-gray-500">Customer since:</span>{" "}
                                   {new Date(customer.createdAt).toLocaleDateString()}
                                 </div>
                       </div>
+                      <DeleteCustomerButton
+                        customerId={customer.id}
+                        customerName={customer.firstName + " " + customer.lastName}
+                      />
               </div>
         
               <div className="mt-6 bg-white shadow rounded-lg overflow-hidden">
