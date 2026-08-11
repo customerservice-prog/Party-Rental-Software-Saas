@@ -31,6 +31,12 @@ export default async function ReportsPage() {
         }),
       ]);
 
+  const leadSourceGroups = await prisma.customer.groupBy({
+    by: ["leadSource"],
+    where: { organizationId: organization.id },
+    _count: { _all: true },
+  });
+
   const itemIds = topItems.map((t) => t.itemId);
     const items = await prisma.item.findMany({
           where: { id: { in: itemIds } },
@@ -211,6 +217,21 @@ export default async function ReportsPage() {
                                 )}
                       </tbody>
               </table>
+              <div className="mt-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">Leads by Source</h2>
+                <div className="bg-white shadow rounded-lg divide-y divide-gray-100">
+                  {leadSourceGroups.length === 0 ? (
+                    <p className="px-4 py-3 text-sm text-gray-500">No customer data yet.</p>
+                  ) : (
+                    leadSourceGroups.map((g) => (
+                      <div key={g.leadSource} className="flex items-center justify-between px-4 py-3 text-sm">
+                        <span className="capitalize text-gray-700">{g.leadSource}</span>
+                        <span className="font-medium text-gray-900">{g._count._all}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
         </div>
       );
 }
