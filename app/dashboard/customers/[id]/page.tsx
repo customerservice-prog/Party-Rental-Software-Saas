@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import DeleteCustomerButton from "@/app/dashboard/customers/DeleteCustomerButton";
+import CustomerNotes from "@/app/dashboard/customers/CustomerNotes";
 
 export default async function CustomerDetailPage({
     params,
@@ -55,6 +56,22 @@ export default async function CustomerDetailPage({
                       <DeleteCustomerButton
                         customerId={customer.id}
                         customerName={customer.firstName + " " + customer.lastName}
+                      />
+                      <div className="mt-4">
+                        <Link
+                          href={`/dashboard/messages?customerId=${customer.id}&to=${encodeURIComponent(customer.email)}&name=${encodeURIComponent(customer.firstName + " " + customer.lastName)}`}
+                          className="inline-block bg-indigo-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-indigo-700"
+                        >
+                          Message this customer
+                        </Link>
+                      </div>
+              </div>
+        
+              <div className="mt-6 bg-white shadow rounded-lg p-6">
+                      <h2 className="text-lg font-semibold text-gray-900 mb-3">Notes</h2>
+                      <CustomerNotes
+                        customerId={customer.id}
+                        initialNotes={customer.notes || ""}
                       />
               </div>
         
