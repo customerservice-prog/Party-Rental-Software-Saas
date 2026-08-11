@@ -56,6 +56,7 @@ model Organization {
   contracts       Contract[]
   tasks           Task[]
   pages           Page[]
+  messageTemplates MessageTemplate[]
 }
 
 // The tenant's own subscription to OUR platform (billing us, not their customers).
@@ -369,4 +370,20 @@ model Page {
   updatedAt      DateTime @updatedAt
 
   @@unique([organizationId, slug])
+}
+
+model MessageTemplate {
+  id             String    @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  channel        String    @default("email")
+  subject        String?
+  body           String
+  category       String    @default("general")
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([organizationId, name])
 }
