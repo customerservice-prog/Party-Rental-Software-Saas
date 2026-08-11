@@ -85,6 +85,25 @@ export default function MessagesPage() {
     if (t.channel) setChannel(t.channel);
   }
 
+  async function onDelete(id: string) {
+    if (!confirm("Delete this message from history?")) return;
+    setError("");
+    setNotice("");
+    try {
+      const res = await fetch(`/api/messages?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Failed to delete message.");
+      } else {
+        await loadAll();
+      }
+    } catch {
+      setError("Failed to delete message.");
+    }
+  }
+
   async function onSend(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -263,6 +282,7 @@ export default function MessagesPage() {
                 <th className="px-3 py-2">To</th>
                 <th className="px-3 py-2">Subject</th>
                 <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2"></th>
               </tr>
             </thead>
             <tbody>
@@ -281,6 +301,14 @@ export default function MessagesPage() {
                     <span className="inline-block rounded bg-yellow-100 text-yellow-800 px-2 py-0.5 text-xs">
                       {m.status}
                     </span>
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <button
+                      onClick={() => onDelete(m.id)}
+                      className="text-red-600 hover:underline text-xs"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
