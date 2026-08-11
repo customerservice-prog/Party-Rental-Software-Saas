@@ -16,7 +16,15 @@ export default async function OrdersPage() {
         <div>
               <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Orders</h1>
-        <Link href="/dashboard/orders/new" className="bg-blue-600 hover:bg-blue-700 text-white rounded px-4 py-2 text-sm font-medium">New Order</Link>
+        <div className="flex gap-2">
+          <a
+            href="/api/orders/export"
+            className="bg-white text-gray-700 border border-gray-300 rounded px-4 py-2 text-sm font-medium hover:bg-gray-50"
+          >
+            Export CSV
+          </a>
+          <Link href="/dashboard/orders/new" className="bg-blue-600 hover:bg-blue-700 text-white rounded px-4 py-2 text-sm font-medium">New Order</Link>
+        </div>
       </div>
         
           {orders.length === 0 && (
