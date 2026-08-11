@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { requireOwnerSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/audit";
 
 export async function GET() {
   const organization = await requireCurrentOrganization();
@@ -11,7 +12,7 @@ export async function GET() {
 export async function PATCH(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   try {
-    await requireOwnerSession(organization.id);
+    const session = await requireOwnerSession(organization.id);
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -54,5 +55,10 @@ export async function PATCH(req: NextRequest) {
     data,
   });
 
+  await logActivity({
+    organizationId: organization.id,
+    performedBy: session.id,
+    action: "Updated business settings",
+  });
   return NextResponse.json({ organization: updated });
 }
