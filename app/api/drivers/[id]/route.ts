@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { requireOwnerSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/audit";
 
 // Editing, deactivating, and removing individual drivers. Only an owner can
 // perform these actions; regular staff logins can view the roster (via
@@ -71,7 +72,7 @@ export async function DELETE(
   ) {
     const organization = await requireCurrentOrganization();
     try {
-          await requireOwnerSession(organization.id);
+          const session = await requireOwnerSession(organization.id);
     } catch (err) {
           return authzErrorResponse(err);
     }
@@ -101,5 +102,11 @@ export async function DELETE(
   }
 
   await prisma.driver.delete({ where: { id: target.id } });
+    await logActivity({
+      organizationId: organization.id,
+      performedBy: session.id,
+      action: "Removed driver",
+      details: target.name,
+    });
     return NextResponse.json({ ok: true });
 }
