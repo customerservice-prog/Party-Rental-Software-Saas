@@ -5,10 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/audit";
 
 export async function GET() {
-  const organizationId = await requireCurrentOrganization();
+  const organization = await requireCurrentOrganization();
 
   const templates = await prisma.messageTemplate.findMany({
-    where: { organizationId },
+    where: { organizationId: organization.id },
     orderBy: { createdAt: "desc" },
   });
 
@@ -16,10 +16,10 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const organizationId = await requireCurrentOrganization();
+  const organization = await requireCurrentOrganization();
   let session;
   try {
-    session = await requireOwnerSession(organizationId);
+    session = await requireOwnerSession(organization.id);
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   }
 
   const existing = await prisma.messageTemplate.findFirst({
-    where: { organizationId, name },
+    where: { organizationId: organization.id, name },
   });
   if (existing) {
     return NextResponse.json({ error: "A template with that name already exists" }, { status: 400 });
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   const template = await prisma.messageTemplate.create({
     data: {
-      organizationId,
+      organizationId: organization.id,
       name,
       channel: body.channel || "email",
       subject: body.subject || null,
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   });
 
   await logActivity({
-    organizationId,
+    organizationId: organization.id,
     performedBy: session.id,
     action: "Created message template",
     details: name,
@@ -64,10 +64,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const organizationId = await requireCurrentOrganization();
+  const organization = await requireCurrentOrganization();
   let session;
   try {
-    session = await requireOwnerSession(organizationId);
+    session = await requireOwnerSession(organization.id);
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -78,7 +78,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const existing = await prisma.messageTemplate.findFirst({
-    where: { id: body.id, organizationId },
+    where: { id: body.id, organizationId: organization.id },
   });
   if (!existing) {
     return NextResponse.json({ error: "Template not found" }, { status: 404 });
@@ -98,7 +98,7 @@ export async function PATCH(req: NextRequest) {
   });
 
   await logActivity({
-    organizationId,
+    organizationId: organization.id,
     performedBy: session.id,
     action: "Updated message template",
     details: template.name,
@@ -108,10 +108,10 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const organizationId = await requireCurrentOrganization();
+  const organization = await requireCurrentOrganization();
   let session;
   try {
-    session = await requireOwnerSession(organizationId);
+    session = await requireOwnerSession(organization.id);
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -123,7 +123,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   const existing = await prisma.messageTemplate.findFirst({
-    where: { id, organizationId },
+    where: { id, organizationId: organization.id },
   });
   if (!existing) {
     return NextResponse.json({ error: "Template not found" }, { status: 404 });
@@ -132,7 +132,7 @@ export async function DELETE(req: NextRequest) {
   await prisma.messageTemplate.delete({ where: { id } });
 
   await logActivity({
-    organizationId,
+    organizationId: organization.id,
     performedBy: session.id,
     action: "Deleted message template",
     details: existing.name,
