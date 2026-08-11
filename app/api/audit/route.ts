@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 // as account-level configuration data.
 export async function GET(request: NextRequest) {
   try {
-    const organization = await requireCurrentOrganization(request);
+    const organization = await requireCurrentOrganization();
     await requireOwnerSession(organization.id);
 
     const logs = await prisma.auditLog.findMany({
