@@ -25,6 +25,12 @@ export default async function CustomerDetailPage({
         notFound();
   }
 
+  const customerMessages = await prisma.sentMessage.findMany({
+    where: { organizationId: organization.id, customerId: customer.id },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+
   return (
         <div className="p-8">
               <Link href="/dashboard/customers" className="text-sm text-indigo-600 hover:underline">
@@ -74,6 +80,43 @@ export default async function CustomerDetailPage({
                         initialNotes={customer.notes || ""}
                       />
               </div>
+
+            <div className="mt-6 bg-white shadow rounded-lg overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Message History</h2>
+                <span className="text-sm text-gray-500">{customerMessages.length} message{customerMessages.length === 1 ? "" : "s"}</span>
+              </div>
+              {customerMessages.length === 0 ? (
+                <div className="px-6 py-8 text-center text-sm text-gray-500">
+                  No messages have been sent to this customer yet.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Channel</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {customerMessages.map((msg) => (
+                        <tr key={msg.id}>
+                          <td className="px-4 py-2 text-sm text-gray-700 whitespace-nowrap">{new Date(msg.createdAt).toLocaleString()}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700 uppercase">{msg.channel}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{msg.channel === "sms" ? "(SMS)" : (msg.subject || "-")}</td>
+                          <td className="px-4 py-2 text-sm">
+                            <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">{msg.status}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
         
               <div className="mt-6 bg-white shadow rounded-lg overflow-hidden">
                       <div className="px-6 py-4 border-b border-gray-200">
