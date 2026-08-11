@@ -12,13 +12,30 @@ function escapeCsv(value: string | null | undefined): string {
   return str;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const organization = await requireCurrentOrganization();
     const session = await requireStaffSession(organization.id);
 
+    const { searchParams } = new URL(request.url);
+    const fromParam = searchParams.get("from");
+    const toParam = searchParams.get("to");
+    const dateFilter: { gte?: Date; lte?: Date } = {};
+    if (fromParam) {
+      const fromDate = new Date(fromParam);
+      if (!isNaN(fromDate.getTime())) dateFilter.gte = fromDate;
+    }
+    if (toParam) {
+      const toDate = new Date(toParam);
+      if (!isNaN(toDate.getTime())) {
+        toDate.setHours(23, 59, 59, 999);
+        dateFilter.lte = toDate;
+      }
+    }
+    const dateWhere = (dateFilter.gte || dateFilter.lte) ? { createdAt: dateFilter } : {};
+
     const customers = await prisma.customer.findMany({
-      where: { organizationId: organization.id },
+      where: { organizationId: organization.id, ...dateWhere },
       orderBy: { createdAt: "desc" },
       include: { _count: { select: { orders: true } } },
     });
