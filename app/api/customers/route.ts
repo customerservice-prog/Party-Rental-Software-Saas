@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
-import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
+import { requireOwnerSession, requireStaffSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/audit";
 
 export async function GET() {
     const organization = await requireCurrentOrganization();
@@ -50,4 +51,46 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json(customer, { status: 201 });
+}
+
+export async function DELETE(request: NextRequest) {
+  const organization = await requireCurrentOrganization();
+  let session;
+  try {
+    session = await requireOwnerSession(organization.id);
+  } catch (err) {
+    return authzErrorResponse(err);
+  }
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+
+  if (!id) {
+    return NextResponse.json({ error: "Customer id is required" }, { status: 400 });
+  }
+
+  const existing = await prisma.customer.findFirst({
+    where: { id, organizationId: organization.id },
+  });
+  if (!existing) {
+    return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+  }
+
+  const orderCount = await prisma.order.count({ where: { customerId: id } });
+  if (orderCount > 0) {
+    return NextResponse.json(
+      { error: "Cannot delete a customer with existing orders" },
+      { status: 400 }
+    );
+  }
+
+  await prisma.customer.delete({ where: { id } });
+
+  await logActivity({
+    organizationId: organization.id,
+    performedBy: session.id,
+    action: "Deleted customer",
+    details: existing.firstName + " " + existing.lastName,
+  });
+
+  return NextResponse.json({ success: true });
 }
