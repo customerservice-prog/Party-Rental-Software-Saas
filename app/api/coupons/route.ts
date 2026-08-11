@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { requireOwnerSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/audit";
 
 export async function GET() {
   const organization = await requireCurrentOrganization();
@@ -17,7 +18,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   try {
-    await requireOwnerSession(organization.id);
+    const session = await requireOwnerSession(organization.id);
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
+    await logActivity({ organizationId: organization.id, performedBy: session.id, action: "Created coupon", details: coupon.code });
   return NextResponse.json({ coupon }, { status: 201 });
 }
 
@@ -91,7 +93,7 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   try {
-    await requireOwnerSession(organization.id);
+    const session = await requireOwnerSession(organization.id);
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -110,6 +112,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   await prisma.coupon.delete({ where: { id } });
+  await logActivity({ organizationId: organization.id, performedBy: session.id, action: "Deleted coupon", details: existing.code });
 
   return NextResponse.json({ success: true });
 }
