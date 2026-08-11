@@ -272,6 +272,12 @@ export default function InventoryPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold">Inventory</h1>
+        <a
+          href="/api/items/export"
+          className="bg-white text-gray-700 border border-gray-300 rounded px-4 py-2 text-sm font-medium hover:bg-gray-50"
+        >
+          Export CSV
+        </a>
       </div>
       {message && <p className="text-sm text-purple-700">{message}</p>}
 
