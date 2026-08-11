@@ -82,7 +82,7 @@ export async function PATCH(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   let actingUser;
   try {
-    actingUser = const session = await requireOwnerSession(organization.id);
+    actingUser = await requireOwnerSession(organization.id);
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -134,7 +134,7 @@ export async function PATCH(req: NextRequest) {
 
   await logActivity({
     organizationId: organization.id,
-    performedBy: session.id,
+    performedBy: actingUser.id,
     action: "Updated staff account",
     details: `${updated.name} (@${updated.username}) role: ${updated.role}`,
   });
@@ -145,7 +145,7 @@ export async function DELETE(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   let actingUser;
   try {
-    actingUser = const session = await requireOwnerSession(organization.id);
+    actingUser = await requireOwnerSession(organization.id);
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -178,7 +178,7 @@ export async function DELETE(req: NextRequest) {
   await prisma.user.delete({ where: { id } });
   await logActivity({
     organizationId: organization.id,
-    performedBy: session.id,
+    performedBy: actingUser.id,
     action: "Deleted staff account",
     details: `${target.name} (@${target.username})`,
   });
