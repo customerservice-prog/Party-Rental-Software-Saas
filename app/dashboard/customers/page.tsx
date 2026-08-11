@@ -32,12 +32,20 @@ export default async function CustomersPage({
         <div className="p-8">
               <div className="flex items-center justify-between mb-6">
                       <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
+                      <div className="flex gap-2">
+                      <a
+                        href="/api/customers/export"
+                        className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50"
+                      >
+                        Export CSV
+                      </a>
                       <Link
                                   href="/dashboard/customers/new"
                                   className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700"
                                 >
                                 Add Customer
                       </Link>
+                    </div>
               </div>
         
               <form method="get" className="mb-4 flex gap-2 max-w-md">
