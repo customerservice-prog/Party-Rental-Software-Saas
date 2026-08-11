@@ -67,7 +67,22 @@ export default async function ReportsPage() {
 
   return (
         <div style={{ padding: 20 }}>
-                <h1>Reports &amp; Analytics</h1>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <h1>Reports &amp; Analytics</h1>
+                  <a
+                    href="/api/reports/export"
+                    style={{
+                      border: "1px solid #ddd",
+                      borderRadius: 6,
+                      padding: "8px 16px",
+                      fontSize: 14,
+                      textDecoration: "none",
+                      color: "#374151",
+                    }}
+                  >
+                    Export CSV
+                  </a>
+                </div>
         
               <div style={{ display: "flex", gap: 16, margin: "20px 0" }}>
                       <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 16, flex: 1 }}>
