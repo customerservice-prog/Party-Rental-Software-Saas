@@ -2,11 +2,28 @@ import Link from "next/link";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 
-export default async function CustomersPage() {
+export default async function CustomersPage({
+  searchParams,
+}: {
+  searchParams: { q?: string };
+}) {
     const organization = await requireCurrentOrganization();
+  const q = searchParams?.q?.trim() || "";
 
   const customers = await prisma.customer.findMany({
-        where: { organizationId: organization.id },
+        where: {
+          organizationId: organization.id,
+          ...(q
+            ? {
+                OR: [
+                  { firstName: { contains: q, mode: "insensitive" } },
+                  { lastName: { contains: q, mode: "insensitive" } },
+                  { email: { contains: q, mode: "insensitive" } },
+                  { phone: { contains: q, mode: "insensitive" } },
+                ],
+              }
+            : {}),
+        },
         orderBy: { createdAt: "desc" },
         include: { _count: { select: { orders: true } } },
   });
@@ -23,6 +40,15 @@ export default async function CustomersPage() {
                       </Link>
               </div>
         
+              <form method="get" className="mb-4">
+                <input
+                  type="text"
+                  name="q"
+                  defaultValue={q}
+                  placeholder="Search by name, email, or phone"
+                  className="w-full max-w-md border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </form>
               <div className="bg-white shadow rounded-lg overflow-hidden">
                       <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
