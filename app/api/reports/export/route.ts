@@ -16,23 +16,39 @@ function money(n: number): string {
   return (n ?? 0).toFixed(2);
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const organization = await requireCurrentOrganization();
     const session = await requireStaffSession(organization.id);
 
+    const { searchParams } = new URL(request.url);
+    const fromParam = searchParams.get("from") || "";
+    const toParam = searchParams.get("to") || "";
+    const dateFilter: { gte?: Date; lte?: Date } = {};
+    const fromDate = fromParam ? new Date(fromParam) : null;
+    if (fromDate && !isNaN(fromDate.getTime())) dateFilter.gte = fromDate;
+    const toDate = toParam ? new Date(toParam) : null;
+    if (toDate && !isNaN(toDate.getTime())) {
+      toDate.setHours(23, 59, 59, 999);
+      dateFilter.lte = toDate;
+    }
+    const dateWhere =
+      dateFilter.gte !== undefined || dateFilter.lte !== undefined
+        ? { createdAt: dateFilter }
+        : {};
+
     const [orderStats, orderCount, statusGroups, leadSourceGroups] =
       await Promise.all([
         prisma.order.aggregate({
-          where: { organizationId: organization.id },
+          where: { organizationId: organization.id, ...dateWhere },
           _sum: { totalAmount: true, amountPaid: true },
         }),
         prisma.order.count({
-          where: { organizationId: organization.id },
+          where: { organizationId: organization.id, ...dateWhere },
         }),
         prisma.order.groupBy({
           by: ["status"],
-          where: { organizationId: organization.id },
+          where: { organizationId: organization.id, ...dateWhere },
           _count: { _all: true },
         }),
         prisma.customer.groupBy({
