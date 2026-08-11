@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireCurrentOrganization } from "@/lib/tenant";
-import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
+import { requireStaffSession, requireOwnerSession, authzErrorResponse } from "@/lib/authz";
 import { logActivity } from "@/lib/audit";
 
 export async function GET() {
@@ -72,6 +72,39 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ message });
+  } catch (err) {
+    return authzErrorResponse(err);
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const organization = await requireCurrentOrganization();
+    const session = await requireOwnerSession(organization.id);
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ error: "A message id is required." }, { status: 400 });
+    }
+
+    const existing = await prisma.sentMessage.findFirst({
+      where: { id, organizationId: organization.id },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "Message not found." }, { status: 404 });
+    }
+
+    await prisma.sentMessage.delete({ where: { id } });
+
+    await logActivity({
+      organizationId: organization.id,
+      performedBy: session.id,
+      action: "Deleted message",
+      details: `${existing.channel} to ${existing.toAddress}`,
+    });
+
+    return NextResponse.json({ success: true });
   } catch (err) {
     return authzErrorResponse(err);
   }
