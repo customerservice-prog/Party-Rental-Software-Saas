@@ -286,7 +286,7 @@ export default function MessageTemplatesPage() {
                 ce(
                   "div",
                   { className: "text-xs text-gray-500 mt-0.5" },
-                  t.channel + " · " + t.category
+                  t.channel + " - " + t.category
                 ),
                 t.subject &&
                   ce(
