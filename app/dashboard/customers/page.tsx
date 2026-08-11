@@ -5,14 +5,30 @@ import { prisma } from "@/lib/prisma";
 export default async function CustomersPage({
   searchParams,
 }: {
-  searchParams: { q?: string };
+  searchParams: { q?: string; from?: string; to?: string };
 }) {
     const organization = await requireCurrentOrganization();
   const q = searchParams?.q?.trim() || "";
+  const fromParam = searchParams?.from?.trim() || "";
+  const toParam = searchParams?.to?.trim() || "";
+  const dateFilter: { gte?: Date; lte?: Date } = {};
+  if (fromParam) {
+    const fromDate = new Date(fromParam);
+    if (!isNaN(fromDate.getTime())) dateFilter.gte = fromDate;
+  }
+  if (toParam) {
+    const toDate = new Date(toParam);
+    if (!isNaN(toDate.getTime())) {
+      toDate.setHours(23, 59, 59, 999);
+      dateFilter.lte = toDate;
+    }
+  }
+  const dateWhere = (dateFilter.gte || dateFilter.lte) ? { createdAt: dateFilter } : {};
 
   const customers = await prisma.customer.findMany({
         where: {
           organizationId: organization.id,
+          ...dateWhere,
           ...(q
             ? {
                 OR: [
@@ -34,7 +50,7 @@ export default async function CustomersPage({
                       <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
                       <div className="flex gap-2">
                       <a
-                        href="/api/customers/export"
+                        href={`/api/customers/export${(fromParam || toParam) ? `?${new URLSearchParams({ ...(fromParam ? { from: fromParam } : {}), ...(toParam ? { to: toParam } : {}) }).toString()}` : ""}`}
                         className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50"
                       >
                         Export CSV
@@ -48,7 +64,7 @@ export default async function CustomersPage({
                     </div>
               </div>
         
-              <form method="get" className="mb-4 flex gap-2 max-w-md">
+              <form method="get" className="mb-4 flex flex-wrap gap-2 items-end">
                 <input
                   type="text"
                   name="q"
@@ -56,6 +72,24 @@ export default async function CustomersPage({
                   placeholder="Search by name, email, or phone"
                   className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
+                <div className="flex flex-col">
+                  <label className="text-xs text-gray-500 mb-1">From</label>
+                  <input
+                    type="date"
+                    name="from"
+                    defaultValue={fromParam}
+                    className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-xs text-gray-500 mb-1">To</label>
+                  <input
+                    type="date"
+                    name="to"
+                    defaultValue={toParam}
+                    className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
                 <button
                   type="submit"
                   className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700"
