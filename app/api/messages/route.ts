@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireCurrentOrganization,
-  requireStaffSession,
-  authzErrorResponse,
-} from "@/lib/authz";
+import { requireCurrentOrganization } from "@/lib/tenant";
+import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
 import { logActivity } from "@/lib/audit";
 
 export async function GET() {
