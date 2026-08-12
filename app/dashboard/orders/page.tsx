@@ -2,11 +2,19 @@ import Link from "next/link";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 
-export default async function OrdersPage() {
+export default async function OrdersPage({
+  searchParams,
+}: {
+  searchParams: { status?: string };
+}) {
     const organization = await requireCurrentOrganization();
 
+  const statusFilter = searchParams?.status?.trim() || "";
+  const validStatuses = ["pending", "confirmed", "cancelled", "completed"];
+  const statusWhere = validStatuses.includes(statusFilter) ? { status: statusFilter } : {};
+
   const orders = await prisma.order.findMany({
-        where: { organizationId: organization.id },
+        where: { organizationId: organization.id, ...statusWhere },
         include: { customer: true },
         orderBy: { eventDate: "desc" },
         take: 50,
@@ -25,6 +33,28 @@ export default async function OrdersPage() {
           </a>
           <Link href="/dashboard/orders/new" className="bg-blue-600 hover:bg-blue-700 text-white rounded px-4 py-2 text-sm font-medium">New Order</Link>
         </div>
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        {[
+          { label: "All", value: "" },
+          { label: "Pending", value: "pending" },
+          { label: "Confirmed", value: "confirmed" },
+          { label: "Completed", value: "completed" },
+          { label: "Cancelled", value: "cancelled" },
+        ].map((tab) => (
+          <Link
+            key={tab.value || "all"}
+            href={tab.value ? `/dashboard/orders?status=${tab.value}` : "/dashboard/orders"}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium border ${
+              statusFilter === tab.value
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+            }`}
+          >
+            {tab.label}
+          </Link>
+        ))}
       </div>
         
           {orders.length === 0 && (
