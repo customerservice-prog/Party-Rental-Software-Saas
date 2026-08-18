@@ -1,33 +1,48 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+
+type TenantRoleRef = { id: string; name: string };
 
 type StaffUser = {
   id: string;
   username: string;
   name: string;
   role: string;
+  tenantRoleId: string | null;
+  tenantRole: TenantRoleRef | null;
   createdAt: string;
 };
 
+type RoleOption = { id: string; name: string; isActive: boolean };
+
 export default function StaffPage() {
   const [users, setUsers] = useState<StaffUser[]>([]);
+  const [roles, setRoles] = useState<RoleOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ username: "", name: "", password: "", role: "staff" });
+  const [form, setForm] = useState({ username: "", name: "", password: "", role: "staff", tenantRoleId: "" });
   const [saving, setSaving] = useState(false);
 
   async function load() {
     setLoading(true);
     setError("");
-    const res = await fetch("/api/users");
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error || "Failed to load staff accounts.");
+    const [usersRes, rolesRes] = await Promise.all([
+      fetch("/api/users"),
+      fetch("/api/roles"),
+    ]);
+    const usersData = await usersRes.json();
+    const rolesData = await rolesRes.json();
+    if (!usersRes.ok) {
+      setError(usersData.error || "Failed to load staff accounts.");
       setUsers([]);
     } else {
-      setUsers(data.users);
+      setUsers(usersData.users);
+    }
+    if (rolesRes.ok) {
+      setRoles(rolesData.roles);
     }
     setLoading(false);
   }
@@ -43,7 +58,10 @@ export default function StaffPage() {
     const res = await fetch("/api/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        ...form,
+        tenantRoleId: form.role === "owner" ? null : form.tenantRoleId || null,
+      }),
     });
     const data = await res.json();
     setSaving(false);
@@ -51,7 +69,7 @@ export default function StaffPage() {
       setError(data.error || "Failed to create account.");
       return;
     }
-    setForm({ username: "", name: "", password: "", role: "staff" });
+    setForm({ username: "", name: "", password: "", role: "staff", tenantRoleId: "" });
     setShowForm(false);
     load();
   }
@@ -61,11 +79,26 @@ export default function StaffPage() {
     const res = await fetch("/api/users", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, role }),
+      body: JSON.stringify({ id, role, tenantRoleId: role === "owner" ? null : undefined }),
     });
     const data = await res.json();
     if (!res.ok) {
       setError(data.error || "Failed to update role.");
+      return;
+    }
+    load();
+  }
+
+  async function handleTenantRoleChange(id: string, tenantRoleId: string) {
+    setError("");
+    const res = await fetch("/api/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, tenantRoleId: tenantRoleId || null }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "Failed to update permission role.");
       return;
     }
     load();
@@ -91,16 +124,24 @@ export default function StaffPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Staff Accounts</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Owners can sign in to everything. Staff accounts can run day-to-day operations
-            but cannot change company settings, coupons, or other staff accounts.
+            Owners can sign in to everything. Staff accounts can be given a
+            custom permission role that controls what they can see and do.
           </p>
         </div>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-        >
-          {showForm ? "Cancel" : "Add Staff Account"}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/dashboard/roles"
+            className="rounded-md border px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Manage Roles
+          </Link>
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          >
+            {showForm ? "Cancel" : "Add Staff Account"}
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -142,7 +183,7 @@ export default function StaffPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Role</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Account type</label>
               <select
                 value={form.role}
                 onChange={(e) => setForm({ ...form, role: e.target.value })}
@@ -152,6 +193,21 @@ export default function StaffPage() {
                 <option value="owner">Owner</option>
               </select>
             </div>
+            {form.role === "staff" && (
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Permission role</label>
+                <select
+                  value={form.tenantRoleId}
+                  onChange={(e) => setForm({ ...form, tenantRoleId: e.target.value })}
+                  className="w-full rounded-md border px-3 py-2 text-sm"
+                >
+                  <option value="">No role assigned (no dashboard access beyond login)</option>
+                  {roles.filter((r) => r.isActive).map((r) => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <button
             type="submit"
@@ -171,12 +227,24 @@ export default function StaffPage() {
             <p className="p-4 text-sm text-gray-500">No staff accounts yet.</p>
           )}
           {users.map((u) => (
-            <div key={u.id} className="flex items-center justify-between px-4 py-3">
+            <div key={u.id} className="flex items-center justify-between px-4 py-3 gap-3">
               <div>
                 <p className="text-sm font-medium text-gray-900">{u.name}</p>
                 <p className="text-xs text-gray-500">@{u.username}</p>
               </div>
               <div className="flex items-center gap-3">
+                {u.role === "staff" && (
+                  <select
+                    value={u.tenantRoleId || ""}
+                    onChange={(e) => handleTenantRoleChange(u.id, e.target.value)}
+                    className="rounded-md border px-2 py-1 text-xs"
+                  >
+                    <option value="">No permission role</option>
+                    {roles.map((r) => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                )}
                 <select
                   value={u.role}
                   onChange={(e) => handleRoleChange(u.id, e.target.value)}
