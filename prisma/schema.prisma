@@ -13,33 +13,33 @@ datasource db {
 
 // One row per rental business ("tenant") using the platform.
 model Organization {
-  id               String    @id @default(cuid())
-  name             String
-  slug             String    @unique
-  customDomain     String?   @unique
-  planTier         String    @default("launch")
-  stripeAccountId  String?   @unique
-  status           String    @default("active")
-  trialEndsAt      DateTime?
-  logoUrl          String?
-  primaryColor     String?
-  tagline          String?
-  heroImageUrl     String?
-  aboutText        String?
-  contractTerms    String?
-  facebookUrl      String?
-  instagramUrl     String?
-  showHoursOnSite  Boolean   @default(true)
-  flatDeliveryFee  Float     @default(0)
-  contactEmail     String?
-  contactPhone     String?
-  address          String?
-  city             String?
-  state            String?
-  zip              String?
-  timezone         String    @default("America/New_York")
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique
+  customDomain      String?  @unique
+  planTier          String   @default("launch")
+  stripeAccountId   String?  @unique
+  status            String   @default("active")
+  trialEndsAt       DateTime?
+  logoUrl           String?
+  primaryColor      String?
+  tagline           String?
+  heroImageUrl      String?
+  aboutText         String?
+  contractTerms     String?
+  facebookUrl       String?
+  instagramUrl      String?
+  showHoursOnSite   Boolean  @default(true)
+  flatDeliveryFee   Float    @default(0)
+  contactEmail      String?
+  contactPhone      String?
+  address           String?
+  city              String?
+  state             String?
+  zip               String?
+  timezone          String   @default("America/New_York")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   users             User[]
   categories        Category[]
@@ -59,6 +59,7 @@ model Organization {
   messageTemplates  MessageTemplate[]
   sentMessages      SentMessage[]
   tenantRoles       TenantRole[]
+  driverRuns        DriverRun[]
 }
 
 // The tenant's own subscription to OUR platform (billing us, not their customers).
@@ -85,17 +86,17 @@ model PlatformSubscription {
 // ---------------------------------------------------------------------------
 
 model User {
-  id              String    @id @default(cuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  username        String
-  password        String
-  name            String
-  role            String    @default("staff")
-  tenantRoleId    String?
-  tenantRole      TenantRole? @relation(fields: [tenantRoleId], references: [id])
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  username       String
+  password       String
+  name           String
+  role           String   @default("staff")
+  tenantRoleId   String?
+  tenantRole     TenantRole? @relation(fields: [tenantRoleId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([organizationId, username])
 }
@@ -105,181 +106,184 @@ model User {
 // owner create roles like "Dispatcher" or "Front Desk" with only the access
 // they need, instead of every staff login being all-or-nothing.
 model TenantRole {
-  id              String    @id @default(cuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  name            String
-  slug            String
-  permissions     Json      @default("[]")
-  isSystem        Boolean   @default(false)
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  slug           String
+  permissions    Json     @default("[]")
+  isSystem       Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  users User[]
+  users          User[]
 
   @@unique([organizationId, slug])
 }
 
 model Category {
-  id                String    @id @default(cuid())
+  id                String   @id @default(cuid())
   organizationId    String
   organization      Organization @relation(fields: [organizationId], references: [id])
   name              String
   slug              String
   description       String?
   picture           String?
-  displayToCustomer Boolean   @default(true)
-  sortOrder         Int       @default(0)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  displayToCustomer Boolean  @default(true)
+  sortOrder         Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  items Item[]
+  items             Item[]
 
   @@unique([organizationId, slug])
 }
 
 model Item {
-  id                String    @id @default(cuid())
+  id                String   @id @default(cuid())
   organizationId    String
   organization      Organization @relation(fields: [organizationId], references: [id])
   categoryId        String
-  category          Category  @relation(fields: [categoryId], references: [id])
+  category          Category @relation(fields: [categoryId], references: [id])
   name              String
   slug              String
   description       String?
   cost              Float
-  quantity          Int       @default(1)
+  quantity          Int      @default(1)
   picture           String?
-  displayToCustomer Boolean   @default(true)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  displayToCustomer Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  orderItems OrderItem[]
-  addons     Addon[]
+  orderItems        OrderItem[]
+  addons            Addon[]
 
   @@unique([organizationId, slug])
 }
 
 model Customer {
-  id              String    @id @default(cuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  firstName       String
-  lastName        String
-  email           String
-  phone           String?
-  address         String?
-  city            String?
-  state           String?
-  zip             String?
-  leadSource      String    @default("other")
-  notes           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  firstName      String
+  lastName       String
+  email          String
+  phone          String?
+  address        String?
+  city           String?
+  state          String?
+  zip            String?
+  leadSource     String   @default("other")
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  orders Order[]
-  tasks  Task[]
+  orders         Order[]
+  tasks          Task[]
 
   @@index([organizationId, email])
 }
 
 model Driver {
-  id              String    @id @default(cuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  name            String
-  phone           String?
-  email           String?
-  isActive        Boolean   @default(true)
-  pin             String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  phone          String?
+  email          String?
+  isActive       Boolean  @default(true)
+  pin            String?
+  defaultStopPay Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   deliveryOrders Order[] @relation("DeliveryDriver")
   pickupOrders   Order[] @relation("PickupDriver")
+  driverRuns     DriverRun[]
 
   @@unique([organizationId, pin])
 }
 
 model Order {
-  id                String    @id @default(cuid())
+  id                String   @id @default(cuid())
   organizationId    String
   organization      Organization @relation(fields: [organizationId], references: [id])
   orderNumber       String
   customerId        String
-  customer          Customer  @relation(fields: [customerId], references: [id])
-  status            String    @default("active")
-  source            String    @default("online")
+  customer          Customer @relation(fields: [customerId], references: [id])
+  status            String   @default("active")
+  source            String   @default("online")
   eventDate         DateTime
   eventEndDate      DateTime?
-  deliveryType      String    @default("delivery")
-  deliveryFee       Float     @default(0)
-  subtotal          Float     @default(0)
-  taxAmount         Float     @default(0)
-  totalAmount       Float     @default(0)
-  amountPaid        Float     @default(0)
+  deliveryType      String   @default("delivery")
+  deliveryFee       Float    @default(0)
+  subtotal          Float    @default(0)
+  taxAmount         Float    @default(0)
+  totalAmount       Float    @default(0)
+  amountPaid        Float    @default(0)
   deliveryDriverId  String?
-  deliveryDriver    Driver?   @relation("DeliveryDriver", fields: [deliveryDriverId], references: [id])
+  deliveryDriver    Driver? @relation("DeliveryDriver", fields: [deliveryDriverId], references: [id])
   pickupDriverId    String?
-  pickupDriver      Driver?   @relation("PickupDriver", fields: [pickupDriverId], references: [id])
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  pickupDriver      Driver? @relation("PickupDriver", fields: [pickupDriverId], references: [id])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  items            OrderItem[]
-  orderAddons      OrderAddon[]
-  deliveryAddress  String?
-  stripeSessionId  String?   @unique
-  contract         Contract?
-  tasks            Task[]
+  items             OrderItem[]
+  orderAddons       OrderAddon[]
+  deliveryAddress   String?
+  stripeSessionId   String?  @unique
+  contract          Contract?
+  tasks             Task[]
+  driverRunStops    DriverRunStop[]
 
   @@unique([organizationId, orderNumber])
 }
 
 model OrderItem {
-  id         String   @id @default(cuid())
-  orderId    String
-  order      Order    @relation(fields: [orderId], references: [id])
-  itemId     String
-  item       Item     @relation(fields: [itemId], references: [id])
-  quantity   Int      @default(1)
-  price      Float
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id])
+  quantity  Int      @default(1)
+  price     Float
+  createdAt DateTime @default(now())
 }
 
 model Coupon {
-  id              String    @id @default(cuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  code            String
-  discountType    String    @default("percentage")
-  discountAmount  Float
-  expiresAt       DateTime?
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  code           String
+  discountType   String   @default("percentage")
+  discountAmount Float
+  expiresAt      DateTime?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
 
   @@unique([organizationId, code])
 }
 
 model DepositRule {
-  id              String   @id @default(cuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  type            String   @default("percentage")
-  amount          Float    @default(25)
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  type           String   @default("percentage")
+  amount         Float    @default(25)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
 }
 
 // Records platform-admin actions taken against tenant organizations
 // (e.g. suspending a tenant, changing plan tier) for accountability.
 model AuditLog {
-  id              String   @id @default(cuid())
-  organizationId  String?
-  action          String
-  performedBy     String
-  details         String?
-  createdAt       DateTime @default(now())
+  id             String   @id @default(cuid())
+  organizationId String?
+  action         String
+  performedBy    String
+  details        String?
+  createdAt      DateTime @default(now())
 }
 
 // ---------------------------------------------------------------------------
@@ -289,13 +293,13 @@ model AuditLog {
 // Weekly operating hours per organization, used to render the booking
 // calendar's default open/closed state for each day of the week.
 model BusinessHours {
-  id              String   @id @default(cuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  dayOfWeek       Int
-  isClosed        Boolean  @default(false)
-  openTime        String?
-  closeTime       String?
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  dayOfWeek      Int
+  isClosed       Boolean  @default(false)
+  openTime       String?
+  closeTime      String?
 
   @@unique([organizationId, dayOfWeek])
 }
@@ -303,12 +307,12 @@ model BusinessHours {
 // Specific closed dates / holidays that override BusinessHours for a
 // single day (e.g. Thanksgiving, a snow day, an owner-declared day off).
 model ClosedDate {
-  id              String   @id @default(cuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  date            DateTime
-  note            String?
-  createdAt       DateTime @default(now())
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  date           DateTime
+  note           String?
+  createdAt      DateTime @default(now())
 
   @@unique([organizationId, date])
 }
@@ -316,67 +320,67 @@ model ClosedDate {
 // Optional add-ons a customer can attach to a rented Item (e.g. a generator
 // with a tent, linens with a table). Priced and toggled per organization.
 model Addon {
-  id              String   @id @default(cuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  itemId          String
-  item            Item     @relation(fields: [itemId], references: [id])
-  name            String
-  price           Float    @default(0)
-  isRequired      Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  itemId         String
+  item           Item     @relation(fields: [itemId], references: [id])
+  name           String
+  price          Float    @default(0)
+  isRequired     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  orderAddons OrderAddon[]
+  orderAddons    OrderAddon[]
 }
 
 // Snapshot of an Addon selected on a specific Order, preserving the name and
 // price at the time of booking even if the underlying Addon is later edited.
 model OrderAddon {
-  id         String   @id @default(cuid())
-  orderId    String
-  order      Order    @relation(fields: [orderId], references: [id])
-  addonId    String
-  addon      Addon    @relation(fields: [addonId], references: [id])
-  name       String
-  price      Float
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  addonId   String
+  addon     Addon    @relation(fields: [addonId], references: [id])
+  name      String
+  price     Float
+  createdAt DateTime @default(now())
 }
 
 // Digital rental contract tied to a single Order. Tracks whether the
 // customer has signed yet, mirroring the "Signed / Unsigned" contract
 // views seen in comparable rental platforms.
 model Contract {
-  id               String    @id @default(cuid())
-  organizationId   String
-  organization     Organization @relation(fields: [organizationId], references: [id])
-  orderId          String    @unique
-  order            Order     @relation(fields: [orderId], references: [id])
-  templateVersion  String    @default("v1")
-  contractText     String?
-  signedAt         DateTime?
-  signatureName    String?
-  signatureIp      String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id              String   @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  orderId         String   @unique
+  order           Order    @relation(fields: [orderId], references: [id])
+  templateVersion String   @default("v1")
+  contractText    String?
+  signedAt        DateTime?
+  signatureName   String?
+  signatureIp     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 // Simple per-organization to-do items, optionally linked to a Customer or
 // Order, backing the dashboard "Tasks" widget.
 model Task {
-  id              String    @id @default(cuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  title           String
-  isDone          Boolean   @default(false)
-  dueDate         DateTime?
-  assignedTo      String?
-  customerId      String?
-  customer        Customer? @relation(fields: [customerId], references: [id])
-  orderId         String?
-  order           Order?    @relation(fields: [orderId], references: [id])
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  title          String
+  isDone         Boolean  @default(false)
+  dueDate        DateTime?
+  assignedTo     String?
+  customerId     String?
+  customer       Customer? @relation(fields: [customerId], references: [id])
+  orderId        String?
+  order          Order?   @relation(fields: [orderId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 // NOTE: Order.status is a free-form String for flexibility, but the
@@ -387,52 +391,98 @@ model Task {
 // and createdAt/eventDate.
 
 model Page {
-  id              String   @id @default(cuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  slug            String
-  title           String
-  navLabel        String?
-  navOrder        Int      @default(0)
-  showInNav       Boolean  @default(true)
-  isPublished     Boolean  @default(true)
-  content         String   @db.Text
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  slug           String
+  title          String
+  navLabel       String?
+  navOrder       Int      @default(0)
+  showInNav      Boolean  @default(true)
+  isPublished    Boolean  @default(true)
+  content        String   @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([organizationId, slug])
 }
 
 model MessageTemplate {
-  id              String   @id @default(cuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  name            String
-  channel         String   @default("email")
-  subject         String?
-  body            String
-  category        String   @default("general")
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  channel        String   @default("email")
+  subject        String?
+  body           String
+  category       String   @default("general")
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([organizationId, name])
 }
 
 model SentMessage {
-  id              String   @id @default(cuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  channel         String   @default("email")
-  toName          String
-  toAddress       String
-  subject         String?
-  body            String
-  status          String   @default("queued")
-  templateId      String?
-  customerId      String?
-  createdBy       String
-  createdAt       DateTime @default(now())
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  channel        String   @default("email")
+  toName         String
+  toAddress      String
+  subject        String?
+  body           String
+  status         String   @default("queued")
+  templateId     String?
+  customerId     String?
+  createdBy      String
+  createdAt      DateTime @default(now())
 
   @@index([organizationId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// DISPATCH / DRIVER ROUTING
+// A DriverRun is one driver's route for a single day; DriverRunStop ties an
+// Order to that run with an explicit order position and live status, so the
+// dispatch board can group and reorder stops instead of just flatly
+// assigning a driver to an order (see lib/driverRuns.ts, app/dashboard/dispatch).
+// ---------------------------------------------------------------------------
+
+model DriverRun {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  driverId       String
+  driver         Driver   @relation(fields: [driverId], references: [id])
+  runDate        DateTime
+  notes          String?
+  totalMiles     Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  stops          DriverRunStop[]
+
+  @@unique([organizationId, driverId, runDate])
+  @@index([organizationId, runDate])
+}
+
+model DriverRunStop {
+  id                 String   @id @default(cuid())
+  driverRunId        String
+  driverRun          DriverRun @relation(fields: [driverRunId], references: [id], onDelete: Cascade)
+  orderId            String
+  order              Order    @relation(fields: [orderId], references: [id])
+  stopOrder          Int      @default(1)
+  stopNotes          String?
+  status             String   @default("")
+  attentionStatus    String   @default("")
+  attentionNotes     String?
+  driverInternalNote String?
+  stopPayOverride    Float?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([driverRunId, orderId])
+  @@index([driverRunId, stopOrder])
 }
