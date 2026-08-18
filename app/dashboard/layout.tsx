@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { requireCurrentOrganization } from "@/lib/tenant";
+import { getBillingStatus } from "@/lib/billing";
 import DashboardNav from "./DashboardNav";
 
 export default async function DashboardLayout({
@@ -14,6 +15,11 @@ export default async function DashboardLayout({
 
   if (!session || (session.user as any).organizationId !== organization.id) {
     redirect("/login");
+  }
+
+  const billing = await getBillingStatus(organization);
+  if (billing.blocked) {
+    redirect("/billing-locked");
   }
 
   const role = (session.user as any).role;
@@ -36,6 +42,22 @@ export default async function DashboardLayout({
         </svg>
         <span className="font-semibold text-lg">{organization.name}</span>
       </header>
+      {billing.message && role === "owner" && (
+        <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-sm px-6 py-2">
+          {billing.message}
+        </div>
+      )}
+      {billing.trialDaysLeft !== null &&
+        billing.trialDaysLeft <= 5 &&
+        billing.trialDaysLeft >= 0 &&
+        !billing.message &&
+        role === "owner" && (
+          <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-sm px-6 py-2">
+            {billing.trialDaysLeft === 0
+              ? "Your free trial ends today."
+              : "Your free trial ends in " + billing.trialDaysLeft + " day(s)."}
+          </div>
+        )}
       <div className="flex flex-1">
         <aside className="w-56 border-r p-4 bg-white">
           <DashboardNav showSettings={role === "owner"} />
