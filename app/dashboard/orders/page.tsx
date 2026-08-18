@@ -26,7 +26,7 @@ export default async function OrdersPage({
         <h1 className="text-2xl font-bold">Orders</h1>
         <div className="flex gap-2">
           <a
-            href="/api/orders/export"
+            href={statusFilter ? `/api/orders/export?status=${encodeURIComponent(statusFilter)}` : "/api/orders/export"}
             className="bg-white text-gray-700 border border-gray-300 rounded px-4 py-2 text-sm font-medium hover:bg-gray-50"
           >
             Export CSV
