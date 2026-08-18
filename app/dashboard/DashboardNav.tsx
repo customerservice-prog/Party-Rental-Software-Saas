@@ -139,6 +139,15 @@ function NavIcon({ name, className }: { name: string; className?: string }) {
       </svg>
     );
   }
+  if (name === "route") {
+    return (
+      <svg {...common}>
+        <circle cx="6" cy="6" r="2.5" />
+        <circle cx="18" cy="18" r="2.5" />
+        <path d="M6 8.5V13a4 4 0 0 0 4 4h4" />
+      </svg>
+    );
+  }
   return null;
 }
 
@@ -149,6 +158,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/orders", label: "Orders", icon: "clipboard" },
   { href: "/dashboard/customers", label: "Customers", icon: "users" },
   { href: "/dashboard/deliveries", label: "Deliveries", icon: "truck" },
+  { href: "/dashboard/dispatch", label: "Dispatch", icon: "route" },
   { href: "/dashboard/reports", label: "Reports", icon: "chart" },
   { href: "/dashboard/pages", label: "Website Pages", icon: "file" },
   { href: "/dashboard/tasks", label: "Tasks", icon: "check" },
