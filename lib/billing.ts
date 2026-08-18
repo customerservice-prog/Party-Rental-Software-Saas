@@ -22,6 +22,9 @@ export type BillingStatus = {
   blocked: boolean;
   code: BillingCode;
   message: string | null;
+  // Only populated while the subscription is actually "trialing" (or has
+  // no subscription row yet). Once a subscription is active/past_due/etc
+  // this is null so the dashboard doesn't show a stale trial countdown.
   trialDaysLeft: number | null;
   subscriptionStatus: string | null;
   planTier: string | null;
@@ -32,6 +35,11 @@ export type BillingStatus = {
 const PAST_DUE_GRACE_DAYS = 7;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+function daysUntil(date: Date | null, now: Date): number | null {
+  if (!date) return null;
+  return Math.ceil((date.getTime() - now.getTime()) / DAY_MS);
+}
 
 export async function getBillingStatus(organization: {
   id: string;
@@ -55,20 +63,16 @@ export async function getBillingStatus(organization: {
   });
 
   const now = new Date();
-  let trialDaysLeft: number | null = null;
-  if (organization.trialEndsAt) {
-    trialDaysLeft = Math.ceil((organization.trialEndsAt.getTime() - now.getTime()) / DAY_MS);
-  }
 
   // No subscription row yet (e.g. a dev/reference org, or one created
   // before billing was wired up) - don't lock anyone out over missing
-  // billing data.
+  // billing data, but still surface a trial countdown if one is set.
   if (!subscription) {
     return {
       blocked: false,
       code: "ok",
       message: null,
-      trialDaysLeft,
+      trialDaysLeft: daysUntil(organization.trialEndsAt, now),
       subscriptionStatus: null,
       planTier: organization.planTier ?? null,
     };
@@ -77,6 +81,7 @@ export async function getBillingStatus(organization: {
   const status = (subscription.status || "").trim().toLowerCase() || "trialing";
 
   if (status === "trialing") {
+    const trialDaysLeft = daysUntil(organization.trialEndsAt, now);
     const trialEnded = organization.trialEndsAt ? organization.trialEndsAt <= now : false;
     if (trialEnded && !subscription.stripeSubId) {
       return {
@@ -103,7 +108,7 @@ export async function getBillingStatus(organization: {
       blocked: true,
       code: "trial_ended",
       message: "Your free trial has ended. Upgrade your plan to keep using the dashboard.",
-      trialDaysLeft,
+      trialDaysLeft: null,
       subscriptionStatus: status,
       planTier: subscription.planTier,
     };
@@ -114,7 +119,7 @@ export async function getBillingStatus(organization: {
       blocked: true,
       code: status === "unpaid" ? "unpaid" : "canceled",
       message: "Your subscription is inactive. Update your billing to regain access.",
-      trialDaysLeft,
+      trialDaysLeft: null,
       subscriptionStatus: status,
       planTier: subscription.planTier,
     };
@@ -128,7 +133,7 @@ export async function getBillingStatus(organization: {
         blocked: true,
         code: "past_due_locked",
         message: "Your subscription is past due and access has been locked. Please update billing.",
-        trialDaysLeft,
+        trialDaysLeft: null,
         subscriptionStatus: status,
         planTier: subscription.planTier,
       };
@@ -137,7 +142,7 @@ export async function getBillingStatus(organization: {
       blocked: false,
       code: "ok",
       message: "Your last payment failed. Please update billing soon to avoid losing access.",
-      trialDaysLeft,
+      trialDaysLeft: null,
       subscriptionStatus: status,
       planTier: subscription.planTier,
     };
@@ -148,7 +153,7 @@ export async function getBillingStatus(organization: {
     blocked: false,
     code: "ok",
     message: null,
-    trialDaysLeft,
+    trialDaysLeft: null,
     subscriptionStatus: status,
     planTier: subscription.planTier,
   };
