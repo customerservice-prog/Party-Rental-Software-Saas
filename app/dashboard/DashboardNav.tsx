@@ -123,6 +123,22 @@ function NavIcon({ name, className }: { name: string; className?: string }) {
       </svg>
     );
   }
+  if (name === "mail") {
+    return (
+      <svg {...common}>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="M3 7l9 6 9-6" />
+      </svg>
+    );
+  }
+  if (name === "key") {
+    return (
+      <svg {...common}>
+        <circle cx="8" cy="15" r="4" />
+        <path d="M11 12l9-9M17 6l3 3M14 9l2 2" />
+      </svg>
+    );
+  }
   return null;
 }
 
@@ -145,8 +161,9 @@ export default function DashboardNav({ showSettings }: { showSettings: boolean }
   const items = showSettings
     ? [
         ...NAV_ITEMS,
-      { href: "/dashboard/drivers", label: "Drivers", icon: "truck" },
+        { href: "/dashboard/drivers", label: "Drivers", icon: "truck" },
         { href: "/dashboard/staff", label: "Staff", icon: "shield" },
+        { href: "/dashboard/roles", label: "Roles", icon: "key" },
         { href: "/dashboard/activity", label: "Activity Log", icon: "clipboard" },
         { href: "/dashboard/message-templates", label: "Message Templates", icon: "mail" },
         { href: "/dashboard/messages", label: "Messages", icon: "mail" },
