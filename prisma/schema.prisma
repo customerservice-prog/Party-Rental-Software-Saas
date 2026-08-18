@@ -58,6 +58,7 @@ model Organization {
   pages           Page[]
   messageTemplates MessageTemplate[]
   sentMessages    SentMessage[]
+  tenantRoles     TenantRole[]
 }
 
 // The tenant's own subscription to OUR platform (billing us, not their customers).
@@ -87,10 +88,33 @@ model User {
   password       String
   name           String
   role           String   @default("staff")
+  tenantRoleId   String?
+  tenantRole     TenantRole? @relation(fields: [tenantRoleId], references: [id])
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   @@unique([organizationId, username])
+}
+
+// Customizable staff role per organization. Permissions are a flat list of
+// stable string codes (see lib/permissions.ts PERMISSION_CATALOG). Lets an
+// owner create roles like "Dispatcher" or "Front Desk" with only the access
+// they need, instead of every staff login being all-or-nothing.
+model TenantRole {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  slug           String
+  permissions    Json     @default("[]")
+  isSystem       Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  users User[]
+
+  @@unique([organizationId, slug])
 }
 
 model Category {
