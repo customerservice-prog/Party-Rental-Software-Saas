@@ -37,8 +37,12 @@ export async function GET(request: Request) {
         ? { createdAt: dateFilter }
         : {};
 
+    const statusParam = searchParams.get("status") || "";
+    const validStatuses = ["pending", "confirmed", "cancelled", "completed"];
+    const statusWhere = validStatuses.includes(statusParam) ? { status: statusParam } : {};
+
     const orders = await prisma.order.findMany({
-      where: { organizationId: organization.id, ...dateWhere },
+      where: { organizationId: organization.id, ...dateWhere, ...statusWhere },
       orderBy: { createdAt: "desc" },
       include: { customer: true },
     });
