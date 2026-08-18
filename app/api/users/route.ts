@@ -9,6 +9,39 @@ import { prisma } from "@/lib/prisma";
 // logins that belong to their organization. Every handler here requires an
 // owner-level session; staff accounts cannot manage other accounts.
 
+const userSelect = {
+  id: true,
+  username: true,
+  name: true,
+  role: true,
+  tenantRoleId: true,
+  createdAt: true,
+  tenantRole: { select: { id: true, name: true } },
+} as const;
+
+// Resolves and validates an optional tenantRoleId from a request body.
+// Returns undefined when the field wasn't sent (leave unchanged), null when
+// it should be cleared, or the id string when it should be set. Throws a
+// plain Error with a user-facing message on invalid input.
+async function resolveTenantRoleId(
+  organizationId: string,
+  body: Record<string, unknown>
+): Promise<string | null | undefined> {
+  if (!("tenantRoleId" in body)) return undefined;
+  const value = body.tenantRoleId;
+  if (value === null || value === "") return null;
+  if (typeof value !== "string") {
+    throw new Error("Invalid role selection.");
+  }
+  const role = await prisma.tenantRole.findFirst({
+    where: { id: value, organizationId },
+  });
+  if (!role) {
+    throw new Error("Selected role was not found.");
+  }
+  return role.id;
+}
+
 export async function GET() {
   const organization = await requireCurrentOrganization();
   try {
@@ -20,7 +53,7 @@ export async function GET() {
   const users = await prisma.user.findMany({
     where: { organizationId: organization.id },
     orderBy: { createdAt: "asc" },
-    select: { id: true, username: true, name: true, role: true, createdAt: true },
+    select: userSelect,
   });
 
   return NextResponse.json({ users });
@@ -51,6 +84,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
   }
 
+  let tenantRoleId: string | null = null;
+  if (role === "staff") {
+    try {
+      const resolved = await resolveTenantRoleId(organization.id, body);
+      tenantRoleId = resolved ?? null;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Invalid role selection.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
   const existing = await prisma.user.findUnique({
     where: { organizationId_username: { organizationId: organization.id, username } },
   });
@@ -66,15 +110,16 @@ export async function POST(req: NextRequest) {
       name,
       password: hashed,
       role,
+      tenantRoleId,
     },
-    select: { id: true, username: true, name: true, role: true, createdAt: true },
+    select: userSelect,
   });
 
   await logActivity({
     organizationId: organization.id,
     performedBy: session.id,
     action: "Created staff account",
-    details: `${created.name} (@${created.username}) as ${created.role}`,
+    details: created.name + " (@" + created.username + ") as " + created.role,
   });
   return NextResponse.json({ user: created }, { status: 201 });
 }
@@ -99,7 +144,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "User not found." }, { status: 404 });
   }
 
-  const data: Record<string, string> = {};
+  const data: Record<string, unknown> = {};
   if (typeof body.name === "string" && body.name.trim()) {
     data.name = body.name.trim();
   }
@@ -116,6 +161,9 @@ export async function PATCH(req: NextRequest) {
       }
     }
     data.role = body.role;
+    if (body.role === "owner") {
+      data.tenantRoleId = null;
+    }
   }
   if (typeof body.password === "string" && body.password.length > 0) {
     if (body.password.length < 8) {
@@ -126,18 +174,29 @@ export async function PATCH(req: NextRequest) {
     }
     data.password = await bcrypt.hash(body.password, 10);
   }
+  if (data.role !== "owner" && (target.role === "staff" || data.role === "staff")) {
+    try {
+      const resolved = await resolveTenantRoleId(organization.id, body);
+      if (resolved !== undefined) {
+        data.tenantRoleId = resolved;
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Invalid role selection.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
 
   const updated = await prisma.user.update({
     where: { id },
     data,
-    select: { id: true, username: true, name: true, role: true, createdAt: true },
+    select: userSelect,
   });
 
   await logActivity({
     organizationId: organization.id,
     performedBy: actingUser.id,
     action: "Updated staff account",
-    details: `${updated.name} (@${updated.username}) role: ${updated.role}`,
+    details: updated.name + " (@" + updated.username + ") role: " + updated.role,
   });
   return NextResponse.json({ user: updated });
 }
@@ -181,7 +240,7 @@ export async function DELETE(req: NextRequest) {
     organizationId: organization.id,
     performedBy: actingUser.id,
     action: "Deleted staff account",
-    details: `${target.name} (@${target.username})`,
+    details: target.name + " (@" + target.username + ")",
   });
   return NextResponse.json({ success: true });
 }
