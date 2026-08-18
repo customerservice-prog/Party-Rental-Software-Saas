@@ -27,9 +27,10 @@ export async function POST() {
       { cwd: process.cwd(), timeout: 60000 }
     );
     return NextResponse.json({ ok: true, stdout, stderr });
-  } catch (err) {
+  } catch (err: unknown) {
+    const e = err as { message?: string; stdout?: string; stderr?: string };
     return NextResponse.json(
-      { ok: false, message: err && err.message, stdout: err && err.stdout, stderr: err && err.stderr },
+      { ok: false, message: e?.message, stdout: e?.stdout, stderr: e?.stderr },
       { status: 500 }
     );
   }
