@@ -41,7 +41,15 @@ export default function LoginPage() {
     setLoading(false);
 
     if (res?.error) {
-      setError("Invalid username or password");
+      // NextAuth returns the fixed code "CredentialsSignin" when authorize()
+      // returns null (wrong username/password). Anything else is a custom
+      // message we threw ourselves (e.g. login lockout) and should be shown
+      // verbatim. See lib/loginSecurity.ts / lib/auth.ts.
+      if (res.error === "CredentialsSignin") {
+        setError("Invalid username or password");
+      } else {
+        setError(res.error);
+      }
       return;
     }
 
