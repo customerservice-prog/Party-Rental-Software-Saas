@@ -3,6 +3,16 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import { getCurrentOrganization } from "./tenant";
+import {
+  getClientIp,
+  isLoginBurstLimited,
+  isLoginLocked,
+  noteLoginAttemptStart,
+  noteLoginFailure,
+  clearLoginFailures,
+  LOGIN_LOCK_MESSAGE,
+  LOGIN_BURST_MESSAGE,
+} from "./loginSecurity";
 
 // NextAuth configuration for tenant-aware, role-based authentication.
 // A username is only unique within a single tenant, so every login must
@@ -23,9 +33,20 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
         tenantSlug: { label: "Business subdomain", type: "text" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.username || !credentials?.password) {
           return null;
+        }
+
+        // Brute-force / abuse protection, checked before touching the DB
+        // for user lookups. See lib/loginSecurity.ts.
+        const ip = getClientIp(req);
+        if (await isLoginBurstLimited(ip)) {
+          throw new Error(LOGIN_BURST_MESSAGE);
+        }
+        await noteLoginAttemptStart(ip);
+        if (await isLoginLocked(ip)) {
+          throw new Error(LOGIN_LOCK_MESSAGE);
         }
 
         let organization = null as Awaited<ReturnType<typeof getCurrentOrganization>>;
@@ -39,7 +60,7 @@ export const authOptions: NextAuthOptions = {
           organization = await getCurrentOrganization();
         }
 
-                let user;
+        let user;
         if (organization) {
           user = await prisma.user.findUnique({
             where: {
@@ -61,14 +82,18 @@ export const authOptions: NextAuthOptions = {
           });
         }
 
-                if (!user) {
+        if (!user) {
+          await noteLoginFailure(ip);
           return null;
         }
 
         const isValid = await bcrypt.compare(credentials.password, user.password);
-                if (!isValid) {
+        if (!isValid) {
+          await noteLoginFailure(ip);
           return null;
         }
+
+        await clearLoginFailures(ip);
 
         return {
           id: user.id,
