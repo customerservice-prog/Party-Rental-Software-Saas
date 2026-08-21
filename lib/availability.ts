@@ -6,9 +6,14 @@ import { prisma } from "./prisma";
 // that would exceed the item's total tracked quantity.
 //
 // An order "holds" its line-item quantities for its event window unless it
-// has been canceled. Completed orders (the event already happened) still
-// count if their window happens to overlap a future range, which in
-// practice it won't, so no special-casing is needed there.
+// has been cancelled (Order.status === "cancelled" - note the app uses the
+// double-L spelling consistently in the order-status dropdown/UI, even
+// though an older schema comment used the single-L spelling). Completed
+// orders (the event already happened) still count if their window happens
+// to overlap a future range, which in practice it won't, so no
+// special-casing is needed there.
+
+const CANCELLED_STATUS = "cancelled";
 
 function normalizeRange(start: Date, end: Date | null | undefined) {
   const rangeStart = new Date(start);
@@ -30,7 +35,7 @@ export async function getBookedQuantity(
       itemId,
       order: {
         organizationId,
-        status: { not: "canceled" },
+        status: { not: CANCELLED_STATUS },
         ...(excludeOrderId ? { id: { not: excludeOrderId } } : {}),
         eventDate: { lte: rangeEnd },
         OR: [
