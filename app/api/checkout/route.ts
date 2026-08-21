@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
+import { getAvailableQuantity } from "@/lib/availability";
 
 export async function POST(request: NextRequest) {
   const organization = await requireCurrentOrganization();
@@ -41,6 +42,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Item not found" }, { status: 404 });
   }
 
+  const rangeStart = new Date(eventDate);
+  const rangeEnd = eventEndDate ? new Date(eventEndDate) : null;
+
+  // Prevent double-booking: make sure enough units of this item are free
+  // for the requested date window before creating the order. See
+  // lib/availability.ts.
+  const available = await getAvailableQuantity(
+    organization.id,
+    item.id,
+    item.quantity,
+    rangeStart,
+    rangeEnd
+  );
+  if (quantity > available) {
+    return NextResponse.json(
+      {
+        error:
+          available > 0
+            ? `Only ${available} unit(s) of "${item.name}" are available for the selected dates`
+            : `"${item.name}" is fully booked for the selected dates`,
+      },
+      { status: 409 }
+    );
+  }
+
   const itemAddons = await prisma.addon.findMany({
     where: { organizationId: organization.id, itemId: item.id },
   });
@@ -48,9 +74,6 @@ export async function POST(request: NextRequest) {
     (addon) => addon.isRequired || requestedAddonIds.includes(addon.id)
   );
   const addonsTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
-
-  const rangeStart = new Date(eventDate);
-  const rangeEnd = eventEndDate ? new Date(eventEndDate) : null;
 
   let customer = await prisma.customer.findFirst({
     where: { organizationId: organization.id, email },
@@ -89,7 +112,14 @@ export async function POST(request: NextRequest) {
         : Math.round(preDiscountTotal * (coupon.discountAmount / 100) * 100) / 100;
   }
 
-  const totalAmount = Math.max(0, subtotal + deliveryFee + addonsTotal - couponDiscount);
+  // Sales tax applies to the taxable rental subtotal (items + add-ons), not
+  // the delivery fee, and is computed after the coupon discount so a
+  // discount lowers the taxed amount too. See Organization.taxRate.
+  const taxRate = organization.taxRate || 0;
+  const taxableAmount = Math.max(0, subtotal + addonsTotal - couponDiscount);
+  const taxAmount = Math.round(taxableAmount * (taxRate / 100) * 100) / 100;
+
+  const totalAmount = Math.max(0, subtotal + deliveryFee + addonsTotal - couponDiscount + taxAmount);
 
   const depositRule = await prisma.depositRule.findFirst({
     where: { organizationId: organization.id, isActive: true },
@@ -116,6 +146,7 @@ export async function POST(request: NextRequest) {
       source: "online",
       deliveryFee,
       subtotal,
+      taxAmount,
       totalAmount,
       items: {
         create: [
