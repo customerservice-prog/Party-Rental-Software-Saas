@@ -81,6 +81,7 @@ export default function SettingsPage() {
     depositType: "percentage",
     depositAmount: "25",
     depositActive: true,
+    taxRate: "0",
   });
   const [pricingMessage, setPricingMessage] = useState("");
   const [savingPricing, setSavingPricing] = useState(false);
@@ -119,7 +120,11 @@ export default function SettingsPage() {
             organization.showHoursOnSite === undefined ? true : organization.showHoursOnSite,
         });
         setOrgSlug(organization.slug || "");
-        setPricing((prev) => ({ ...prev, flatDeliveryFee: String(organization.flatDeliveryFee || 0) }));
+        setPricing((prev) => ({
+          ...prev,
+          flatDeliveryFee: String(organization.flatDeliveryFee || 0),
+          taxRate: String(organization.taxRate || 0),
+        }));
       }
       if (stripeRes.ok) {
         setStripeStatus(await stripeRes.json());
@@ -145,13 +150,13 @@ export default function SettingsPage() {
         setClosedDates(rows);
       }
       if (depositRes.ok) {
-        const { rule } = await depositRes.json();
-        if (rule) {
+        const data = await depositRes.json();
+        if (data.rule) {
           setPricing((prev) => ({
             ...prev,
-            depositType: rule.type,
-            depositAmount: String(rule.amount),
-            depositActive: rule.isActive,
+            depositType: data.rule.type,
+            depositAmount: String(data.rule.amount),
+            depositActive: data.rule.isActive,
           }));
         }
       }
@@ -202,11 +207,12 @@ export default function SettingsPage() {
     try {
       const fee = parseFloat(pricing.flatDeliveryFee) || 0;
       const depositAmt = parseFloat(pricing.depositAmount) || 0;
+      const taxRateValue = Math.max(0, parseFloat(pricing.taxRate) || 0);
       const [orgRes, depositRes] = await Promise.all([
         fetch("/api/organizations", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ flatDeliveryFee: fee }),
+          body: JSON.stringify({ flatDeliveryFee: fee, taxRate: taxRateValue }),
         }),
         fetch("/api/deposit-rules", {
           method: "PUT",
@@ -219,7 +225,7 @@ export default function SettingsPage() {
         }),
       ]);
       if (!orgRes.ok || !depositRes.ok) throw new Error("Failed to save pricing settings");
-      setPricingMessage("Delivery fee and deposit rule saved.");
+      setPricingMessage("Delivery fee, tax rate, and deposit rule saved.");
     } catch (e: any) {
       setPricingMessage(e.message || "Something went wrong");
     } finally {
@@ -485,9 +491,9 @@ export default function SettingsPage() {
       </div>
 
       <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>Delivery &amp; Deposit</h2>
+        <h2 className={sectionTitleClass}>Delivery, Deposit &amp; Tax</h2>
         {pricingMessage && <p className="mb-4 text-sm text-green-700">{pricingMessage}</p>}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
           <label className={labelClass}>
             <span className={labelTextClass}>Flat delivery fee ($)</span>
             <input
@@ -517,7 +523,21 @@ export default function SettingsPage() {
               className={inputClass}
             />
           </label>
+          <label className={labelClass}>
+            <span className={labelTextClass}>Sales tax rate (%)</span>
+            <input
+              value={pricing.taxRate}
+              onChange={(e) => setPricing({ ...pricing, taxRate: e.target.value })}
+              placeholder="e.g. 8.25"
+              className={inputClass}
+            />
+          </label>
         </div>
+        <p className="text-xs text-gray-500 mb-4">
+          Tax is calculated on the rental subtotal and add-ons (not the delivery fee) and shown
+          as a separate line item at checkout and on orders. Leave at 0 if your state doesn't
+          require you to charge sales tax on rentals, or if you handle tax outside this system.
+        </p>
         <label className="flex items-center gap-2 mb-6">
           <input
             type="checkbox"
@@ -529,7 +549,7 @@ export default function SettingsPage() {
           </span>
         </label>
         <button disabled={savingPricing} onClick={handleSavePricing} className={buttonClass}>
-          {savingPricing ? "Saving..." : "Save Delivery & Deposit"}
+          {savingPricing ? "Saving..." : "Save Delivery, Deposit & Tax"}
         </button>
       </div>
 
@@ -598,7 +618,7 @@ export default function SettingsPage() {
             <li key={d.id} className="flex items-center justify-between py-2 text-sm">
               <span>
                 {new Date(d.date).toLocaleDateString()}
-                {d.note ? " â " + d.note : ""}
+                {d.note ? " – " + d.note : ""}
               </span>
               <button
                 onClick={() => handleRemoveClosedDate(d.id)}
