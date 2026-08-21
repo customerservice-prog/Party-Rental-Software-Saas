@@ -29,6 +29,9 @@ export default async function StorefrontNav({
         <Link href="/book" className={linkClass("book")}>
           Book Now
         </Link>
+        <Link href="/order-status" className={linkClass("order-status")}>
+          Track Order
+        </Link>
         {pages.map((page) => (
           <Link key={page.id} href={"/" + page.slug} className={linkClass(page.slug)}>
             {page.navLabel || page.title}
