@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 
+function toDateInputValue(value: string | null | undefined) {
+  if (!value) return "";
+  return value.slice(0, 10);
+}
+
 export default function AdminOrganizationDetailPage() {
   const params = useParams();
   const id = params.id as string;
@@ -12,6 +17,10 @@ export default function AdminOrganizationDetailPage() {
   const [revenue, setRevenue] = useState<any>(null);
   const [status, setStatus] = useState("active");
   const [planTier, setPlanTier] = useState("launch");
+  const [trialEndsAt, setTrialEndsAt] = useState("");
+  const [subscriptionStatus, setSubscriptionStatus] = useState("trialing");
+  const [subscriptionPlanTier, setSubscriptionPlanTier] = useState("launch");
+  const [currentPeriodEnd, setCurrentPeriodEnd] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -25,6 +34,10 @@ export default function AdminOrganizationDetailPage() {
         setRevenue(data.revenue);
         setStatus(data.organization.status);
         setPlanTier(data.organization.planTier);
+        setTrialEndsAt(toDateInputValue(data.organization.trialEndsAt));
+        setSubscriptionStatus(data.organization.subscription?.status || "trialing");
+        setSubscriptionPlanTier(data.organization.subscription?.planTier || data.organization.planTier);
+        setCurrentPeriodEnd(toDateInputValue(data.organization.subscription?.currentPeriodEnd));
       }
       setLoading(false);
     }
@@ -39,7 +52,14 @@ export default function AdminOrganizationDetailPage() {
     const res = await fetch(`/api/admin/organizations/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, planTier }),
+      body: JSON.stringify({
+        status,
+        planTier,
+        trialEndsAt: trialEndsAt || null,
+        subscriptionStatus,
+        subscriptionPlanTier,
+        currentPeriodEnd: currentPeriodEnd || null,
+      }),
     });
 
     setSaving(false);
@@ -84,10 +104,12 @@ export default function AdminOrganizationDetailPage() {
       </div>
 
       <div className="bg-white shadow rounded-lg p-6 mb-6 space-y-2 text-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Billing</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">Billing (current)</h2>
         <div><span className="font-medium">Platform Subscription Status:</span> {sub?.status || "no subscription record"}</div>
         <div><span className="font-medium">Subscription Plan:</span> {sub?.planTier || "-"}</div>
         <div><span className="font-medium">Current Period End:</span> {sub?.currentPeriodEnd ? new Date(sub.currentPeriodEnd).toLocaleDateString() : "-"}</div>
+        <div><span className="font-medium">Past Due Since:</span> {sub?.pastDueSince ? new Date(sub.pastDueSince).toLocaleDateString() : "-"}</div>
+        <div><span className="font-medium">Trial Ends At:</span> {organization.trialEndsAt ? new Date(organization.trialEndsAt).toLocaleDateString() : "-"}</div>
         <div><span className="font-medium">Stripe Connect Account:</span> {organization.stripeAccountId ? "Connected" : "Not connected"}</div>
         <div className="pt-2 border-t mt-2">
           <span className="font-medium">Customer Order Revenue (Total):</span> ${(revenue?.totalAmount || 0).toFixed(2)}
@@ -103,7 +125,7 @@ export default function AdminOrganizationDetailPage() {
 
       <form onSubmit={handleSave} className="bg-white shadow rounded-lg p-6 space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Status</label>
+          <label className="block text-sm font-medium mb-1">Account Status</label>
           <select
             className="w-full border rounded p-2"
             value={status}
@@ -113,17 +135,76 @@ export default function AdminOrganizationDetailPage() {
             <option value="suspended">Suspended</option>
           </select>
           <p className="text-xs text-gray-500 mt-1">
-            Suspending blocks this tenant storefront, login, and checkout.
+            Suspending blocks this tenant storefront, login, and checkout immediately.
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Plan Tier</label>
+          <label className="block text-sm font-medium mb-1">Display Plan Tier</label>
           <input
             className="w-full border rounded p-2"
             value={planTier}
             onChange={(e) => setPlanTier(e.target.value)}
           />
+        </div>
+
+        <div className="pt-4 border-t">
+          <p className="text-xs font-semibold text-gray-500 uppercase mb-3">
+            Manual Billing Controls (Stripe not yet connected)
+          </p>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Trial Ends At</label>
+            <input
+              type="date"
+              className="w-full border rounded p-2"
+              value={trialEndsAt}
+              onChange={(e) => setTrialEndsAt(e.target.value)}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Extend this to give the tenant more free trial time.
+            </p>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Subscription Status</label>
+            <select
+              className="w-full border rounded p-2"
+              value={subscriptionStatus}
+              onChange={(e) => setSubscriptionStatus(e.target.value)}
+            >
+              <option value="trialing">Trialing</option>
+              <option value="active">Active (paid)</option>
+              <option value="past_due">Past Due (grace period)</option>
+              <option value="trial_ended">Trial Ended</option>
+              <option value="unpaid">Unpaid</option>
+              <option value="canceled">Canceled</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Set to Active after receiving payment manually. Dashboard access is
+              blocked for trial_ended, unpaid, and canceled, and after the grace
+              period for past_due.
+            </p>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Subscription Plan Tier</label>
+            <input
+              className="w-full border rounded p-2"
+              value={subscriptionPlanTier}
+              onChange={(e) => setSubscriptionPlanTier(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Current Period End</label>
+            <input
+              type="date"
+              className="w-full border rounded p-2"
+              value={currentPeriodEnd}
+              onChange={(e) => setCurrentPeriodEnd(e.target.value)}
+            />
+          </div>
         </div>
 
         <button
