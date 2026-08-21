@@ -27,6 +27,7 @@ function CheckoutForm() {
 
   const [item, setItem] = useState<ItemInfo | null>(null);
   const [flatDeliveryFee, setFlatDeliveryFee] = useState(0);
+  const [taxRate, setTaxRate] = useState(0);
   const [depositInfo, setDepositInfo] = useState<{ type: string; amount: number; isActive: boolean } | null>(null);
   const [addons, setAddons] = useState<AddonInfo[]>([]);
   const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
@@ -38,6 +39,9 @@ function CheckoutForm() {
   const [agree, setAgree] = useState(false);
   const [signatureName, setSignatureName] = useState("");
   const [contractTerms, setContractTerms] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [eventEndDate, setEventEndDate] = useState("");
+  const [availability, setAvailability] = useState<{ available: number; ok: boolean } | null>(null);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -58,6 +62,7 @@ function CheckoutForm() {
       if (orgRes.ok) {
         const data = await orgRes.json();
         setFlatDeliveryFee(data.organization?.flatDeliveryFee || 0);
+        setTaxRate(data.organization?.taxRate || 0);
         if (data.organization?.contractTerms) setContractTerms(data.organization.contractTerms);
       }
       if (depositRes.ok) {
@@ -72,6 +77,26 @@ function CheckoutForm() {
       }
     })();
   }, [itemId]);
+
+  // Live availability check whenever the item, date, or quantity changes, so
+  // the customer sees a warning before they try to submit. The booking
+  // routes still re-check this server-side (see app/api/checkout).
+  useEffect(() => {
+    if (!itemId || !eventDate) {
+      setAvailability(null);
+      return;
+    }
+    const params = new URLSearchParams({
+      itemId,
+      start: eventDate,
+      quantity: String(quantity),
+    });
+    if (eventEndDate) params.set("end", eventEndDate);
+    fetch("/api/availability?" + params.toString())
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setAvailability(data))
+      .catch(() => setAvailability(null));
+  }, [itemId, eventDate, eventEndDate, quantity]);
 
   function toggleAddon(id: string) {
     setSelectedAddonIds((prev) =>
@@ -89,7 +114,9 @@ function CheckoutForm() {
       ? Math.min(appliedCoupon.discountAmount, preDiscountTotal)
       : Math.round(preDiscountTotal * (appliedCoupon.discountAmount / 100) * 100) / 100
     : 0;
-  const total = Math.max(0, preDiscountTotal - couponDiscount);
+  const taxableAmount = Math.max(0, subtotal + addonsTotal - couponDiscount);
+  const taxAmount = Math.round(taxableAmount * (taxRate / 100) * 100) / 100;
+  const total = Math.max(0, preDiscountTotal - couponDiscount + taxAmount);
   const depositDue =
     depositInfo && depositInfo.isActive
       ? depositInfo.type === "flat"
@@ -202,6 +229,13 @@ function CheckoutForm() {
         </div>
       )}
 
+      {availability && !availability.ok && (
+        <div className="mb-4 p-3 rounded-md bg-amber-50 text-amber-800 text-sm">
+          Only {availability.available} unit(s) of this item are available for the selected
+          date(s). Please reduce the quantity or choose different dates.
+        </div>
+      )}
+
       {addons.length > 0 && (
         <div className="bg-white shadow rounded-lg p-4 mb-6">
           <div className="font-semibold text-gray-900 mb-2">Add-ons</div>
@@ -256,11 +290,24 @@ function CheckoutForm() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Event date</label>
-            <input type="date" name="eventDate" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+            <input
+              type="date"
+              name="eventDate"
+              required
+              value={eventDate}
+              onChange={(e) => setEventDate(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Event end date (optional)</label>
-            <input type="date" name="eventEndDate" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+            <input
+              type="date"
+              name="eventEndDate"
+              value={eventEndDate}
+              onChange={(e) => setEventEndDate(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+            />
           </div>
         </div>
 
@@ -303,6 +350,9 @@ function CheckoutForm() {
           {couponDiscount > 0 && (
             <div className="flex justify-between text-green-700"><span>Coupon discount</span><span>-${couponDiscount.toFixed(2)}</span></div>
           )}
+          {taxAmount > 0 && (
+            <div className="flex justify-between"><span>Tax</span><span>${taxAmount.toFixed(2)}</span></div>
+          )}
           <div className="flex justify-between font-semibold"><span>Total</span><span>${total.toFixed(2)}</span></div>
           <div className="flex justify-between text-indigo-700 font-semibold"><span>Due today (deposit)</span><span>${depositDue.toFixed(2)}</span></div>
           {balanceDue > 0 && (
@@ -333,7 +383,7 @@ function CheckoutForm() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (availability !== null && !availability.ok)}
           className="w-full bg-indigo-600 text-white py-2 rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
         >
           {loading ? "Processing..." : "Sign & Pay Deposit"}
