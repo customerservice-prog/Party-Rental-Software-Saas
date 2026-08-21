@@ -31,6 +31,7 @@ model Organization {
   instagramUrl     String?
   showHoursOnSite  Boolean   @default(true)
   flatDeliveryFee  Float     @default(0)
+  taxRate          Float     @default(0)
   contactEmail     String?
   contactPhone     String?
   address          String?
