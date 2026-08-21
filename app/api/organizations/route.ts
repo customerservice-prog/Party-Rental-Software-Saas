@@ -50,6 +50,12 @@ export async function PATCH(req: NextRequest) {
   if (typeof body.flatDeliveryFee === "number" && !Number.isNaN(body.flatDeliveryFee)) {
     data.flatDeliveryFee = body.flatDeliveryFee;
   }
+  // Sales tax rate as a percentage (e.g. 8.25 means 8.25%), applied to the
+  // taxable subtotal at checkout and manual order creation. See
+  // lib availability/tax calculations in app/api/checkout and app/api/orders.
+  if (typeof body.taxRate === "number" && !Number.isNaN(body.taxRate) && body.taxRate >= 0) {
+    data.taxRate = body.taxRate;
+  }
 
   const updated = await prisma.organization.update({
     where: { id: organization.id },
