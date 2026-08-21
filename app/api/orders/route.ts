@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
+import { getAvailableQuantity } from "@/lib/availability";
 
 export async function POST(request: NextRequest) {
   const organization = await requireCurrentOrganization();
@@ -97,10 +98,38 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "None of the selected items were found" }, { status: 400 });
   }
 
+  // Prevent double-booking: check each line item against units already
+  // committed to other (non-canceled) orders for an overlapping date
+  // range. See lib/availability.ts.
+  for (const { item, quantity } of resolved) {
+    const available = await getAvailableQuantity(
+      organization.id,
+      item.id,
+      item.quantity,
+      rangeStart,
+      rangeEnd
+    );
+    if (quantity > available) {
+      return NextResponse.json(
+        {
+          error:
+            available > 0
+              ? `Only ${available} unit(s) of "${item.name}" are available for the selected dates`
+              : `"${item.name}" is fully booked for the selected dates`,
+        },
+        { status: 409 }
+      );
+    }
+  }
+
   const subtotal = resolved.reduce((sum, r) => sum + r.item.cost * r.quantity, 0);
   const isDelivery = deliveryType !== "pickup";
   const deliveryFee = isDelivery ? organization.flatDeliveryFee || 0 : 0;
-  const totalAmount = Math.max(0, subtotal + deliveryFee);
+
+  const taxRate = organization.taxRate || 0;
+  const taxAmount = Math.round(subtotal * (taxRate / 100) * 100) / 100;
+
+  const totalAmount = Math.max(0, subtotal + deliveryFee + taxAmount);
 
   const paid =
     typeof amountPaid === "number" && amountPaid > 0
@@ -126,6 +155,7 @@ export async function POST(request: NextRequest) {
       source: "manual",
       deliveryFee,
       subtotal,
+      taxAmount,
       totalAmount,
       amountPaid: paid,
       stripeSessionId: null,
