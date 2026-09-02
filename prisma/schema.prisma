@@ -61,6 +61,7 @@ model Organization {
   sentMessages     SentMessage[]
   tenantRoles      TenantRole[]
   driverRuns       DriverRun[]
+  doNotRentRestrictions DoNotRentRestriction[]
 }
 
 // The tenant's own subscription to OUR platform (billing us, not their customers).
@@ -285,6 +286,23 @@ model DepositRule {
   amount         Float    @default(25)
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
+}
+
+// Blocks a customer from booking again. Matched by email and/or phone at
+// checkout (see lib/doNotRent.ts) -- either match is enough to block, so
+// staff can restrict by whichever contact info they have on hand.
+model DoNotRentRestriction {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String?
+  email          String?
+  phone          String?
+  address        String?
+  reason         String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 // Records platform-admin actions taken against tenant organizations
