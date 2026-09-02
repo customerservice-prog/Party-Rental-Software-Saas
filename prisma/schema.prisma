@@ -154,6 +154,17 @@ model Item {
   quantity          Int       @default(1)
   picture           String?
   displayToCustomer Boolean   @default(true)
+  // Physical condition tracking. "available" is normal; "missing",
+  // "out_of_service", and "retired" hard-block new bookings (see
+  // lib/availability.ts), while "damaged" and "needs_repair" are
+  // attention-only flags staff can still choose to rent out.
+  status             String    @default("available")
+  lastInspectedAt    DateTime?
+  attentionNotes     String?
+  // If set, customers cannot book this item for any event date before
+  // this date. Independent of status.
+  blockBookingsUntil DateTime?
+  restrictionMessage String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
