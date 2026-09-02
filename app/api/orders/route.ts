@@ -3,6 +3,7 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { getAvailableQuantity } from "@/lib/availability";
+import { getItemBookingRestriction } from "@/lib/availability";
 
 export async function POST(request: NextRequest) {
   const organization = await requireCurrentOrganization();
@@ -102,6 +103,10 @@ export async function POST(request: NextRequest) {
   // committed to other (non-canceled) orders for an overlapping date
   // range. See lib/availability.ts.
   for (const { item, quantity } of resolved) {
+        const restriction = getItemBookingRestriction(item, rangeStart);
+        if (restriction) {
+                return NextResponse.json({ error: restriction }, { status: 409 });
+        }
     const available = await getAvailableQuantity(
       organization.id,
       item.id,
