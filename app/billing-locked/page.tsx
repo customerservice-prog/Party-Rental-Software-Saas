@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
-import { requireCurrentOrganization } from "@/lib/tenant";
+import { getCurrentOrganization } from "@/lib/tenant";
 import { getBillingStatus } from "@/lib/billing";
 
 // Full-page lock screen shown instead of the dashboard when an
@@ -16,7 +16,11 @@ export default async function BillingLockedPage() {
     redirect("/login");
   }
 
-  const organization = await requireCurrentOrganization();
+  const organization = await getCurrentOrganization();
+  if (!organization || (session.user as any).organizationId !== organization.id) {
+    redirect("/login");
+  }
+
   const billing = await getBillingStatus(organization);
 
   if (!billing.blocked) {
