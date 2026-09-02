@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
-import { requireCurrentOrganization } from "@/lib/tenant";
+import { getCurrentOrganization } from "@/lib/tenant";
 import { getBillingStatus } from "@/lib/billing";
 import DashboardNav from "./DashboardNav";
 
@@ -10,10 +10,13 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const organization = await requireCurrentOrganization();
   const session = await getServerSession(authOptions);
+  if (!session) {
+    redirect("/login");
+  }
 
-  if (!session || (session.user as any).organizationId !== organization.id) {
+  const organization = await getCurrentOrganization();
+  if (!organization || (session.user as any).organizationId !== organization.id) {
     redirect("/login");
   }
 
