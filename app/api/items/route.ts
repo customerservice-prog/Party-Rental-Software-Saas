@@ -3,6 +3,8 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
+const ITEM_STATUSES = ["available", "damaged", "needs_repair", "missing", "out_of_service", "retired"];
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -68,6 +70,7 @@ export async function POST(req: NextRequest) {
       picture: typeof body.picture === "string" && body.picture.length > 0 ? body.picture : null,
       displayToCustomer:
         typeof body.displayToCustomer === "boolean" ? body.displayToCustomer : true,
+              status: ITEM_STATUSES.includes(body.status) ? body.status : "available",
     },
   });
 
@@ -109,6 +112,19 @@ export async function PATCH(req: NextRequest) {
   }
   if (typeof body.displayToCustomer === "boolean") data.displayToCustomer = body.displayToCustomer;
   if (typeof body.categoryId === "string" && body.categoryId.length > 0) data.categoryId = body.categoryId;
+        if (typeof body.status === "string" && ITEM_STATUSES.includes(body.status)) data.status = body.status;
+        if (body.lastInspectedAt !== undefined) {
+                  data.lastInspectedAt = body.lastInspectedAt ? new Date(body.lastInspectedAt) : null;
+        }
+        if (typeof body.attentionNotes === "string") {
+                  data.attentionNotes = body.attentionNotes.length > 0 ? body.attentionNotes : null;
+        }
+        if (body.blockBookingsUntil !== undefined) {
+                  data.blockBookingsUntil = body.blockBookingsUntil ? new Date(body.blockBookingsUntil) : null;
+        }
+        if (typeof body.restrictionMessage === "string") {
+                  data.restrictionMessage = body.restrictionMessage.length > 0 ? body.restrictionMessage : null;
+        }
 
   const item = await prisma.item.update({ where: { id: body.id }, data });
 
