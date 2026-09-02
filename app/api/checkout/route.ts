@@ -3,6 +3,7 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { getAvailableQuantity } from "@/lib/availability";
+import { getItemBookingRestriction } from "@/lib/availability";
 
 export async function POST(request: NextRequest) {
   const organization = await requireCurrentOrganization();
@@ -44,6 +45,11 @@ export async function POST(request: NextRequest) {
 
   const rangeStart = new Date(eventDate);
   const rangeEnd = eventEndDate ? new Date(eventEndDate) : null;
+
+        const restriction = getItemBookingRestriction(item, rangeStart);
+    if (restriction) {
+          return NextResponse.json({ error: restriction }, { status: 409 });
+    }
 
   // Prevent double-booking: make sure enough units of this item are free
   // for the requested date window before creating the order. See
