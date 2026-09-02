@@ -93,3 +93,38 @@ export async function checkItemAvailability(
   );
   return { ok: requestedQuantity <= available, available, requested: requestedQuantity };
 }
+
+// ---------------------------------------------------------------------------
+             // CONDITION / RESTRICTION-BASED BOOKING BLOCKS
+// Independent of the quantity-based double-booking check above. An item can
+// be pulled from booking entirely (regardless of remaining quantity) via its
+// condition status or an explicit "block bookings until" date. See the Item
+// model's status / blockBookingsUntil / restrictionMessage fields.
+        // ---------------------------------------------------------------------------
+
+      const HARD_BLOCKING_STATUSES = ["missing", "out_of_service", "retired"];
+
+// Returns a customer-facing message if this item cannot be booked at all for
+// the requested event start date, or null if booking may proceed (subject to
+  // the normal quantity check via getAvailableQuantity / checkItemAvailability
+// above). Callers should check this BEFORE the quantity check.
+export function getItemBookingRestriction(
+    item: {
+          name: string;
+          status?: string | null;
+          blockBookingsUntil?: Date | null;
+          restrictionMessage?: string | null;
+    },
+    rangeStart: Date
+  ): string | null {
+    if (item.status && HARD_BLOCKING_STATUSES.includes(item.status)) {
+          return item.restrictionMessage || `"${item.name}" is not currently available to rent.`;
+    }
+    if (item.blockBookingsUntil && rangeStart < item.blockBookingsUntil) {
+          return (
+                  item.restrictionMessage ||
+                  `"${item.name}" is not available for booking until ${item.blockBookingsUntil.toLocaleDateString()}.`
+                );
+    }
+    return null;
+}
