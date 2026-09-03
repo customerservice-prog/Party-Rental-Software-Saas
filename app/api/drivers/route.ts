@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
-import { requireStaffSession, requireOwnerSession, authzErrorResponse } from "@/lib/authz";
+import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/audit";
 
-// Driver roster management. Any signed-in staff or owner login can view the
-// driver list (needed to assign drivers to deliveries on the Deliveries
-// page), but only an owner can add, edit, deactivate, or remove drivers.
+// Driver roster management. Viewing the roster requires drivers.view;
+// adding, editing, deactivating, or removing drivers requires
+// drivers.manage (owners always have both implicitly).
 
 export async function GET() {
     const organization = await requireCurrentOrganization();
     try {
-          await requireStaffSession(organization.id);
+          await requirePermission(organization.id, "drivers.view");
     } catch (err) {
           return authzErrorResponse(err);
     }
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const organization = await requireCurrentOrganization();
     let session;
     try {
-          session = await requireOwnerSession(organization.id);
+          session = await requirePermission(organization.id, "drivers.manage");
     } catch (err) {
           return authzErrorResponse(err);
     }
