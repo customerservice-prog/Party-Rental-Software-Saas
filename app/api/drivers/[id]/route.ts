@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
-import { requireOwnerSession, authzErrorResponse } from "@/lib/authz";
+import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/audit";
 
-// Editing, deactivating, and removing individual drivers. Only an owner can
-// perform these actions; regular staff logins can view the roster (via
-// GET /api/drivers) but cannot modify it.
+// Editing, deactivating, and removing individual drivers. Requires the
+// drivers.manage permission (owners always have it implicitly); regular
+// staff logins can view the roster (via GET /api/drivers) but cannot
+// modify it unless granted that permission.
 
 export async function PATCH(
   req: NextRequest,
@@ -14,7 +15,7 @@ export async function PATCH(
 ) {
   const organization = await requireCurrentOrganization();
   try {
-    await requireOwnerSession(organization.id);
+    await requirePermission(organization.id, "drivers.manage");
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -81,7 +82,7 @@ export async function DELETE(
   const organization = await requireCurrentOrganization();
   let session;
   try {
-    session = await requireOwnerSession(organization.id);
+    session = await requirePermission(organization.id, "drivers.manage");
   } catch (err) {
     return authzErrorResponse(err);
   }
