@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireCurrentOrganization } from "@/lib/tenant";
-import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
+import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { logActivity } from "@/lib/audit";
 
 export async function PATCH(
@@ -10,7 +10,7 @@ export async function PATCH(
 ) {
   try {
     const organization = await requireCurrentOrganization();
-    const session = await requireStaffSession(organization.id);
+    const session = await requirePermission(organization.id, "customers.manage");
 
     const existing = await prisma.customer.findFirst({
       where: { id: params.id, organizationId: organization.id },
