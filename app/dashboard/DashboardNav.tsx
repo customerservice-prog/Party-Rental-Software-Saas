@@ -157,6 +157,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/inventory", label: "Inventory", icon: "box" },
   { href: "/dashboard/orders", label: "Orders", icon: "clipboard" },
   { href: "/dashboard/customers", label: "Customers", icon: "users" },
+  { href: "/dashboard/do-not-rent", label: "Do Not Rent", icon: "shield" },
   { href: "/dashboard/deliveries", label: "Deliveries", icon: "truck" },
   { href: "/dashboard/dispatch", label: "Dispatch", icon: "route" },
   { href: "/dashboard/reports", label: "Reports", icon: "chart" },
