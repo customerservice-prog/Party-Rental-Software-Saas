@@ -34,8 +34,7 @@ export async function POST(request: NextRequest) {
         .filter((li: { itemId?: unknown; quantity?: unknown }) => li && typeof li.itemId === "string")
         .map((li: { itemId: string; quantity?: unknown }) => ({
           itemId: li.itemId,
-          quantity:
-            typeof li.quantity === "number" && li.quantity > 0 ? Math.floor(li.quantity) : 1,
+          quantity: typeof li.quantity === "number" && li.quantity > 0 ? Math.floor(li.quantity) : 1,
         }))
     : [];
 
@@ -100,13 +99,13 @@ export async function POST(request: NextRequest) {
   }
 
   // Prevent double-booking: check each line item against units already
-  // committed to other (non-canceled) orders for an overlapping date
+  // committed to other (non-cancelled) orders for an overlapping date
   // range. See lib/availability.ts.
   for (const { item, quantity } of resolved) {
-        const restriction = getItemBookingRestriction(item, rangeStart);
-        if (restriction) {
-                return NextResponse.json({ error: restriction }, { status: 409 });
-        }
+      const restriction = getItemBookingRestriction(item, rangeStart);
+      if (restriction) {
+          return NextResponse.json({ error: restriction }, { status: 409 });
+      }
     const available = await getAvailableQuantity(
       organization.id,
       item.id,
@@ -126,7 +125,6 @@ export async function POST(request: NextRequest) {
       );
     }
   }
-
   const subtotal = resolved.reduce((sum, r) => sum + r.item.cost * r.quantity, 0);
   const isDelivery = deliveryType !== "pickup";
   const deliveryFee = isDelivery ? organization.flatDeliveryFee || 0 : 0;
@@ -144,6 +142,33 @@ export async function POST(request: NextRequest) {
   const allowedStatuses = ["quote", "pending", "confirmed", "active"];
   const orderStatus =
     typeof status === "string" && allowedStatuses.includes(status) ? status : "quote";
+
+  // Block confirmed/active/pending bookings for customers the tenant has
+  // flagged as do-not-rent. Quotes are still allowed through so staff can
+  // prepare pricing without committing inventory. Restrictions are scoped
+  // to this organization only - a restriction created by one tenant never
+  // affects another tenant's customers.
+  if (orderStatus !== "quote") {
+    const doNotRentMatch = await prisma.doNotRentRestriction.findFirst({
+      where: {
+        organizationId: organization.id,
+        isActive: true,
+        OR: [
+          ...(customer.email ? [{ email: { equals: customer.email, mode: "insensitive" as const } }] : []),
+          ...(customer.phone ? [{ phone: customer.phone }] : []),
+          ...(customer.address
+            ? [{ address: { contains: customer.address, mode: "insensitive" as const } }]
+            : []),
+        ],
+      },
+    });
+    if (doNotRentMatch) {
+      return NextResponse.json(
+        { error: "This customer has an active do-not-rent restriction. Review it before booking." },
+        { status: 403 }
+      );
+    }
+  }
 
   const orderNumber = "ORD-" + Date.now();
 
