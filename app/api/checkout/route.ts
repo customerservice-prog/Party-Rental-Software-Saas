@@ -35,6 +35,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "A signature is required to agree to the rental contract" }, { status: 400 });
   }
 
+  // Block bookings from customers the tenant has flagged as do-not-rent.
+  // Restrictions are scoped to this organization only - a restriction created
+  // by one tenant never affects another tenant's customers.
+  const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+  const normalizedPhone = typeof phone === "string" && phone.trim() ? phone.trim() : "";
+  const doNotRentMatch = await prisma.doNotRentRestriction.findFirst({
+    where: {
+      organizationId: organization.id,
+      isActive: true,
+      OR: [
+        ...(normalizedEmail ? [{ email: { equals: normalizedEmail, mode: "insensitive" as const } }] : []),
+        ...(normalizedPhone ? [{ phone: normalizedPhone }] : []),
+        ...(deliveryAddress
+          ? [{ address: { contains: deliveryAddress, mode: "insensitive" as const } }]
+          : []),
+      ],
+    },
+  });
+  if (doNotRentMatch) {
+    return NextResponse.json(
+      { error: "We're unable to process this booking. Please contact us directly for assistance." },
+      { status: 403 }
+    );
+  }
+
   const item = await prisma.item.findFirst({
     where: { id: itemId, organizationId: organization.id },
   });
@@ -46,201 +71,201 @@ export async function POST(request: NextRequest) {
   const rangeStart = new Date(eventDate);
   const rangeEnd = eventEndDate ? new Date(eventEndDate) : null;
 
-        const restriction = getItemBookingRestriction(item, rangeStart);
-    if (restriction) {
-          return NextResponse.json({ error: restriction }, { status: 409 });
-    }
+    const restriction = getItemBookingRestriction(item, rangeStart);
+  if (restriction) {
+      return NextResponse.json({ error: restriction }, { status: 409 });
+  }
 
-  // Prevent double-booking: make sure enough units of this item are free
-  // for the requested date window before creating the order. See
-  // lib/availability.ts.
-  const available = await getAvailableQuantity(
-    organization.id,
-    item.id,
-    item.quantity,
-    rangeStart,
-    rangeEnd
+// Prevent double-booking: make sure enough units of this item are free
+// for the requested date window before creating the order. See
+// lib/availability.ts.
+const available = await getAvailableQuantity(
+  organization.id,
+  item.id,
+  item.quantity,
+  rangeStart,
+  rangeEnd
+);
+if (quantity > available) {
+  return NextResponse.json(
+    {
+      error:
+        available > 0
+          ? `Only ${available} unit(s) of "${item.name}" are available for the selected dates`
+          : `"${item.name}" is fully booked for the selected dates`,
+    },
+    { status: 409 }
   );
-  if (quantity > available) {
-    return NextResponse.json(
-      {
-        error:
-          available > 0
-            ? `Only ${available} unit(s) of "${item.name}" are available for the selected dates`
-            : `"${item.name}" is fully booked for the selected dates`,
-      },
-      { status: 409 }
-    );
-  }
+}
 
-  const itemAddons = await prisma.addon.findMany({
-    where: { organizationId: organization.id, itemId: item.id },
-  });
-  const selectedAddons = itemAddons.filter(
-    (addon) => addon.isRequired || requestedAddonIds.includes(addon.id)
-  );
-  const addonsTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
+const itemAddons = await prisma.addon.findMany({
+  where: { organizationId: organization.id, itemId: item.id },
+});
+const selectedAddons = itemAddons.filter(
+  (addon) => addon.isRequired || requestedAddonIds.includes(addon.id)
+);
+const addonsTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
 
-  let customer = await prisma.customer.findFirst({
-    where: { organizationId: organization.id, email },
-  });
+let customer = await prisma.customer.findFirst({
+  where: { organizationId: organization.id, email },
+});
 
-  if (!customer) {
-    customer = await prisma.customer.create({
-      data: {
-        organizationId: organization.id,
-        firstName,
-        lastName,
-        email,
-        phone: phone || null,
-        address: deliveryAddress,
-      },
-    });
-  }
-
-  const subtotal = item.cost * quantity;
-  const deliveryFee = organization.flatDeliveryFee || 0;
-
-  let couponDiscount = 0;
-  const couponCode = typeof body.couponCode === "string" ? body.couponCode.trim().toUpperCase() : "";
-  if (couponCode) {
-    const coupon = await prisma.coupon.findFirst({
-      where: { organizationId: organization.id, code: couponCode },
-    });
-    const isExpired = coupon?.expiresAt ? coupon.expiresAt < new Date() : false;
-    if (!coupon || !coupon.isActive || isExpired) {
-      return NextResponse.json({ error: "That coupon code is invalid or has expired" }, { status: 400 });
-    }
-    const preDiscountTotal = subtotal + deliveryFee + addonsTotal;
-    couponDiscount =
-      coupon.discountType === "fixed"
-        ? Math.min(coupon.discountAmount, preDiscountTotal)
-        : Math.round(preDiscountTotal * (coupon.discountAmount / 100) * 100) / 100;
-  }
-
-  // Sales tax applies to the taxable rental subtotal (items + add-ons), not
-  // the delivery fee, and is computed after the coupon discount so a
-  // discount lowers the taxed amount too. See Organization.taxRate.
-  const taxRate = organization.taxRate || 0;
-  const taxableAmount = Math.max(0, subtotal + addonsTotal - couponDiscount);
-  const taxAmount = Math.round(taxableAmount * (taxRate / 100) * 100) / 100;
-
-  const totalAmount = Math.max(0, subtotal + deliveryFee + addonsTotal - couponDiscount + taxAmount);
-
-  const depositRule = await prisma.depositRule.findFirst({
-    where: { organizationId: organization.id, isActive: true },
-    orderBy: { createdAt: "desc" },
-  });
-
-  const depositAmount = depositRule
-    ? depositRule.type === "flat"
-      ? Math.min(depositRule.amount, totalAmount)
-      : Math.round(totalAmount * (depositRule.amount / 100) * 100) / 100
-    : totalAmount;
-
-  const orderNumber = `ORD-${Date.now()}`;
-
-  const order = await prisma.order.create({
+if (!customer) {
+  customer = await prisma.customer.create({
     data: {
       organizationId: organization.id,
-      customerId: customer.id,
-      orderNumber,
-      eventDate: rangeStart,
-      eventEndDate: rangeEnd,
-      deliveryAddress,
-      status: "pending",
-      source: "online",
-      deliveryFee,
-      subtotal,
-      taxAmount,
-      totalAmount,
-      items: {
-        create: [
-          {
-            itemId: item.id,
-            quantity,
-            price: item.cost,
-          },
-        ],
-      },
-      orderAddons: {
-        create: selectedAddons.map((addon) => ({
-          addonId: addon.id,
-          name: addon.name,
-          price: addon.price,
-        })),
-      },
+      firstName,
+      lastName,
+      email,
+      phone: phone || null,
+      address: deliveryAddress,
     },
   });
+}
 
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const signatureIp = forwardedFor ? forwardedFor.split(",")[0].trim() : null;
+const subtotal = item.cost * quantity;
+const deliveryFee = organization.flatDeliveryFee || 0;
 
-  const DEFAULT_CONTRACT_TERMS =
-    "By signing below, you agree to be financially responsible for all rented items for the duration of the rental period, to use the equipment safely and as intended, and to pay any repair or replacement costs for damage beyond normal wear and tear. Deposits are non-refundable if the reservation is cancelled within 7 days of the event date.";
-
-  await prisma.contract.create({
-    data: {
-      organizationId: organization.id,
-      orderId: order.id,
-      signedAt: new Date(),
-      signatureName,
-      signatureIp,
-      contractText: organization.contractTerms || DEFAULT_CONTRACT_TERMS,
-    },
+let couponDiscount = 0;
+const couponCode = typeof body.couponCode === "string" ? body.couponCode.trim().toUpperCase() : "";
+if (couponCode) {
+  const coupon = await prisma.coupon.findFirst({
+    where: { organizationId: organization.id, code: couponCode },
   });
+  const isExpired = coupon?.expiresAt ? coupon.expiresAt < new Date() : false;
+  if (!coupon || !coupon.isActive || isExpired) {
+    return NextResponse.json({ error: "That coupon code is invalid or has expired" }, { status: 400 });
+  }
+  const preDiscountTotal = subtotal + deliveryFee + addonsTotal;
+  couponDiscount =
+    coupon.discountType === "fixed"
+      ? Math.min(coupon.discountAmount, preDiscountTotal)
+      : Math.round((preDiscountTotal * (coupon.discountAmount / 100)) * 100) / 100;
+}
 
-  const proto = request.headers.get("x-forwarded-proto") || "https";
-  const host = request.headers.get("host");
-  const origin = process.env.NEXT_PUBLIC_APP_URL || `${proto}://${host}`;
+// Tax applies to the taxable subtotal (items + add-ons), not
+// the delivery fee, and is computed after the coupon discount so a
+// discount lowers the taxed amount too. See Organization.taxRate.
+const taxRate = organization.taxRate || 0;
+const taxableAmount = Math.max(0, subtotal + addonsTotal - couponDiscount);
+const taxAmount = Math.round(taxableAmount * (taxRate / 100) * 100) / 100;
 
-  const applicationFeeAmount = organization.stripeAccountId
-    ? Math.round(depositAmount * 100 * 0.03)
-    : undefined;
+const totalAmount = Math.max(0, subtotal + deliveryFee + addonsTotal - couponDiscount + taxAmount);
 
-  const depositLabel = depositRule && depositAmount < totalAmount ? " (deposit)" : "";
-  const addonsLabel = selectedAddons.length > 0 ? ` + ${selectedAddons.length} add-on${selectedAddons.length > 1 ? "s" : ""}` : "";
+const depositRule = await prisma.depositRule.findFirst({
+  where: { organizationId: organization.id, isActive: true },
+  orderBy: { createdAt: "desc" },
+});
 
-  try {
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      payment_intent_data: organization.stripeAccountId
-        ? {
-            application_fee_amount: applicationFeeAmount,
-            transfer_data: { destination: organization.stripeAccountId },
-          }
-        : undefined,
-      payment_method_types: ["card"],
-      customer_email: email,
-      line_items: [
+const depositAmount = depositRule
+  ? depositRule.type === "flat"
+    ? Math.min(depositRule.amount, totalAmount)
+    : Math.round((totalAmount * (depositRule.amount / 100)) * 100) / 100
+  : totalAmount;
+
+const orderNumber = `ORD-${Date.now()}`;
+
+const order = await prisma.order.create({
+  data: {
+    organizationId: organization.id,
+    customerId: customer.id,
+    orderNumber,
+    eventDate: rangeStart,
+    eventEndDate: rangeEnd,
+    deliveryAddress,
+    status: "pending",
+    source: "online",
+    deliveryFee,
+    subtotal,
+    taxAmount,
+    totalAmount,
+    items: {
+      create: [
         {
-          price_data: {
-            currency: "usd",
-            product_data: { name: `${item.name} x${quantity}${addonsLabel}${depositLabel}` },
-            unit_amount: Math.round(depositAmount * 100),
-          },
-          quantity: 1,
+          itemId: item.id,
+          quantity,
+          price: item.cost,
         },
       ],
-      success_url: `${origin}/checkout/success?orderId=${order.id}`,
-      cancel_url: `${origin}/checkout?itemId=${item.id}`,
-      metadata: {
-        orderId: order.id,
-        organizationId: organization.id,
+    },
+    orderAddons: {
+      create: selectedAddons.map((addon) => ({
+        addonId: addon.id,
+        name: addon.name,
+        price: addon.price,
+      })),
+    },
+  },
+});
+
+const forwardedFor = request.headers.get("x-forwarded-for");
+const signatureIp = forwardedFor ? forwardedFor.split(",")[0].trim() : null;
+
+const DEFAULT_CONTRACT_TERMS =
+  "By signing below, you agree to the rental terms: all items remain the property of the rental company, the renter is responsible for replacement costs for lost or stolen items, and for repair or replacement costs for damage beyond normal wear and tear. Deposits are non-refundable if the reservation is cancelled within 7 days of the event date.";
+
+await prisma.contract.create({
+  data: {
+    organizationId: organization.id,
+    orderId: order.id,
+    signedAt: new Date(),
+    signatureName,
+    signatureIp,
+    contractText: organization.contractTerms || DEFAULT_CONTRACT_TERMS,
+  },
+});
+
+const proto = request.headers.get("x-forwarded-proto") || "https";
+const host = request.headers.get("host");
+const origin = process.env.NEXT_PUBLIC_APP_URL || `${proto}://${host}`;
+
+const applicationFeeAmount = organization.stripeAccountId
+  ? Math.round(depositAmount * 100 * 0.03)
+  : undefined;
+
+const depositLabel = depositRule && depositAmount < totalAmount ? " (deposit)" : "";
+const addonsLabel = selectedAddons.length > 0 ? ` + ${selectedAddons.length} add-on${selectedAddons.length > 1 ? "s" : ""}` : "";
+
+try {
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    payment_intent_data: organization.stripeAccountId
+      ? {
+          application_fee_amount: applicationFeeAmount,
+          transfer_data: { destination: organization.stripeAccountId },
+        }
+      : undefined,
+    payment_method_types: ["card"],
+    customer_email: email,
+    line_items: [
+      {
+        price_data: {
+          currency: "usd",
+          product_data: { name: `${item.name} x${quantity}${addonsLabel}${depositLabel}` },
+          unit_amount: Math.round(depositAmount * 100),
+        },
+        quantity: 1,
       },
-    });
+    ],
+    success_url: `${origin}/checkout/success?orderId=${order.id}`,
+    cancel_url: `${origin}/checkout?itemId=${item.id}`,
+    metadata: {
+      orderId: order.id,
+      organizationId: organization.id,
+    },
+  });
 
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { stripeSessionId: session.id },
-    });
+  await prisma.order.update({
+    where: { id: order.id },
+    data: { stripeSessionId: session.id },
+  });
 
-    return NextResponse.json({ url: session.url });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Payment setup failed";
-    return NextResponse.json(
-      { error: "Your booking was saved, but payment setup failed: " + message, orderId: order.id },
-      { status: 502 }
-    );
-  }
+  return NextResponse.json({ url: session.url });
+} catch (err) {
+  const message = err instanceof Error ? err.message : "Payment setup failed";
+  return NextResponse.json(
+    { error: "Your booking was saved, but payment setup failed: " + message, orderId: order.id },
+    { status: 502 }
+  );
+}
 }
