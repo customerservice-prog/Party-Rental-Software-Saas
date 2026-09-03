@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
-import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
+import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
 const ITEM_STATUSES = ["available", "damaged", "needs_repair", "missing", "out_of_service", "retired"];
@@ -16,7 +16,7 @@ function slugify(value: string) {
 export async function GET(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   try {
-    await requireStaffSession(organization.id);
+    await requirePermission(organization.id, "inventory.view");
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   try {
-    await requireStaffSession(organization.id);
+    await requirePermission(organization.id, "inventory.manage");
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   try {
-    await requireStaffSession(organization.id);
+    await requirePermission(organization.id, "inventory.manage");
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -134,7 +134,7 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   try {
-    await requireStaffSession(organization.id);
+    await requirePermission(organization.id, "inventory.manage");
   } catch (err) {
     return authzErrorResponse(err);
   }
