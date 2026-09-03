@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
-import { requireOwnerSession, authzErrorResponse } from "@/lib/authz";
+import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/audit";
 
 export async function GET() {
   const organization = await requireCurrentOrganization();
+  try {
+    await requirePermission(organization.id, "coupons.manage");
+  } catch (err) {
+    return authzErrorResponse(err);
+  }
 
   const coupons = await prisma.coupon.findMany({
     where: { organizationId: organization.id },
@@ -19,7 +24,7 @@ export async function POST(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   let session;
   try {
-    session = await requireOwnerSession(organization.id);
+    session = await requirePermission(organization.id, "coupons.manage");
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -57,14 +62,14 @@ export async function POST(req: NextRequest) {
     },
   });
 
-    await logActivity({ organizationId: organization.id, performedBy: session.id, action: "Created coupon", details: coupon.code });
+  await logActivity({ organizationId: organization.id, performedBy: session.id, action: "Created coupon", details: coupon.code });
   return NextResponse.json({ coupon }, { status: 201 });
 }
 
 export async function PATCH(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   try {
-    await requireOwnerSession(organization.id);
+    await requirePermission(organization.id, "coupons.manage");
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -95,7 +100,7 @@ export async function DELETE(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   let session;
   try {
-    session = await requireOwnerSession(organization.id);
+    session = await requirePermission(organization.id, "coupons.manage");
   } catch (err) {
     return authzErrorResponse(err);
   }
