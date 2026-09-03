@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
-import { requireOwnerSession, authzErrorResponse } from "@/lib/authz";
+import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   try {
-    await requireOwnerSession(organization.id);
+    await requirePermission(organization.id, "pages.manage");
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
   ]);
   if (RESERVED_SLUGS.has(slug)) {
     return NextResponse.json(
-      { error: "That page address is reserved. Please choose a different one." },
+      { error: "That page address is reserved. Choose a different one." },
       { status: 400 }
     );
   }
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   try {
-    await requireOwnerSession(organization.id);
+    await requirePermission(organization.id, "pages.manage");
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -141,7 +141,7 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   try {
-    await requireOwnerSession(organization.id);
+    await requirePermission(organization.id, "pages.manage");
   } catch (err) {
     return authzErrorResponse(err);
   }
