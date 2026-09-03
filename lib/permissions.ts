@@ -10,6 +10,7 @@ export const PERMISSION_CATALOG = [
   { code: "customers.view", label: "View customers", group: "Customers" },
   { code: "customers.manage", label: "Create / edit customers", group: "Customers" },
   { code: "customers.message", label: "Send messages to customers", group: "Customers" },
+  { code: "do_not_rent.manage", label: "Manage do-not-rent restrictions", group: "Customers" },
   { code: "inventory.view", label: "View items & categories", group: "Inventory" },
   { code: "inventory.manage", label: "Create / edit items & categories", group: "Inventory" },
   { code: "drivers.view", label: "View drivers & deliveries", group: "Dispatch" },
@@ -19,24 +20,24 @@ export const PERMISSION_CATALOG = [
   { code: "pages.manage", label: "Manage website pages & branding", group: "Settings" },
   { code: "staff.manage", label: "Manage staff accounts & roles", group: "Settings" },
   { code: "billing.manage", label: "Manage subscription & billing", group: "Settings" },
-] as const;
+  ] as const;
 
 export type PermissionCode = (typeof PERMISSION_CATALOG)[number]["code"];
 
 export const ALL_PERMISSION_CODES: readonly string[] = PERMISSION_CATALOG.map((p) => p.code);
 
 export function isValidPermissionCode(code: string): code is PermissionCode {
-  return (ALL_PERMISSION_CODES as string[]).includes(code);
+    return (ALL_PERMISSION_CODES as string[]).includes(code);
 }
 
 // Owners implicitly have every permission. Staff need an assigned
 // TenantRole whose permissions[] array includes the code being checked.
 export function roleHasPermission(
-  userRole: string,
-  tenantRolePermissions: string[] | null | undefined,
-  code: PermissionCode
-): boolean {
-  if (userRole === "owner") return true;
-  if (!tenantRolePermissions) return false;
-  return tenantRolePermissions.includes(code);
+    userRole: string,
+    tenantRolePermissions: string[] | null | undefined,
+    code: PermissionCode
+  ): boolean {
+    if (userRole === "owner") return true;
+    if (!tenantRolePermissions) return false;
+    return tenantRolePermissions.includes(code);
 }
