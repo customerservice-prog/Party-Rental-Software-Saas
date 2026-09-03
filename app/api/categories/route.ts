@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
-import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
+import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
 function slugify(value: string) {
@@ -8,13 +8,13 @@ function slugify(value: string) {
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
+    .replace(/(^-|-$)/g, "");
 }
 
 export async function GET() {
   const organization = await requireCurrentOrganization();
   try {
-    await requireStaffSession(organization.id);
+    await requirePermission(organization.id, "inventory.view");
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -29,7 +29,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   try {
-    await requireStaffSession(organization.id);
+    await requirePermission(organization.id, "inventory.manage");
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   try {
-    await requireStaffSession(organization.id);
+    await requirePermission(organization.id, "inventory.manage");
   } catch (err) {
     return authzErrorResponse(err);
   }
@@ -99,7 +99,7 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const organization = await requireCurrentOrganization();
   try {
-    await requireStaffSession(organization.id);
+    await requirePermission(organization.id, "inventory.manage");
   } catch (err) {
     return authzErrorResponse(err);
   }
