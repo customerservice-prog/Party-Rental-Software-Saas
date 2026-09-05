@@ -229,7 +229,7 @@ export default function DashboardNav({
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 h-20 bg-[#2d6a2d] text-white shadow">
-      <div className="flex items-center gap-1 overflow-x-auto">
+      <div className="flex items-center gap-1 overflow-x-auto flex-1 min-w-0">
         <Link href="/dashboard" className="font-bold text-lg tracking-tight px-3 whitespace-nowrap">
           {orgName || "Dashboard"}
         </Link>
@@ -249,45 +249,45 @@ export default function DashboardNav({
             </Link>
           );
         })}
-        {showSettings && (
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setSettingsOpen((v) => !v)}
-              className={
-                "flex flex-col items-center px-4 py-2 rounded hover:bg-green-700 transition-colors " +
-                (settingsOpen ? "text-[#f5c518]" : "text-white")
-              }
-            >
-              <NavIcon name="gear" className="w-5 h-5" />
-              <span className="text-xs mt-1 whitespace-nowrap">Settings</span>
-            </button>
-            {settingsOpen && (
-              <div className="absolute right-0 top-full mt-1 w-64 bg-white text-gray-800 rounded shadow-lg py-2 z-50">
-                {SETTINGS_GROUPS.map((group) => (
-                  <div key={group.section} className="px-4 py-1">
-                    <p className="text-xs font-semibold text-gray-400 uppercase mt-2">
-                      {group.section}
-                    </p>
-                    {group.items.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setSettingsOpen(false)}
-                        className="flex items-center gap-2 py-1 text-sm hover:text-indigo-600"
-                      >
-                        <NavIcon name={item.icon} className="w-4 h-4" />
-                        {item.label}
-                      </Link>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
-      <div className="flex items-center gap-4 pl-4 whitespace-nowrap">
+      {showSettings && (
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            onClick={() => setSettingsOpen((v) => !v)}
+            className={
+              "flex flex-col items-center px-4 py-2 rounded hover:bg-green-700 transition-colors " +
+              (settingsOpen ? "text-[#f5c518]" : "text-white")
+            }
+          >
+            <NavIcon name="gear" className="w-5 h-5" />
+            <span className="text-xs mt-1 whitespace-nowrap">Settings</span>
+          </button>
+          {settingsOpen && (
+            <div className="absolute right-0 top-full mt-1 w-64 bg-white text-gray-800 rounded shadow-lg py-2 z-50 max-h-[70vh] overflow-y-auto">
+              {SETTINGS_GROUPS.map((group) => (
+                <div key={group.section} className="px-4 py-1">
+                  <p className="text-xs font-semibold text-gray-400 uppercase mt-2">
+                    {group.section}
+                  </p>
+                  {group.items.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setSettingsOpen(false)}
+                      className="flex items-center gap-2 py-1 text-sm hover:text-indigo-600"
+                    >
+                      <NavIcon name={item.icon} className="w-4 h-4" />
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      <div className="flex items-center gap-4 pl-4 whitespace-nowrap shrink-0">
         {userName && (
           <span className="text-sm hidden md:inline">
             Signed in as <strong>{userName}</strong>
