@@ -1,5 +1,6 @@
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
+import { requirePermission, AuthzError } from "@/lib/authz";
 
 export default async function ReportsPage({
   searchParams,
@@ -7,6 +8,22 @@ export default async function ReportsPage({
   searchParams: { from?: string; to?: string };
 }) {
     const organization = await requireCurrentOrganization();
+
+  try {
+    await requirePermission(organization.id, "reports.view");
+  } catch (err) {
+    if (err instanceof AuthzError) {
+      return (
+        <div style={{ padding: 32, maxWidth: 640 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Reports</h1>
+          <p style={{ color: "#666" }}>
+            You don't have permission to view reports for this organization. Contact an account owner if you need access.
+          </p>
+        </div>
+      );
+    }
+    throw err;
+  }
 
   const fromParam = typeof searchParams.from === "string" ? searchParams.from : "";
   const toParam = typeof searchParams.to === "string" ? searchParams.to : "";
