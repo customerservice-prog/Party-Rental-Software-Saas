@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
-import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
+import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/audit";
 
@@ -19,7 +19,7 @@ function money(n: number): string {
 export async function GET(request: Request) {
   try {
     const organization = await requireCurrentOrganization();
-    const session = await requireStaffSession(organization.id);
+    const session = await requirePermission(organization.id, "reports.view");
 
     const { searchParams } = new URL(request.url);
     const fromParam = searchParams.get("from") || "";
