@@ -18,7 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const billing = await getBillingStatus(organization);
   const role = (session.user as any).role;
-  const userName = (session.user as any).name || session.user.email || "User";
+  const userName = (session.user as any).name || (session.user as any).email || "User";
 
   return (
     <div className="flex min-h-screen flex-col">
