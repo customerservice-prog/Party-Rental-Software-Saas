@@ -168,6 +168,7 @@ const NAV_GROUPS: NavGroup[] = [
           { href: "/dashboard/reports", label: "Reports", icon: "chart" },
           { href: "/dashboard/analytics", label: "Analytics", icon: "chart" },
           { href: "/dashboard/tasks", label: "Tasks", icon: "check" },
+          { href: "/dashboard/marketing", label: "Marketing", icon: "chart" },
               ],
   },
   {
@@ -178,7 +179,7 @@ const NAV_GROUPS: NavGroup[] = [
               ],
   },
   {
-        section: "Website",
+          section: "Website",
         items: [{ href: "/dashboard/pages", label: "Website Pages", icon: "file" }],
   },
   ];
