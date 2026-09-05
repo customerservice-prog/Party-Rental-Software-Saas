@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import HomeCalendar from "./HomeCalendar";
 import HomeTasks from "./HomeTasks";
+import HomeWeather from "./HomeWeather";
+import HomeScreen from "./HomeScreen";
+import HomeMeetings from "./HomeMeetings";
+import { getOrganizationWeather } from "@/lib/weather";
 
 function monthRange(year: number, month: number) {
   const start = new Date(year, month, 1);
@@ -43,6 +47,7 @@ export default async function DashboardHomePage({
     recentOrderItems,
     recentOrders,
     upcomingOrders,
+    weather,
   ] = await Promise.all([
     prisma.item.count({ where: { organizationId: organization.id } }),
     prisma.item.count({ where: { organizationId: organization.id, cost: { gte: 65 } } }),
@@ -76,6 +81,12 @@ export default async function DashboardHomePage({
       take: 5,
       include: { customer: true },
     }),
+    getOrganizationWeather({
+      city: organization.city,
+      state: organization.state,
+      zip: organization.zip,
+      address: organization.address,
+    }),
   ]);
 
   const collectedToday = todaysOrders.reduce((sum, o) => sum + o.amountPaid, 0);
@@ -104,7 +115,7 @@ export default async function DashboardHomePage({
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-6">
           <HomeCalendar
             year={year}
             month={month}
@@ -115,6 +126,10 @@ export default async function DashboardHomePage({
               eventDate: o.eventDate.toISOString(),
             }))}
           />
+
+          <HomeScreen />
+
+          <HomeMeetings contactEmail={organization.contactEmail} />
         </div>
 
         <div className="space-y-6">
@@ -153,6 +168,8 @@ export default async function DashboardHomePage({
               </div>
             )}
           </div>
+
+          <HomeWeather weather={weather} />
         </div>
       </div>
 
