@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 function NavIcon({ name, className }: { name: string; className?: string }) {
   const common = {
@@ -209,43 +210,97 @@ const SETTINGS_GROUPS: NavGroup[] = [
   },
   ];
 
-export default function DashboardNav({ showSettings }: { showSettings: boolean }) {
-    const pathname = usePathname();
+export default function DashboardNav({
+  showSettings,
+  orgName,
+}: {
+  showSettings: boolean;
+  orgName?: string;
+}) {
+  const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
 
   const groups: NavGroup[] = showSettings ? [...NAV_GROUPS, ...SETTINGS_GROUPS] : NAV_GROUPS;
 
   return (
-        <nav className="flex flex-col space-y-1 text-sm">
-          {groups.map((group, groupIndex) => (
-                  <div key={group.section ?? `group-${groupIndex}`} className={groupIndex === 0 ? "" : "mt-4"}>
-                    {group.section && (
-                                <div className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                                  {group.section}
-                                </div>
-                            )}
-                    {group.items.map((item) => {
-                                const active =
-                                                item.href === "/dashboard"
-                                                  ? pathname === item.href
-                                                  : pathname?.startsWith(item.href);
-                                return (
-                                                <Link
-                                                                  key={item.href}
-                                                                  href={item.href}
-                                                                  className={
-                                                                                      "flex items-center gap-3 rounded-md px-3 py-2 transition-colors " +
-                                                                                      (active
-                                                                                                           ? "bg-indigo-50 text-indigo-700 font-medium"
-                                                                                                           : "text-gray-600 hover:bg-gray-50 hover:text-gray-900")
-                                                                  }
-                                                                >
-                                                                <NavIcon name={item.icon} className="w-4 h-4 flex-shrink-0" />
-                                                                <span>{item.label}</span>
-                                                </Link>
-                                              );
-                  })}
+    <>
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        aria-label="Open menu"
+        className="p-2 rounded hover:bg-white/10"
+      >
+        <svg
+          className="w-6 h-6"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <line x1="4" y1="7" x2="20" y2="7" />
+          <line x1="4" y1="12" x2="20" y2="12" />
+          <line x1="4" y1="17" x2="20" y2="17" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="fixed inset-0 z-50 bg-white flex flex-col">
+          <div className="bg-indigo-600 text-white px-6 py-3 flex items-center justify-between gap-3 shadow">
+            <span className="font-semibold text-lg">{orgName || "Menu"}</span>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              aria-label="Close menu"
+              className="p-2 rounded hover:bg-white/10"
+            >
+              <svg
+                className="w-6 h-6"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="5" y1="5" x2="19" y2="19" />
+                <line x1="19" y1="5" x2="5" y2="19" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {groups.map((group, groupIndex) => (
+              <div key={group.section ?? `group-${groupIndex}`}>
+                {group.section && (
+                  <div className="px-6 pt-5 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400 bg-gray-50">
+                    {group.section}
                   </div>
-                ))}
-        </nav>
-      );
+                )}
+                {group.items.map((item) => {
+                  const active = pathname === item.href || pathname?.startsWith(item.href + "/");
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setIsOpen(false)}
+                      className={
+                        "flex items-center gap-4 px-6 py-4 border-b border-gray-100 text-base " +
+                        (active
+                          ? "bg-indigo-50 text-indigo-700 font-semibold"
+                          : "text-gray-700 hover:bg-gray-50")
+                      }
+                    >
+                      <NavIcon name={item.icon} className={"w-5 h-5 " + (active ? "text-indigo-600" : "text-gray-500")} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
