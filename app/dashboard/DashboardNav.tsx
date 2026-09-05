@@ -166,6 +166,7 @@ const NAV_GROUPS: NavGroup[] = [
           { href: "/dashboard/deliveries", label: "Deliveries", icon: "truck" },
           { href: "/dashboard/dispatch", label: "Dispatch", icon: "route" },
           { href: "/dashboard/reports", label: "Reports", icon: "chart" },
+          { href: "/dashboard/analytics", label: "Analytics", icon: "chart" },
           { href: "/dashboard/tasks", label: "Tasks", icon: "check" },
               ],
   },
