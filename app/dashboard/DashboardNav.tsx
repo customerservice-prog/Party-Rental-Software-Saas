@@ -247,4 +247,3 @@ export default function DashboardNav({ showSettings }: { showSettings: boolean }
         </nav>
       );
 }
-</nav>
