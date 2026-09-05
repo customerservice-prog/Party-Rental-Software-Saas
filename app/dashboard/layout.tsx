@@ -16,7 +16,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect("/login");
   }
 
-  const billing = await getBillingStatus(organization.id);
+  const billing = await getBillingStatus(organization);
   const role = (session.user as any).role;
 
   return (
