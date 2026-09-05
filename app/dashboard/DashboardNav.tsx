@@ -151,60 +151,100 @@ function NavIcon({ name, className }: { name: string; className?: string }) {
   return null;
 }
 
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Home", icon: "home" },
-  { href: "/dashboard/scheduling", label: "Scheduling", icon: "calendar" },
-  { href: "/dashboard/inventory", label: "Inventory", icon: "box" },
-  { href: "/dashboard/orders", label: "Orders", icon: "clipboard" },
-  { href: "/dashboard/customers", label: "Customers", icon: "users" },
-  { href: "/dashboard/do-not-rent", label: "Do Not Rent", icon: "shield" },
-  { href: "/dashboard/deliveries", label: "Deliveries", icon: "truck" },
-  { href: "/dashboard/dispatch", label: "Dispatch", icon: "route" },
-  { href: "/dashboard/reports", label: "Reports", icon: "chart" },
-  { href: "/dashboard/pages", label: "Website Pages", icon: "file" },
-  { href: "/dashboard/tasks", label: "Tasks", icon: "check" },
-  { href: "/dashboard/coupons", label: "Coupons", icon: "tag" },
-];
+type NavItem = { href: string; label: string; icon: string };
+type NavGroup = { section: string | null; items: NavItem[] };
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+        section: null,
+        items: [
+          { href: "/dashboard", label: "Home", icon: "home" },
+          { href: "/dashboard/scheduling", label: "Scheduling", icon: "calendar" },
+          { href: "/dashboard/orders", label: "Orders", icon: "clipboard" },
+          { href: "/dashboard/customers", label: "Customers", icon: "users" },
+          { href: "/dashboard/do-not-rent", label: "Do Not Rent", icon: "shield" },
+          { href: "/dashboard/deliveries", label: "Deliveries", icon: "truck" },
+          { href: "/dashboard/dispatch", label: "Dispatch", icon: "route" },
+          { href: "/dashboard/reports", label: "Reports", icon: "chart" },
+          { href: "/dashboard/tasks", label: "Tasks", icon: "check" },
+              ],
+  },
+  {
+        section: "Catalog",
+        items: [
+          { href: "/dashboard/inventory", label: "Inventory", icon: "box" },
+          { href: "/dashboard/coupons", label: "Coupons", icon: "tag" },
+              ],
+  },
+  {
+        section: "Website",
+        items: [{ href: "/dashboard/pages", label: "Website Pages", icon: "file" }],
+  },
+  ];
+
+const SETTINGS_GROUPS: NavGroup[] = [
+  {
+        section: "Team & Access",
+        items: [
+          { href: "/dashboard/staff", label: "Staff", icon: "shield" },
+          { href: "/dashboard/roles", label: "Roles", icon: "key" },
+          { href: "/dashboard/drivers", label: "Drivers", icon: "truck" },
+              ],
+  },
+  {
+        section: "Communication",
+        items: [
+          { href: "/dashboard/message-templates", label: "Message Templates", icon: "mail" },
+          { href: "/dashboard/messages", label: "Messages", icon: "mail" },
+              ],
+  },
+  {
+        section: "System",
+        items: [
+          { href: "/dashboard/activity", label: "Activity Log", icon: "clipboard" },
+          { href: "/dashboard/settings", label: "Settings", icon: "gear" },
+              ],
+  },
+  ];
 
 export default function DashboardNav({ showSettings }: { showSettings: boolean }) {
-  const pathname = usePathname();
+    const pathname = usePathname();
 
-  const items = showSettings
-    ? [
-        ...NAV_ITEMS,
-        { href: "/dashboard/drivers", label: "Drivers", icon: "truck" },
-        { href: "/dashboard/staff", label: "Staff", icon: "shield" },
-        { href: "/dashboard/roles", label: "Roles", icon: "key" },
-        { href: "/dashboard/activity", label: "Activity Log", icon: "clipboard" },
-        { href: "/dashboard/message-templates", label: "Message Templates", icon: "mail" },
-        { href: "/dashboard/messages", label: "Messages", icon: "mail" },
-        { href: "/dashboard/settings", label: "Settings", icon: "gear" },
-      ]
-    : NAV_ITEMS;
+  const groups: NavGroup[] = showSettings ? [...NAV_GROUPS, ...SETTINGS_GROUPS] : NAV_GROUPS;
 
   return (
-    <nav className="flex flex-col space-y-1 text-sm">
-      {items.map((item) => {
-        const active =
-          item.href === "/dashboard"
-            ? pathname === item.href
-            : pathname?.startsWith(item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={
-              "flex items-center gap-3 rounded-md px-3 py-2 transition-colors " +
-              (active
-                ? "bg-indigo-50 text-indigo-700 font-medium"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900")
-            }
-          >
-            <NavIcon name={item.icon} className="w-4 h-4 flex-shrink-0" />
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
-  );
+        <nav className="flex flex-col space-y-1 text-sm">
+          {groups.map((group, groupIndex) => (
+                  <div key={group.section ?? `group-${groupIndex}`} className={groupIndex === 0 ? "" : "mt-4"}>
+                    {group.section && (
+                                <div className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                  {group.section}
+                                </div>
+                            )}
+                    {group.items.map((item) => {
+                                const active =
+                                                item.href === "/dashboard"
+                                                  ? pathname === item.href
+                                                  : pathname?.startsWith(item.href);
+                                return (
+                                                <Link
+                                                                  key={item.href}
+                                                                  href={item.href}
+                                                                  className={
+                                                                                      "flex items-center gap-3 rounded-md px-3 py-2 transition-colors " +
+                                                                                      (active
+                                                                                                           ? "bg-indigo-50 text-indigo-700 font-medium"
+                                                                                                           : "text-gray-600 hover:bg-gray-50 hover:text-gray-900")
+                                                                  }
+                                                                >
+                                                                <NavIcon name={item.icon} className="w-4 h-4 flex-shrink-0" />
+                                                                <span>{item.label}</span>
+                                                </Link>
+                                              );
+                  })}
+                  </div>
+                ))}
+        </nav>
+      );
 }
+</nav>
