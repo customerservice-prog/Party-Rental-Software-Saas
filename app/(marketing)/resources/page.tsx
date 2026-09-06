@@ -51,6 +51,18 @@ const articles = [
       "How a shared calendar of events, deliveries, and internal meetings keeps setup crews, office staff, and drivers from colliding on the same day.",
     href: "/resources/scheduling-and-calendar",
   },
+    {
+    title: "How Inventory Condition Tracking Prevents Bad Rental Days",
+    description:
+      "Why marking rental items by condition and status, not just counting them, keeps damaged or dirty equipment from ever reaching a customer's event.",
+    href: "/resources/inventory-condition-tracking",
+  },
+  {
+    title: "Why Task Lists and Message Templates Keep a Rental Team on the Same Page",
+    description:
+      "How a shared task list and reusable message templates cut down on the sticky notes, group texts, and repeated typing that slow down a rental business.",
+    href: "/resources/task-management-and-communication",
+  },
 ];
 
 export default function ResourcesPage() {
