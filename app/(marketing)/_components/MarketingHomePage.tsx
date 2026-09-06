@@ -143,35 +143,53 @@ export default function MarketingHomePage() {
             </p>
           </div>
 
-          <div className="bg-white border rounded-xl shadow-sm p-6">
-            <div className="text-xs font-semibold text-gray-400 mb-3">
-              YOUR DASHBOARD
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="border rounded p-3">
-                <div className="text-xs text-gray-500">Today’s Deliveries</div>
-                <div className="text-2xl font-bold text-gray-900">6</div>
-              </div>
-              <div className="border rounded p-3">
-                <div className="text-xs text-gray-500">Collected Today</div>
-                <div className="text-2xl font-bold text-gray-900">$1,240</div>
-              </div>
-              <div className="border rounded p-3">
-                <div className="text-xs text-gray-500">Open Tasks</div>
-                <div className="text-2xl font-bold text-gray-900">3</div>
-              </div>
-              <div className="border rounded p-3">
-                <div className="text-xs text-gray-500">Inventory Items</div>
-                <div className="text-2xl font-bold text-gray-900">128</div>
-              </div>
-            </div>
-            <p className="mt-3 text-xs text-gray-400">
-              Illustrative preview — your dashboard reflects your own orders and inventory.
-            </p>
-          </div>
+                <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+        <div className="flex items-center gap-1.5 border-b bg-gray-50 px-4 py-2.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-gray-300" />
+          <span className="h-2.5 w-2.5 rounded-full bg-gray-300" />
+          <span className="h-2.5 w-2.5 rounded-full bg-gray-300" />
+          <span className="ml-3 text-xs text-gray-400">partyrentalcrm.com/dashboard</span>
+        </div>
+        <img
+          src="/marketing/screenshots/dashboard-home.png"
+          alt="Party Rental CRM dashboard showing a real calendar, collected payments, inventory count, and tasks"
+          className="w-full"
+        />
+        <p className="border-t px-4 py-2.5 text-xs text-gray-400">Real product screenshot from a live account. Not a mockup.</p>
+      </div>
         </div>
       </section>
 
+
+      <section className="bg-white border-b">
+        <div className="max-w-6xl mx-auto px-4 py-16">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center">This is the actual product</h2>
+          <p className="mt-3 text-center text-gray-600 max-w-2xl mx-auto">No mockups. These are real screens from a live Party Rental CRM account.</p>
+          <div className="mt-10 grid sm:grid-cols-2 md:grid-cols-3 gap-8">
+            <div>
+              <div className="border rounded-lg overflow-hidden shadow-sm">
+                <img src="/marketing/screenshots/dashboard-orders.png" alt="Orders list showing order numbers, customers, event dates, status, and payment totals" className="w-full" />
+              </div>
+              <div className="mt-3 font-semibold text-gray-900">Orders</div>
+              <div className="text-sm text-gray-600">Every order's status, items, and balance in one screen.</div>
+            </div>
+            <div>
+              <div className="border rounded-lg overflow-hidden shadow-sm">
+                <img src="/marketing/screenshots/dashboard-inventory.png" alt="Inventory screen showing rental categories and items with pricing, quantity, and condition" className="w-full" />
+              </div>
+              <div className="mt-3 font-semibold text-gray-900">Inventory</div>
+              <div className="text-sm text-gray-600">Track every item, category, and quantity you own.</div>
+            </div>
+            <div>
+              <div className="border rounded-lg overflow-hidden shadow-sm">
+                <img src="/marketing/screenshots/dashboard-customers.png" alt="Customers screen showing customer names, contact information, order counts, and join dates" className="w-full" />
+              </div>
+              <div className="mt-3 font-semibold text-gray-900">Customers</div>
+              <div className="text-sm text-gray-600">A record of every customer and their rental history.</div>
+            </div>
+          </div>
+        </div>
+      </section>
       <section className="border-t border-b bg-white">
         <div className="max-w-6xl mx-auto px-4 py-10">
           <div className="flex flex-wrap items-center justify-center gap-3 text-sm font-medium text-gray-600">
