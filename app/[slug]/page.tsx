@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireCurrentOrganization } from "@/lib/tenant";
+import { getCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import StorefrontNav from "../StorefrontNav";
 
@@ -23,12 +23,21 @@ function parseBlocks(content: string): Block[] {
 // Policies, etc.), built via the dashboard's Website Pages editor. Any
 // path that isn't one of the platform's reserved routes (book, checkout,
 // login, dashboard, ...) falls through to this dynamic segment.
+//
+// A platform visitor with no resolvable tenant (e.g. someone on the
+// marketing site who mistyped a URL) must get a normal 404, not a thrown
+// error — so this uses getCurrentOrganization() and checks for null
+// instead of requireCurrentOrganization(), which throws.
 export default async function CustomPage({
   params,
 }: {
   params: { slug: string };
 }) {
-  const organization = await requireCurrentOrganization();
+  const organization = await getCurrentOrganization();
+
+  if (!organization) {
+    notFound();
+  }
 
   const page = await prisma.page.findFirst({
     where: { organizationId: organization.id, slug: params.slug, isPublished: true },
