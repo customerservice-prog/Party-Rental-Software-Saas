@@ -8,7 +8,7 @@ export const metadata: Metadata = pageMetadata({
 });
 
 // NOTE: replace this with a real monitored inbox before launch.
-const CONTACT_EMAIL = "hello@rentalos.app";
+const CONTACT_EMAIL = "hello@partyrentalcrm.com";
 
 export default function ContactPage() {
   return (
