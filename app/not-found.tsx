@@ -6,7 +6,7 @@ import { SITE_NAME } from "@/lib/seo";
 export default function NotFound() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
-      <div className="font-bold text-lg text-brand-600 mb-6">{SITE_NAME}</div>
+        <img src="/logo.png" alt="Party Rental CRM" className="h-10 w-auto mb-6" />
       <h1 className="text-4xl font-bold text-gray-900">Page not found</h1>
       <p className="mt-3 text-gray-600 max-w-md">
         The page you’re looking for doesn’t exist or may have moved.
