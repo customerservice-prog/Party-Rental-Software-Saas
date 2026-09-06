@@ -1,12 +1,12 @@
 import Link from "next/link";
 
 const CONNECTED_STAGES = [
-  "Online Booking",
-  "Inventory",
-  "Scheduling",
-  "Delivery & Drivers",
-  "Payments",
-  "Reporting",
+  "🛒 Online Booking",
+  "📦 Inventory",
+  "📅 Scheduling",
+  "🚚 Delivery & Drivers",
+  "💳 Payments",
+  "📊 Reporting",
 ];
 
 const FRAGMENTED_TOOLS = [
@@ -20,47 +20,47 @@ const FRAGMENTED_TOOLS = [
 
 const FEATURES: { title: string; description: string }[] = [
   {
-    title: "Online booking & storefront",
+    title: "🛒 Online booking & storefront",
     description:
       "Every tenant gets its own branded storefront where customers can browse categories, check availability, and book online — instead of relying on phone calls and back-and-forth messages.",
   },
   {
-    title: "Inventory & categories",
+    title: "📦 Inventory & categories",
     description:
       "Track every rental item and category in one place, so you always know what you actually own and what’s already booked before you confirm another order.",
   },
   {
-    title: "Order & quote management",
+    title: "🧾 Order & quote management",
     description:
       "See every order’s status, items, delivery details, and balance in one screen instead of piecing it together from texts and paper.",
   },
   {
-    title: "Scheduling & calendar",
+    title: "📅 Scheduling & calendar",
     description:
       "A shared calendar view of every event date keeps deliveries, pickups, and staff from colliding on the same day.",
   },
   {
-    title: "Delivery & driver dispatch",
+    title: "🚚 Delivery & driver dispatch",
     description:
       "Turn tomorrow’s orders into an organized driver plan, with delivery and pickup tracked as part of the order itself, not a side conversation.",
   },
   {
-    title: "Payments & balances",
+    title: "💳 Payments & balances",
     description:
       "Track what’s been collected against every order and see payments received over time, so outstanding balances don’t get lost.",
   },
   {
-    title: "Staff roles & permissions",
+    title: "👥 Staff roles & permissions",
     description:
       "Give office staff, warehouse staff, and drivers their own logins with the access they need — without handing everyone the keys to everything.",
   },
   {
-    title: "Reports & analytics",
+    title: "📊 Reports & analytics",
     description:
       "See recent orders, best-selling items, and inventory counts from a single dashboard instead of reconstructing them by hand at month end.",
   },
   {
-    title: "Tasks & team coordination",
+    title: "✅ Tasks & team coordination",
     description:
       "Keep a running list of what still needs to happen — for an order, a delivery, or the business in general — so nothing depends on someone remembering it.",
   },
