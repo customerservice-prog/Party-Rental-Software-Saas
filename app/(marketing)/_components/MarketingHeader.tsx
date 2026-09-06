@@ -8,9 +8,9 @@ export default function MarketingHeader() {
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-        <Link href="/" className="font-bold text-lg text-brand-600">
-          {SITE_NAME}
-        </Link>
+          <Link href="/" className="flex items-center gap-2">
+            <img src="/logo.png" alt="Party Rental CRM" className="h-10 w-auto" />
+          </Link>
 
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-700">
           <Link href="/features" className="hover:text-brand-600">
