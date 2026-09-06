@@ -128,7 +128,7 @@ export default function FeaturesPage() {
             <ul className="mt-4 grid sm:grid-cols-2 gap-2 text-sm text-gray-700">
               {section.points.map((point) => (
                 <li key={point} className="flex items-start gap-2">
-                  <span className="text-brand-600">&check;</span>
+                  <span className="text-brand-600">{"✓"}</span>
                   <span>{point}</span>
                 </li>
               ))}
