@@ -41,7 +41,7 @@ export default function HomeMeetings({ contactEmail }: { contactEmail: string | 
       const res = await fetch("/api/meetings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, scheduledAt }),
+        body: JSON.stringify({ title, scheduledAt: new Date(scheduledAt).toISOString() }),
       });
       if (!res.ok) {
         const data = await res.json();
