@@ -27,6 +27,18 @@ const articles = [
       "The case for collecting a deposit up front and using coupon codes deliberately, rather than discounting every order that asks.",
     href: "/resources/deposits-and-coupons",
   },
+  {
+    title: "Why Real-Time Availability Matters for Online Bookings",
+    description:
+      "How showing customers real inventory availability, instead of a static booking form, prevents double-booked equipment and phone-tag.",
+    href: "/resources/online-booking-availability",
+  },
+  {
+    title: "How Staff Roles Keep a Rental Business Secure Without Slowing Anyone Down",
+    description:
+      "Why giving office staff, warehouse staff, and drivers their own logins and permissions matters more as a rental business grows.",
+    href: "/resources/staff-roles-and-permissions",
+  },
 ];
 
 export default function ResourcesPage() {
