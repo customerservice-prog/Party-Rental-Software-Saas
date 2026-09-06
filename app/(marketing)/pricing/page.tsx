@@ -47,7 +47,7 @@ export default function PricingPage() {
         <ul className="mt-6 space-y-2 text-gray-700">
           {INCLUDED.map((item) => (
             <li key={item} className="flex items-start gap-2">
-              <span className="text-brand-600">&check;</span>
+              <span className="text-brand-600">✓</span>
               <span>{item}</span>
             </li>
           ))}
