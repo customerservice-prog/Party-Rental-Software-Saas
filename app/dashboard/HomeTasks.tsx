@@ -54,7 +54,7 @@ export default function HomeTasks() {
   const openTasks = tasks.filter((t) => !t.isDone);
 
   return (
-    <div className="bg-white rounded-lg shadow p-4">
+    <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-600">
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-semibold text-gray-900">Tasks</h2>
         <button
@@ -73,11 +73,12 @@ export default function HomeTasks() {
       ) : (
         <ul className="divide-y mb-3">
           {openTasks.slice(0, 6).map((task) => (
-            <li key={task.id} className="flex items-center gap-2 py-2 text-sm">
+            <li key={task.id} className="flex items-center gap-2 py-2 text-sm rounded hover:bg-gray-50 transition-colors">
               <input
                 type="checkbox"
                 checked={task.isDone}
                 onChange={() => toggleDone(task)}
+                className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
               />
               <span className="text-gray-800">{task.title}</span>
             </li>
@@ -92,7 +93,7 @@ export default function HomeTasks() {
           if (e.key === "Enter") addTask();
         }}
         placeholder="Add a task..."
-        className="w-full border rounded px-3 py-2 text-sm"
+        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
       />
     </div>
   );
