@@ -120,6 +120,21 @@ export default function ResourcesPage() {
           Try the calculator &rarr;
         </Link>
       </div>
+      <div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-8">
+        <h2 className="text-xl font-semibold text-gray-900">
+          Free tool: Rental Deposit &amp; Balance Calculator
+        </h2>
+        <p className="mt-2 text-gray-600">
+          Calculate the deposit due at booking and the remaining balance
+          owed, based on an order total and deposit percentage.
+        </p>
+        <Link
+          href="/resources/deposit-calculator"
+          className="mt-4 inline-block text-sm font-medium text-orange-600"
+        >
+          Try the calculator &rarr;
+        </Link>
+      </div>
     </div>
   );
 }
