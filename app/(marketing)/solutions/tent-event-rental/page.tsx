@@ -5,6 +5,7 @@ export const metadata = pageMetadata({
   title: "Tent & Event Rental Software",
   description:
     "Run a tent and event rental company on one system: multi-item quotes that become orders, a shared calendar for setup and teardown, organized driver runs, and packing lists for the warehouse.",
+  path: "/solutions/tent-event-rental",
 });
 
 export default function TentEventSolutionPage() {
