@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
           SITE_NAME +
           " — Party & Event Rental Software Built to Run Your Whole Rental Business",
         description:
-          "RentalOS runs bookings, inventory, scheduling, delivery, drivers, payments, staff, and reporting for party and event rental companies in one system.",
+          "Party Rental CRM runs bookings, inventory, scheduling, delivery, drivers, payments, staff, and reporting for party and event rental companies in one system.",
         path: "/",
       }),
       title: {
