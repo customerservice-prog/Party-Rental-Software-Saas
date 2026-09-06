@@ -5,6 +5,7 @@ export const metadata = pageMetadata({
   title: "Bounce House & Inflatable Rental Software",
   description:
     "Run a bounce house or inflatable rental business on one system: online booking, inventory that reflects real damage and downtime, order status tracking, and driver dispatch for same-day delivery and pickup.",
+  path: "/solutions/bounce-house-rental",
 });
 
 export default function BounceHouseSolutionPage() {
