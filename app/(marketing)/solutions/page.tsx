@@ -4,7 +4,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   title: "Solutions by Rental Type",
   description:
-    "How RentalOS fits bounce house and inflatable rentals, tent and event rentals, and table, chair, and linen rental businesses.",
+    "How Party Rental CRM fits bounce house and inflatable rentals, tent and event rentals, and table, chair, and linen rental businesses.",
   path: "/solutions",
 });
 
@@ -37,7 +37,7 @@ export default function SolutionsPage() {
           One system, built around how different rental businesses actually operate
         </h1>
         <p className="mt-6 max-w-3xl text-lg text-gray-600">
-          RentalOS runs on the same core system for every account — booking, inventory,
+          Party Rental CRM runs on the same core system for every account — booking, inventory,
           scheduling, delivery, and payments — because that operational chain is what
           every rental business shares. What differs is which parts matter most day to
           day, depending on what you rent.
@@ -65,7 +65,7 @@ export default function SolutionsPage() {
       <section className="mx-auto max-w-5xl border-t border-gray-200 px-6 py-16">
         <h2 className="text-2xl font-bold text-gray-900">Not sure which fits?</h2>
         <p className="mt-4 max-w-2xl text-gray-600">
-          Most rental businesses rent more than one type of item. RentalOS doesn't
+          Most rental businesses rent more than one type of item. Party Rental CRM doesn't
           require picking a category — every account can manage inflatables, tents,
           tables, chairs, linens, and anything else you rent side by side. See{" "}
           <Link href="/features" className="font-medium text-orange-600">
