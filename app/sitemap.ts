@@ -26,6 +26,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/resources/inventory-condition-tracking", priority: 0.5 },
     { path: "/resources/task-management-and-communication", priority: 0.5 },
     { path: "/resources/payments-and-balances", priority: 0.5 },
+    { path: "/resources/deposit-calculator", priority: 0.5 },
     { path: "/demo", priority: 0.7 },
     { path: "/security", priority: 0.5 },
     { path: "/about", priority: 0.5 },
