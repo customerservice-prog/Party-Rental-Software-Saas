@@ -21,6 +21,11 @@ export default function MarketingFooter() {
                 Features
               </Link>
             </li>
+          <li>
+            <Link href="/solutions" className="hover:text-brand-600">
+              Solutions
+            </Link>
+          </li>
             <li>
               <Link href="/pricing" className="hover:text-brand-600">
                 Pricing
