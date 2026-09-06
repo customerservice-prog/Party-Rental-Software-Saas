@@ -63,6 +63,12 @@ const articles = [
       "How a shared task list and reusable message templates cut down on the sticky notes, group texts, and repeated typing that slow down a rental business.",
     href: "/resources/task-management-and-communication",
   },
+  {
+    title: "How Tracking Payments and Balances Keeps a Rental Business Ahead of Cash Flow Surprises",
+    description:
+      "Why knowing the balance on every order, a collected-today total, and monthly payment trends matter more than a single revenue number.",
+    href: "/resources/payments-and-balances",
+  },
 ];
 
 export default function ResourcesPage() {
