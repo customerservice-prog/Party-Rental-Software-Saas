@@ -5,6 +5,7 @@ export const metadata = pageMetadata({
   title: "Solutions by Rental Type",
   description:
     "How RentalOS fits bounce house and inflatable rentals, tent and event rentals, and table, chair, and linen rental businesses.",
+  path: "/solutions",
 });
 
 const segments = [
