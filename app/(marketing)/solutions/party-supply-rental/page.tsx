@@ -5,6 +5,7 @@ export const metadata = pageMetadata({
   title: "Table, Chair & Linen Rental Software",
   description:
     "Run a table, chair, and linen rental business on one system: high-volume inventory tracking, an online storefront customers can book from directly, and reports on what's actually renting.",
+  path: "/solutions/party-supply-rental",
 });
 
 export default function PartySupplySolutionPage() {
