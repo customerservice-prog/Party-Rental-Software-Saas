@@ -23,13 +23,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/resources/staff-roles-and-permissions", priority: 0.5 },
     { path: "/resources/reports-and-analytics", priority: 0.5 },
     { path: "/resources/scheduling-and-calendar", priority: 0.5 },
+    { path: "/resources/inventory-condition-tracking", priority: 0.5 },
+    { path: "/resources/task-management-and-communication", priority: 0.5 },
     { path: "/demo", priority: 0.7 },
     { path: "/security", priority: 0.5 },
     { path: "/about", priority: 0.5 },
     { path: "/contact", priority: 0.5 },
     { path: "/signup", priority: 0.9 },
-      ];
-
+  ];
+    
   return routes.map((route) => ({
         url: SITE_URL + route.path,
         lastModified: now,
