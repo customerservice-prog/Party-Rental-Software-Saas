@@ -21,7 +21,7 @@ export default function BounceHouseSolutionPage() {
         <p className="mt-6 text-lg text-gray-600">
           Inflatable rentals move quickly: most orders are booked, delivered, and picked
           up within the same day or two, and a single torn unit can mean a scramble to
-          find a substitute before a party starts. RentalOS is built around that pace.
+          find a substitute before a party starts. Party Rental CRM is built around that pace.
         </p>
         <div className="mt-8 flex gap-4">
           <Link
