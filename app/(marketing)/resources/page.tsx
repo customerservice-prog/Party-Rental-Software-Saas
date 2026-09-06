@@ -55,7 +55,7 @@ const articles = [
 
 export default function ResourcesPage() {
   return (
-    <main className="mx-auto max-w-5xl px-6 py-16">
+    <div className="mx-auto max-w-5xl px-6 py-16">
       <div className="max-w-2xl">
         <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
           Resources
@@ -102,6 +102,6 @@ export default function ResourcesPage() {
           Try the calculator &rarr;
         </Link>
       </div>
-    </main>
+    </div>
   );
 }
