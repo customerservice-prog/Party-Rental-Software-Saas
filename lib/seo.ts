@@ -5,7 +5,7 @@ export const SITE_TAGLINE =
 
 export const SITE_URL =
     process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://party-rental-software-saas-production.up.railway.app";
+    "https://partyrentalcrm.com";
 
 type PageMetaInput = {
     title: string;
