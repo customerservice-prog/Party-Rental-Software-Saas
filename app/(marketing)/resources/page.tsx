@@ -39,6 +39,18 @@ const articles = [
       "Why giving office staff, warehouse staff, and drivers their own logins and permissions matters more as a rental business grows.",
     href: "/resources/staff-roles-and-permissions",
   },
+  {
+    title: "Why Best-Seller Reports Beat a Gut Feeling",
+    description:
+      "How seeing recent orders, best-selling items, and an activity log in one place turns rental business decisions into something based on data, not memory.",
+    href: "/resources/reports-and-analytics",
+  },
+  {
+    title: "Why One Shared Calendar Prevents Double-Booked Event Dates",
+    description:
+      "How a shared calendar of events, deliveries, and internal meetings keeps setup crews, office staff, and drivers from colliding on the same day.",
+    href: "/resources/scheduling-and-calendar",
+  },
 ];
 
 export default function ResourcesPage() {
