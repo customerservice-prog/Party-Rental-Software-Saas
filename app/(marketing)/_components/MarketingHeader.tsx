@@ -19,6 +19,9 @@ export default function MarketingHeader() {
           <Link href="/solutions" className="hover:text-brand-600">
             Solutions
           </Link>
+          <Link href="/resources" className="hover:text-brand-600">
+            Resources
+          </Link>
           <Link href="/pricing" className="hover:text-brand-600">
             Pricing
           </Link>
