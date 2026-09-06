@@ -6,7 +6,7 @@ export default function MarketingFooter() {
     <footer className="border-t bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 py-12 grid grid-cols-2 sm:grid-cols-4 gap-8 text-sm">
         <div className="col-span-2 sm:col-span-1">
-          <div className="font-bold text-brand-600 mb-3">{SITE_NAME}</div>
+          <img src="/logo.png" alt="Party Rental CRM" className="h-8 w-auto mb-3" />
           <p className="text-gray-500">
             Software to run a party and event rental business end to end:
             bookings, inventory, delivery, and payments.
