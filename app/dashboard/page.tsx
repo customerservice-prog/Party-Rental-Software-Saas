@@ -38,6 +38,7 @@ export default async function DashboardHomePage({
   const month = searchParams.month ? parseInt(searchParams.month, 10) : now.getMonth();
   const { start, end } = monthRange(year, month);
   const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+  const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
   const [
     itemCount,
@@ -48,6 +49,7 @@ export default async function DashboardHomePage({
     recentOrders,
     upcomingOrders,
     weather,
+    paymentOrders,
   ] = await Promise.all([
     prisma.item.count({ where: { organizationId: organization.id } }),
     prisma.item.count({ where: { organizationId: organization.id, cost: { gte: 65 } } }),
@@ -87,6 +89,14 @@ export default async function DashboardHomePage({
       zip: organization.zip,
       address: organization.address,
     }),
+    prisma.order.findMany({
+      where: {
+        organizationId: organization.id,
+        createdAt: { gte: twelveMonthsAgo },
+        amountPaid: { gt: 0 },
+      },
+      select: { amountPaid: true, createdAt: true },
+    }),
   ]);
 
   const collectedToday = todaysOrders.reduce((sum, o) => sum + o.amountPaid, 0);
@@ -100,6 +110,21 @@ export default async function DashboardHomePage({
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
   const maxBestSeller = bestSellers.length > 0 ? bestSellers[0][1] : 0;
+  const monthlyPayments: { label: string; total: number }[] = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const label = d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+    monthlyPayments.push({ label, total: 0 });
+  }
+  paymentOrders.forEach((o) => {
+    const d = new Date(o.createdAt);
+    const monthsAgo = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+    const idx = 11 - monthsAgo;
+    if (idx >= 0 && idx < monthlyPayments.length) {
+      monthlyPayments[idx].total += o.amountPaid;
+    }
+  });
+  const maxMonthlyPayment = monthlyPayments.reduce((m, p) => Math.max(m, p.total), 0);
 
   return (
     <div>
@@ -238,6 +263,34 @@ export default async function DashboardHomePage({
           )}
         </div>
       </div>
+
+    <div className="mt-8 bg-white shadow rounded-lg p-6">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">Monthly Payments Received</h2>
+      {maxMonthlyPayment === 0 ? (
+        <p className="text-sm text-gray-400">No payments recorded in the last 12 months.</p>
+      ) : (
+        <div>
+          <div className="h-48 flex items-end gap-1">
+            {monthlyPayments.map((m) => (
+              <div key={m.label} className="flex-1 flex flex-col items-center justify-end h-full">
+                <div
+                  className="w-full bg-blue-600 rounded-t"
+                  style={{ height: (maxMonthlyPayment > 0 ? (m.total / maxMonthlyPayment) * 100 : 0) + "%" }}
+                  title={"$" + m.total.toFixed(2)}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-1 mt-1">
+            {monthlyPayments.map((m) => (
+              <span key={m.label} className="flex-1 text-center text-[9px] text-gray-500">
+                {m.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
     </div>
   );
 }
