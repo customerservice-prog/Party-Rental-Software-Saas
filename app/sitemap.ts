@@ -19,6 +19,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/resources/driver-dispatch-planning", priority: 0.5 },
     { path: "/resources/deposits-and-coupons", priority: 0.5 },
     { path: "/resources/inventory-calculator", priority: 0.5 },
+    { path: "/resources/online-booking-availability", priority: 0.5 },
+    { path: "/resources/staff-roles-and-permissions", priority: 0.5 },
     { path: "/demo", priority: 0.7 },
     { path: "/security", priority: 0.5 },
     { path: "/about", priority: 0.5 },
