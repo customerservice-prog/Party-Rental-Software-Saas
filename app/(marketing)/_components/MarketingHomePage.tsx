@@ -216,11 +216,11 @@ export default function MarketingHomePage() {
               With everything in one system
             </h3>
             <ul className="space-y-3 text-gray-700">
-              <li>&check; Bookings create orders automatically</li>
-              <li>&check; Inventory updates as orders are placed</li>
-              <li>&check; Every delivery has a driver and a route</li>
-              <li>&check; Every order shows what’s been paid</li>
-              <li>&check; Everyone sees the same calendar</li>
+              <li>✓ Bookings create orders automatically</li>
+              <li>✓ Inventory updates as orders are placed</li>
+              <li>✓ Every delivery has a driver and a route</li>
+              <li>✓ Every order shows what’s been paid</li>
+              <li>✓ Everyone sees the same calendar</li>
             </ul>
           </div>
         </div>
