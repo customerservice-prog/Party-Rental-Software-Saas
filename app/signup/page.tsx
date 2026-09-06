@@ -50,7 +50,7 @@ export default function SignupPage() {
   return (
     <div className="max-w-md mx-auto py-12 px-4">
       <div className="mb-6 text-center">
-<Link href="/" className="inline-block"><img src="/logo.png" alt="Party Rental CRM" className="h-8 w-auto mx-auto" /></Link>
+        <Link href="/" className="inline-block"><img src="/logo.png" alt="Party Rental CRM" className="h-8 w-auto mx-auto" /></Link>
       </div>
       <h1 className="text-2xl font-bold mb-2">Start Your Rental Business</h1>
       <p className="text-gray-600 mb-6">
