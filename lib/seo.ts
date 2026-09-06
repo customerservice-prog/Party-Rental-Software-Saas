@@ -1,4 +1,4 @@
-export const SITE_NAME = "RentalOS";
+export const SITE_NAME = "Party Rental CRM";
 
 export const SITE_TAGLINE =
     "Party & event rental software for online booking, inventory, delivery, and payments.";
