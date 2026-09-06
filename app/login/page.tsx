@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { SITE_NAME } from "@/lib/seo";
 
 function readCookie(name: string) {
   const match = document.cookie
@@ -41,10 +43,6 @@ export default function LoginPage() {
     setLoading(false);
 
     if (res?.error) {
-      // NextAuth returns the fixed code "CredentialsSignin" when authorize()
-      // returns null (wrong username/password). Anything else is a custom
-      // message we threw ourselves (e.g. login lockout) and should be shown
-      // verbatim. See lib/loginSecurity.ts / lib/auth.ts.
       if (res.error === "CredentialsSignin") {
         setError("Invalid username or password");
       } else {
@@ -63,6 +61,11 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-sm mx-auto py-16 px-4">
+      <div className="mb-8 text-center">
+        <Link href="/" className="font-bold text-lg text-brand-600">
+          {SITE_NAME}
+        </Link>
+      </div>
       <h1 className="text-2xl font-bold mb-6">Control Panel Login</h1>
 
       {error && (
