@@ -62,9 +62,7 @@ export default function LoginPage() {
   return (
     <div className="max-w-sm mx-auto py-16 px-4">
       <div className="mb-8 text-center">
-        <Link href="/" className="font-bold text-lg text-brand-600">
-          {SITE_NAME}
-        </Link>
+            <Link href="/" className="inline-block"><img src="/logo.png" alt="Party Rental CRM" className="h-8 w-auto mx-auto" /></Link>    
       </div>
       <h1 className="text-2xl font-bold mb-6">Control Panel Login</h1>
 
