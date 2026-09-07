@@ -63,7 +63,7 @@ await prisma.platformSubscription.upsert({
   },
 });
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+const appUrl = process.env.PUBLIC_BASE_URL || "";
 
 const checkoutSession = await stripe.checkout.sessions.create({
   mode: "subscription",
