@@ -217,7 +217,7 @@ await prisma.contract.create({
 
 const proto = request.headers.get("x-forwarded-proto") || "https";
 const host = request.headers.get("host");
-const origin = process.env.NEXT_PUBLIC_APP_URL || `${proto}://${host}`;
+const origin = process.env.PUBLIC_BASE_URL || `${proto}://${host}`;
 
 const applicationFeeAmount = organization.stripeAccountId
   ? Math.round(depositAmount * 100 * 0.03)
