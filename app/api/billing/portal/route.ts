@@ -29,10 +29,33 @@ if (!subscription?.stripeCustomerId) {
 
 const appUrl = process.env.PUBLIC_BASE_URL || "";
 
-const portalSession = await stripe.billingPortal.sessions.create({
-  customer: subscription.stripeCustomerId,
-  return_url: `${appUrl}/dashboard/settings/billing`,
-});
+try {
+  const portalSession = await stripe.billingPortal.sessions.create({
+    customer: subscription.stripeCustomerId,
+    return_url: `${appUrl}/dashboard/settings/billing`,
+  });
 
-return NextResponse.json({ url: portalSession.url });
+  return NextResponse.json({ url: portalSession.url });
+} catch (err) {
+  console.error("Failed to create billing portal session", err);
+
+  const message = err instanceof Error ? err.message : "";
+
+  if (message.includes("No such customer")) {
+    await prisma.platformSubscription.update({
+      where: { organizationId: organization.id },
+      data: { stripeCustomerId: null },
+    });
+
+  return NextResponse.json(
+    { error: "Your billing account needs to be reconnected. Please choose a plan again to continue." },
+    { status: 409 }
+    );
+  }
+
+  return NextResponse.json(
+    { error: "We could not open the billing portal right now. Please try again in a moment or contact support." },
+    { status: 502 }
+    );
+}
 }
