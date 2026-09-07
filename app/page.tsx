@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getCurrentOrganization } from "@/lib/tenant";
+import { getOrganizationFromHost } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import StorefrontNav from "./StorefrontNav";
 import MarketingHomePage from "./(marketing)/_components/MarketingHomePage";
@@ -13,7 +13,7 @@ import { pageMetadata, SITE_NAME } from "@/lib/seo";
 // marketing homepage (this is the SaaS's own front door), while a request
 // that resolves to a tenant organization sees that tenant's storefront.
 export async function generateMetadata(): Promise<Metadata> {
-  const organization = await getCurrentOrganization().catch(() => null);
+  const organization = await getOrganizationFromHost().catch(() => null);
 
   if (!organization) {
     return {
@@ -44,7 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootPage() {
-  const organization = await getCurrentOrganization();
+  const organization = await getOrganizationFromHost();
 
   if (!organization) {
     return (
