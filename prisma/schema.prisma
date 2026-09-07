@@ -79,6 +79,14 @@ model PlatformSubscription {
   // grace period before locking the account out (see lib/billing.ts).
   // Cleared back to null whenever status moves away from "past_due".
   pastDueSince      DateTime?
+  // Billing interval selected at signup/upgrade time. Only meaningful once
+  // real subscription billing is turned on.
+  billingInterval String @default("monthly")
+  // True for the first cohort of paying customers who locked in the
+  // Founding Customer price. See lib/plans.ts FOUNDING_OFFER and
+  // lib/founding.ts for eligibility/counting logic.
+  foundingCustomer Boolean @default(false)
+  foundingPriceLockedUntil DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 }
