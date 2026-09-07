@@ -38,7 +38,7 @@ export async function GET(request: Request) {
         : {};
 
     const statusParam = searchParams.get("status") || "";
-    const validStatuses = ["pending", "confirmed", "cancelled", "completed"];
+    const validStatuses = ["quote", "pending", "confirmed", "cancelled", "completed"];
     const statusWhere = validStatuses.includes(statusParam) ? { status: statusParam } : {};
 
     const orders = await prisma.order.findMany({
