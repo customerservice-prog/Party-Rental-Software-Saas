@@ -1,3 +1,4 @@
+import { createElement as h } from "react";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -16,44 +17,57 @@ export default async function BillingLockedPage() {
     redirect("/login");
   }
 
-  const organization = await getCurrentOrganization();
+const organization = await getCurrentOrganization();
   if (!organization || (session.user as any).organizationId !== organization.id) {
     redirect("/login");
   }
 
-  const billing = await getBillingStatus(organization);
+const billing = await getBillingStatus(organization);
 
-  if (!billing.blocked) {
-    redirect("/dashboard");
-  }
+if (!billing.blocked) {
+  redirect("/dashboard");
+}
 
-  const role = (session.user as { role?: string }).role;
+const role = (session.user as { role?: string }).role;
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full bg-white border rounded-lg shadow-sm p-8 text-center">
-        <h1 className="text-xl font-bold text-gray-900 mb-2">{organization.name}</h1>
-        <p className="text-sm font-medium text-red-600 mb-4">
-          Dashboard access is currently locked
-        </p>
-        <p className="text-sm text-gray-600 mb-6">{billing.message}</p>
-        {role === "owner" ? (
-          <p className="text-xs text-gray-400">
-            Payment processing isn&apos;t connected on this account yet. Contact
-            support to update your plan and restore access.
-          </p>
-        ) : (
-          <p className="text-xs text-gray-400">
-            Please contact your account owner to resolve this.
-          </p>
-        )}
-        <a
-          href="/api/auth/signout"
-          className="inline-block mt-6 text-sm font-medium text-indigo-600 hover:underline"
-        >
-          Sign out
-        </a>
-      </div>
-    </div>
+return h(
+  "div",
+  { className: "min-h-screen flex items-center justify-center bg-gray-50 px-4" },
+  h(
+    "div",
+    { className: "max-w-md w-full bg-white border rounded-lg shadow-sm p-8 text-center" },
+    h("h1", { className: "text-xl font-bold text-gray-900 mb-2" }, organization.name),
+    h("p", { className: "text-sm font-medium text-red-600 mb-4" }, "Dashboard access is currently locked"),
+    h("p", { className: "text-sm text-gray-600 mb-6" }, billing.message),
+    role === "owner"
+    ? h(
+      "p",
+      { className: "text-xs text-gray-400" },
+      "Payment processing isn't connected on this account yet. Contact support to update your plan and restore access."
+      )
+    : h(
+      "p",
+      { className: "text-xs text-gray-400" },
+      "Please contact your account owner to resolve this."
+      ),
+    role === "owner"
+    ? h(
+      "a",
+      {
+        href: "/pricing",
+        className: "inline-block mt-4 text-sm font-medium text-indigo-600 hover:underline",
+      },
+      "View plans"
+      )
+    : null,
+    h(
+      "a",
+      {
+        href: "/api/auth/signout",
+        className: "inline-block mt-6 text-sm font-medium text-indigo-600 hover:underline",
+      },
+      "Sign out"
+      )
+    )
   );
 }
