@@ -27,7 +27,7 @@ if (!subscription?.stripeCustomerId) {
     );
 }
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+const appUrl = process.env.PUBLIC_BASE_URL || "";
 
 const portalSession = await stripe.billingPortal.sessions.create({
   customer: subscription.stripeCustomerId,
