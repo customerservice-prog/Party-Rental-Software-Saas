@@ -73,13 +73,11 @@ export function middleware(req: NextRequest) {
   if (tenantSlug) {
     requestHeaders.set("x-tenant-slug", tenantSlug);
   } else if (isPlatformHost) {
-    // Fall back to a tenant remembered from a previous /t/<slug> visit.
-    const cookieSlug = req.cookies.get("tenant_slug")?.value;
-    if (cookieSlug) {
-      requestHeaders.set("x-tenant-slug", cookieSlug);
-    } else {
-      requestHeaders.set("x-tenant-domain", host);
-    }
+// Do NOT fall back to a remembered tenant_slug cookie here: a stale
+        // cookie from an earlier /t/<slug> test visit would hijack the public
+        // marketing site (and other platform pages) for that browser.
+        // Signed-in tenant users are resolved via their session in
+        // lib/tenant.ts, not via this header, so nothing else needs it.
   } else {
     requestHeaders.set("x-tenant-domain", host);
   }
