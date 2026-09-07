@@ -4,6 +4,7 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { requireOwnerSession, authzErrorResponse } from "@/lib/authz";
 import { logActivity } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { canAddOfficeUser, seatLimitMessage } from "@/lib/entitlements";
 
 // Staff account management - lets an Owner see, add, edit, and remove the
 // logins that belong to their organization. Every handler here requires an
@@ -83,6 +84,14 @@ export async function POST(req: NextRequest) {
   if (password.length < 8) {
     return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
   }
+
+        const seatCheck = await canAddOfficeUser(organization.id, organization.planTier);
+    if (!seatCheck.allowed) {
+          return NextResponse.json(
+            { error: seatLimitMessage("office", seatCheck) },
+            { status: 403 }
+                );
+    }
 
   let tenantRoleId: string | null = null;
   if (role === "staff") {
