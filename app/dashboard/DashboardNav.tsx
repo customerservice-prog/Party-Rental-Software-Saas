@@ -207,6 +207,7 @@ const SETTINGS_GROUPS: NavGroup[] = [
         items: [
           { href: "/dashboard/activity", label: "Activity Log", icon: "clipboard" },
           { href: "/dashboard/settings", label: "Settings", icon: "gear" },
+          { href: "/dashboard/settings/billing", label: "Plan & Billing", icon: "tag" },
               ],
   },
   ];
