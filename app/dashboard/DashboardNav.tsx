@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { signOut } from "next-auth/react";
 
 function NavIcon({ name, className }: { name: string; className?: string }) {
@@ -212,97 +211,87 @@ const SETTINGS_GROUPS: NavGroup[] = [
   },
   ];
 
+
+
 export default function DashboardNav({
-  showSettings,
-  orgName,
-  userName,
-  role,
+    showSettings,
+    orgName,
+    userName,
+    role,
 }: {
-  showSettings: boolean;
-  orgName?: string;
-  userName?: string;
-  role?: string;
+    showSettings: boolean;
+    orgName?: string;
+    userName?: string;
+    role?: string;
 }) {
-  const pathname = usePathname();
-  const [settingsOpen, setSettingsOpen] = useState(false);
+    const pathname = usePathname();
 
-  const topItems = NAV_GROUPS.flatMap((g) => g.items);
-
-  return (
-    <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 h-20 bg-[#2d6a2d] text-white shadow">
-      <div className="flex items-center gap-1 overflow-x-auto flex-1 min-w-0">
-        <Link href="/dashboard" className="font-bold text-lg tracking-tight px-3 whitespace-nowrap">
-          {orgName || "Dashboard"}
-        </Link>
-        {topItems.map((item) => {
-          const active = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={
-                "flex flex-col items-center px-4 py-2 rounded hover:bg-green-700 transition-colors " +
-                (active ? "text-[#f5c518]" : "text-white")
-              }
-            >
-              <NavIcon name={item.icon} className="w-5 h-5" />
-              <span className="text-xs mt-1 whitespace-nowrap">{item.label}</span>
-            </Link>
-          );
-        })}
-      </div>
-      {showSettings && (
-        <div className="relative shrink-0">
-          <button
-            type="button"
-            onClick={() => setSettingsOpen((v) => !v)}
-            className={
-              "flex flex-col items-center px-4 py-2 rounded hover:bg-green-700 transition-colors " +
-              (settingsOpen ? "text-[#f5c518]" : "text-white")
-            }
-          >
-            <NavIcon name="gear" className="w-5 h-5" />
-            <span className="text-xs mt-1 whitespace-nowrap">Settings</span>
-          </button>
-          {settingsOpen && (
-            <div className="absolute right-0 top-full mt-1 w-64 bg-white text-gray-800 rounded shadow-lg py-2 z-50 max-h-[70vh] overflow-y-auto">
-              {SETTINGS_GROUPS.map((group) => (
-                <div key={group.section} className="px-4 py-1">
-                  <p className="text-xs font-semibold text-gray-400 uppercase mt-2">
-                    {group.section}
-                  </p>
-                  {group.items.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setSettingsOpen(false)}
-                      className="flex items-center gap-2 py-1 text-sm hover:text-indigo-600"
-                    >
-                      <NavIcon name={item.icon} className="w-4 h-4" />
-                      {item.label}
-                    </Link>
-                  ))}
+  function renderLink(item: NavItem) {
+        const active = pathname === item.href;
+        return (
+                <Link
+                          key={item.href}
+                          href={item.href}
+                          className={
+                                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors " +
+                                      (active
+                                                   ? "bg-green-800 text-[#f5c518] font-medium"
+                                                   : "text-green-50 hover:bg-green-700")
+                          }
+                        >
+                        <NavIcon name={item.icon} className="w-4 h-4 shrink-0" />
+                        <span className="truncate">{item.label}</span>
+                </Link>
+              );
+  }
+  
+    return (
+          <div className="fixed top-0 left-0 bottom-0 w-64 bg-[#2d6a2d] text-white flex flex-col z-50">
+                <div className="px-4 h-16 flex items-center border-b border-green-800 shrink-0">
+                        <Link href="/dashboard" className="font-bold text-lg tracking-tight truncate">
+                          {orgName || "Dashboard"}
+                        </Link>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-      <div className="flex items-center gap-4 pl-4 whitespace-nowrap shrink-0">
-        {userName && (
-          <span className="text-sm hidden md:inline">
-            Signed in as <strong>{userName}</strong>
-            {role ? " (" + role.charAt(0).toUpperCase() + role.slice(1) + ")" : ""}
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="border border-white rounded px-3 py-1.5 text-sm hover:bg-green-700 transition-colors"
-        >
-          Logout
-        </button>
-      </div>
-    </nav>
-  );
+                <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+                  {NAV_GROUPS.map((group) => (
+                      <div key={group.section || "main"}>
+                        {group.section && (
+                                      <p className="px-3 text-xs font-semibold text-green-200 uppercase tracking-wide mb-1">
+                                        {group.section}
+                                      </p>
+                                  )}
+                                  <div className="space-y-1">{group.items.map((item) => renderLink(item))}</div>
+                      </div>
+                    ))}
+                
+                  {showSettings && (
+                      <div className="pt-4 border-t border-green-800 space-y-6">
+                        {SETTINGS_GROUPS.map((group) => (
+                                      <div key={group.section}>
+                                                      <p className="px-3 text-xs font-semibold text-green-200 uppercase tracking-wide mb-1">
+                                                        {group.section}
+                                                      </p>
+                                                      <div className="space-y-1">{group.items.map((item) => renderLink(item))}</div>
+                                      </div>
+                                    ))}
+                      </div>
+                        )}
+                </div>
+                <div className="px-4 py-4 border-t border-green-800 shrink-0">
+                  {userName && (
+                      <p className="text-xs text-green-100 mb-2 truncate">
+                                  Signed in as <strong>{userName}</strong>
+                        {role ? " (" + role.charAt(0).toUpperCase() + role.slice(1) + ")" : ""}
+                      </p>
+                        )}
+                        <button
+                                    type="button"
+                                    onClick={() => signOut({ callbackUrl: "/login" })}
+                                    className="w-full border border-white rounded px-3 py-1.5 text-sm hover:bg-green-700 transition-colors"
+                                  >
+                                  Logout
+                        </button>
+                </div>
+          </div>
+        );
 }
