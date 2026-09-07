@@ -61,3 +61,39 @@ export async function requireCurrentOrganization() {
         }
         return org;
 }
+
+
+/**
+ * Like getCurrentOrganization, but resolves a tenant ONLY from the request
+ * host (subdomain, custom domain, or an explicit /t/<slug> path) - never
+ * from the signed-in user's session.
+ *
+ * The root route (app/page.tsx) renders either the platform's public
+ * marketing homepage or a tenant's storefront depending on whether a
+ * tenant is resolved. If it used getCurrentOrganization()'s session
+ * fallback, a staff member merely being signed in to their dashboard in
+ * the same browser would cause the public marketing homepage on the bare
+ * platform domain to render as their tenant's storefront instead - which
+ * must never happen. Use this helper anywhere that ambiguity exists.
+ */
+export async function getOrganizationFromHost() {
+        	const headerList = headers();
+        	const slug = headerList.get("x-tenant-slug");
+        	const domain = headerList.get("x-tenant-domain");
+
+	if (slug) {
+                		const org = await prisma.organization.findUnique({ where: { slug } });
+                		if (org) {
+                                        			return org.status !== "suspended" ? org : null;
+                                }
+        }
+
+	if (domain) {
+                		const org = await prisma.organization.findUnique({ where: { customDomain: domain } });
+                		if (org) {
+                                        			return org.status !== "suspended" ? org : null;
+                                }
+        }
+
+	return null;
+}
