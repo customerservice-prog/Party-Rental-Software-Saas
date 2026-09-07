@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { TRIAL_DAYS } from "@/lib/plans";
 
 const signupSchema = z.object({
     businessName: z.string().min(2),
@@ -39,14 +40,14 @@ export async function POST(req: Request) {
 
   const passwordHash = await bcrypt.hash(password, 10);
     const trialEndsAt = new Date();
-    trialEndsAt.setDate(trialEndsAt.getDate() + 14);
+    trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DAYS);
 
   const organization = await prisma.organization.create({
         data: {
                 name: businessName,
                 slug,
                 contactEmail,
-                planTier: "launch",
+                planTier: "starter",
                 status: "trial",
                 trialEndsAt,
                 users: {
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
                 },
                 subscription: {
                           create: {
-                                      planTier: "launch",
+                                      planTier: "starter",
                                       status: "trialing",
                           },
                 },
