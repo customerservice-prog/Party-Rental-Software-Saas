@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
-import { requireOwnerSession, authzErrorResponse } from "@/lib/authz";
+import { requireStaffSession, requireOwnerSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/audit";
 
 export async function GET() {
   const organization = await requireCurrentOrganization();
+    try {
+          await requireStaffSession(organization.id);
+    } catch (err) {
+          return authzErrorResponse(err);
+    }
 
   const templates = await prisma.messageTemplate.findMany({
     where: { organizationId: organization.id },
