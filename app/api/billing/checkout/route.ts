@@ -18,6 +18,7 @@ const body = await request.json().catch(() => ({}));
   const planCode = normalizePlanCode(body.planCode);
   const interval: BillingInterval = body.interval === "annual" ? "annual" : "monthly";
 
+
 if (planCode === "enterprise") {
   return NextResponse.json(
     { error: "Enterprise plans are custom pricing. Please contact us instead of checking out here." },
@@ -39,6 +40,14 @@ const existingSubscription = await prisma.platformSubscription.findUnique({
 });
 
 let customerId = existingSubscription?.stripeCustomerId || undefined;
+
+if (customerId) {
+  try {
+    await stripe.customers.retrieve(customerId);
+  } catch (err) {
+    customerId = undefined;
+  }
+}
 
 if (!customerId) {
   const customer = await stripe.customers.create({
@@ -65,18 +74,26 @@ await prisma.platformSubscription.upsert({
 
 const appUrl = process.env.PUBLIC_BASE_URL || "";
 
-const checkoutSession = await stripe.checkout.sessions.create({
-  mode: "subscription",
-  customer: customerId,
-  line_items: [{ price: price.id, quantity: 1 }],
-  subscription_data: {
-    trial_period_days: TRIAL_DAYS,
-    metadata: { organizationId: organization.id, planCode },
-  },
-  success_url: `${appUrl}/dashboard/settings/billing?checkout=success`,
-  cancel_url: `${appUrl}/dashboard/settings/billing?checkout=canceled`,
-  metadata: { organizationId: organization.id, planCode, interval },
-});
+try {
+  const checkoutSession = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    customer: customerId,
+    line_items: [{ price: price.id, quantity: 1 }],
+    subscription_data: {
+      trial_period_days: TRIAL_DAYS,
+      metadata: { organizationId: organization.id, planCode },
+    },
+    success_url: `${appUrl}/dashboard/settings/billing?checkout=success`,
+    cancel_url: `${appUrl}/dashboard/settings/billing?checkout=canceled`,
+    metadata: { organizationId: organization.id, planCode, interval },
+  });
 
-return NextResponse.json({ url: checkoutSession.url });
+  return NextResponse.json({ url: checkoutSession.url });
+} catch (err) {
+  console.error("Failed to create checkout session", err);
+  return NextResponse.json(
+    { error: "We could not start checkout right now. Please try again in a moment or contact support." },
+    { status: 502 }
+    );
+}
 }
