@@ -3,6 +3,7 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/audit";
+import { canAddCrewUser, seatLimitMessage } from "@/lib/entitlements";
 
 // Driver roster management. Viewing the roster requires drivers.view;
 // adding, editing, deactivating, or removing drivers requires
@@ -46,6 +47,14 @@ export async function POST(req: NextRequest) {
   if (!name) {
         return NextResponse.json({ error: "Driver name is required." }, { status: 400 });
   }
+
+        const seatCheck = await canAddCrewUser(organization.id, organization.planTier);
+        if (!seatCheck.allowed) {
+                    return NextResponse.json(
+                        { error: seatLimitMessage("crew", seatCheck) },
+                        { status: 403 }
+                                );
+        }
 
   if (pin && !/^\d{4,6}$/.test(pin)) {
         return NextResponse.json({ error: "PIN must be 4-6 digits." }, { status: 400 });
