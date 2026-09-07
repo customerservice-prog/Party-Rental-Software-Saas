@@ -100,7 +100,7 @@ const FAQS: { question: string; answer: string }[] = [
   {
     question: "What does it cost?",
     answer:
-      "See the Pricing page for current details. We are in an early access period, so final published pricing is still being finalized — you will always see the price before you are ever charged.",
+"See the Pricing page for full plan details. Plans start at $49/month with a 14-day free trial \u2014 no credit card required.",
   },
   {
     question: "Do I need to be technical to use this?",
