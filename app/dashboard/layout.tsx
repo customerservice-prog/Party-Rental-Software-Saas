@@ -21,14 +21,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const userName = (session.user as any).name || (session.user as any).email || "User";
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen">
       <DashboardNav
         showSettings={role === "owner"}
         orgName={organization.name}
         userName={userName}
         role={role}
       />
-      <div className="pt-20 flex flex-1 flex-col">
+      <div className="pl-64 flex flex-1 flex-col min-h-screen">
         {billing.message && role === "owner" && (
           <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-sm px-6 py-2">
             {billing.message}
