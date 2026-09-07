@@ -40,7 +40,7 @@ export async function POST() {
       });
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const appUrl = process.env.PUBLIC_BASE_URL || "";
 
   const accountLink = await stripe.accountLinks.create({
         account: accountId,
