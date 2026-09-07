@@ -6,7 +6,20 @@ import { logActivity } from "@/lib/audit";
 
 export async function GET() {
   const organization = await requireCurrentOrganization();
-  return NextResponse.json({ organization });
+  const {
+      name, slug, logoUrl, primaryColor, tagline, heroImageUrl, aboutText,
+      contractTerms, facebookUrl, instagramUrl, showHoursOnSite,
+      flatDeliveryFee, taxRate, contactEmail, contactPhone, address, city,
+      state, zip, timezone,
+  } = organization;
+  return NextResponse.json({
+      organization: {
+            name, slug, logoUrl, primaryColor, tagline, heroImageUrl, aboutText,
+            contractTerms, facebookUrl, instagramUrl, showHoursOnSite,
+            flatDeliveryFee, taxRate, contactEmail, contactPhone, address, city,
+            state, zip, timezone,
+      },
+  });
 }
 
 export async function PATCH(req: NextRequest) {
