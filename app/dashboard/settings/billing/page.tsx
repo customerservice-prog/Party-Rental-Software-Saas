@@ -56,6 +56,12 @@ const STATUS_COLORS: Record<string, string> = {
   canceled: "bg-gray-200 text-gray-700",
 };
 
+const CHECKOUT_PLANS: { code: string; name: string; monthlyPrice: number; annualMonthlyPrice: number }[] = [
+  { code: "starter", name: "Starter", monthlyPrice: 49, annualMonthlyPrice: 39 },
+  { code: "growth", name: "Growth", monthlyPrice: 99, annualMonthlyPrice: 79 },
+  { code: "pro", name: "Pro", monthlyPrice: 199, annualMonthlyPrice: 159 },
+  ];
+
 function formatDate(value: string | null): string {
   if (!value) return "Not available yet";
   const d = new Date(value);
@@ -100,6 +106,9 @@ export default function BillingPage() {
   const [data, setData] = useState<BillingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [actionLoading, setActionLoading] = useState("");
+  const [billingInterval, setBillingInterval] = useState("monthly");
 
 useEffect(() => {
   async function load() {
@@ -115,6 +124,59 @@ useEffect(() => {
   }
   load();
 }, []);
+
+async function startCheckout(planCode: string) {
+  setActionError("");
+  setActionLoading(planCode);
+  try {
+    const res = await fetch("/api/billing/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ planCode, interval: billingInterval }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Unable to start checkout");
+    if (json.url) window.location.href = json.url;
+  } catch (e: any) {
+    setActionError(e.message || "Something went wrong");
+    setActionLoading("");
+  }
+}
+
+async function openBillingPortal() {
+  setActionError("");
+  setActionLoading("portal");
+  try {
+    const res = await fetch("/api/billing/portal", { method: "POST" });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Unable to open billing portal");
+    if (json.url) window.location.href = json.url;
+  } catch (e: any) {
+    setActionError(e.message || "Something went wrong");
+    setActionLoading("");
+  }
+}
+  function planButton(p: { code: string; name: string; monthlyPrice: number; annualMonthlyPrice: number }) {
+    const price = billingInterval === "annual" ? p.annualMonthlyPrice : p.monthlyPrice;
+    const isCurrent = plan.code === p.code;
+    return h(
+      "button",
+      {
+        key: p.code,
+        type: "button",
+        disabled: isCurrent || actionLoading === p.code,
+        onClick: () => startCheckout(p.code),
+        className:
+          "flex-1 min-w-[150px] rounded-lg border-2 px-4 py-4 text-left transition " +
+          (isCurrent ? "border-indigo-600 bg-indigo-50 cursor-default" : "border-gray-200 hover:border-indigo-400"),
+      },
+      h("div", { className: "font-semibold text-gray-900" }, p.name),
+      h("div", { className: "text-sm text-gray-600" }, "$" + price + "/mo"),
+      isCurrent
+      ? h("div", { className: "text-xs text-indigo-600 mt-1 font-medium" }, "Current plan")
+      : h("div", { className: "text-xs text-gray-500 mt-1" }, actionLoading === p.code ? "Redirecting..." : "Choose plan")
+      );
+  }
 
 if (loading) {
   return h("div", { className: "p-6" }, "Loading billing information...");
@@ -158,11 +220,7 @@ return h(
       "div",
       { className: "flex items-center justify-between mb-2" },
       h("h2", { className: sectionTitleClass + " mb-0" }, "Current Plan"),
-      h(
-        "span",
-        { className: "text-xs font-semibold px-2.5 py-1 rounded-full " + statusColor },
-        statusLabel
-        )
+      h("span", { className: "text-xs font-semibold px-2.5 py-1 rounded-full " + statusColor }, statusLabel)
       ),
     h("p", { className: "text-xl font-bold text-gray-900" }, plan.name),
     h("p", { className: "text-sm text-gray-600 mb-3" }, plan.tagline),
@@ -178,13 +236,11 @@ return h(
        ? " (billed annually at $" + plan.annualBilledTotal + "/year)"
        : "")
       ),
+
     subscription && subscription.foundingCustomer
     ? h(
       "span",
-      {
-        className:
-          "inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 mb-3",
-      },
+      { className: "inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 mb-3" },
       "Founding Customer - price locked" +
       (subscription.foundingPriceLockedUntil
        ? " until " + formatDate(subscription.foundingPriceLockedUntil)
@@ -197,27 +253,72 @@ return h(
       { className: "text-sm text-gray-600 mb-3" },
       billing.trialDaysLeft === 0
       ? "Your free trial ends today."
-      : "Your free trial ends in " +
-      billing.trialDaysLeft +
-      " day" +
-      (billing.trialDaysLeft === 1 ? "" : "s") +
-      "."
+      : "Your free trial ends in " + billing.trialDaysLeft + " day" + (billing.trialDaysLeft === 1 ? "" : "s") + "."
       )
     : null,
     h(
       "p",
       { className: "text-sm text-gray-600" },
-      "Next billing date: " +
-      (subscription ? formatDate(subscription.currentPeriodEnd) : "Not available yet")
+      "Next billing date: " + (subscription ? formatDate(subscription.currentPeriodEnd) : "Not available yet")
       ),
+
     h(
       "div",
-      { className: "mt-4" },
-      h(
-        Link,
-        { href: "/pricing", className: "text-indigo-600 font-medium hover:underline text-sm" },
-        "View plans & upgrade ->"
+      { className: "mt-4 flex items-center gap-3" },
+      h(Link, { href: "/pricing", className: "text-indigo-600 font-medium hover:underline text-sm" }, "View full plan comparison ->"),
+      subscription && subscription.status && subscription.status !== "canceled"
+      ? h(
+        "button",
+        {
+          type: "button",
+          onClick: openBillingPortal,
+          disabled: actionLoading === "portal",
+          className: "text-sm font-medium text-gray-700 border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50",
+        },
+        actionLoading === "portal" ? "Opening..." : "Manage billing"
         )
+      : null
+      )
+    ),
+
+  h(
+    "div",
+    { className: sectionClass },
+    h(
+      "div",
+      { className: "flex items-center justify-between mb-4" },
+      h("h2", { className: sectionTitleClass + " mb-0" }, "Change Plan"),
+      h(
+        "div",
+        { className: "flex items-center gap-1 bg-gray-100 rounded-full p-1 text-xs font-medium" },
+        h(
+          "button",
+          {
+            type: "button",
+            onClick: () => setBillingInterval("monthly"),
+            className: "px-3 py-1 rounded-full " + (billingInterval === "monthly" ? "bg-white shadow text-gray-900" : "text-gray-500"),
+          },
+          "Monthly"
+          ),
+        h(
+          "button",
+          {
+            type: "button",
+            onClick: () => setBillingInterval("annual"),
+            className: "px-3 py-1 rounded-full " + (billingInterval === "annual" ? "bg-white shadow text-gray-900" : "text-gray-500"),
+          },
+          "Annual"
+          )
+        )
+      ),
+    actionError ? h("p", { className: "text-sm text-red-600 mb-3" }, actionError) : null,
+    h("div", { className: "flex flex-wrap gap-3" }, CHECKOUT_PLANS.map(planButton)),
+    h(
+      "p",
+      { className: "text-xs text-gray-500 mt-3" },
+      "Enterprise plans are custom. ",
+      h(Link, { href: "/contact", className: "text-indigo-600 hover:underline" }, "Contact us"),
+      " to discuss your needs."
       )
     ),
 
@@ -227,11 +328,7 @@ return h(
     h("h2", { className: sectionTitleClass }, "Team Usage"),
     seatBar("Full office users", seats.office.current, seats.office.limit),
     seatBar("Crew / driver logins", seats.crew.current, seats.crew.limit),
-    h(
-      "p",
-      { className: "text-xs text-gray-500" },
-      "Need more seats? Upgrading your plan raises these limits."
-      )
+    h("p", { className: "text-xs text-gray-500" }, "Need more seats? Upgrading your plan raises these limits.")
     ),
 
   h(
@@ -248,13 +345,9 @@ return h(
     h(
       "p",
       { className: "text-sm text-gray-600 mb-3" },
-      "Plan changes and billing questions are currently handled by our team while we finish rolling out self-serve billing."
+      "Use \"Manage billing\" above to update your payment method, view invoices, or cancel your subscription. For anything else, we're happy to help."
       ),
-    h(
-      Link,
-      { href: "/contact", className: "text-indigo-600 font-medium hover:underline text-sm" },
-      "Contact us ->"
-      )
+    h(Link, { href: "/contact", className: "text-indigo-600 font-medium hover:underline text-sm" }, "Contact us ->")
     )
   );
 }
