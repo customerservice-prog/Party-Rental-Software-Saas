@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
+import { requireOwnerSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 
 export async function GET() {
     const organization = await requireCurrentOrganization();
+        try {
+                    await requireOwnerSession(organization.id);
+        } catch (err) {
+                    return authzErrorResponse(err);
+        }
 
   if (!organization.stripeAccountId) {
         return NextResponse.json({ connected: false });
@@ -21,6 +27,11 @@ export async function GET() {
 
 export async function POST() {
     const organization = await requireCurrentOrganization();
+        try {
+                    await requireOwnerSession(organization.id);
+        } catch (err) {
+                    return authzErrorResponse(err);
+        }
 
   let accountId = organization.stripeAccountId;
 
