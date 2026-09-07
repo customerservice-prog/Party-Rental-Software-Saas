@@ -3,7 +3,7 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
-const VALID_STATUSES = ["pending", "confirmed", "completed", "cancelled"];
+const VALID_STATUSES = ["quote", "pending", "confirmed", "completed", "cancelled"];
 
 export async function PATCH(
   request: NextRequest,
