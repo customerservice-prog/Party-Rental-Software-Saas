@@ -10,7 +10,7 @@ export default async function OrdersPage({
     const organization = await requireCurrentOrganization();
 
   const statusFilter = searchParams?.status?.trim() || "";
-  const validStatuses = ["pending", "confirmed", "cancelled", "completed"];
+  const validStatuses = ["quote", "pending", "confirmed", "cancelled", "completed"];
   const statusWhere = validStatuses.includes(statusFilter) ? { status: statusFilter } : {};
 
   const orders = await prisma.order.findMany({
@@ -38,6 +38,7 @@ export default async function OrdersPage({
       <div className="mb-4 flex flex-wrap gap-2">
         {[
           { label: "All", value: "" },
+          { label: "Quote", value: "quote" },
           { label: "Pending", value: "pending" },
           { label: "Confirmed", value: "confirmed" },
           { label: "Completed", value: "completed" },
