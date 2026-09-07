@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
       ? Math.min(Math.round(amountPaid * 100) / 100, totalAmount)
       : 0;
 
-  const allowedStatuses = ["quote", "pending", "confirmed", "active"];
+  const allowedStatuses = ["quote", "pending", "confirmed", "completed", "cancelled"];
   const orderStatus =
     typeof status === "string" && allowedStatuses.includes(status) ? status : "quote";
 
