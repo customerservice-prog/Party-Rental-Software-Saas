@@ -87,11 +87,11 @@ export default function DoNotRentManager() {
   }
 
   if (loading) {
-    return <div className="p-8">Loading restrictions...</div>;
+    return <div>Loading restrictions...</div>;
   }
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div className="max-w-5xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Do Not Rent</h1>
       <p className="text-gray-500 mb-6">
         Flag customers who should be blocked from booking. Restrictions apply only to your
@@ -111,7 +111,7 @@ export default function DoNotRentManager() {
         <label className="text-sm text-gray-600">
           Name
           <input
-            className="mt-1 border rounded px-3 py-2 w-full"
+            className="mt-1 border border-gray-300 rounded-md px-3 py-2 text-sm w-full"
             placeholder="Jane Doe"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -121,7 +121,7 @@ export default function DoNotRentManager() {
           Email
           <input
             type="email"
-            className="mt-1 border rounded px-3 py-2 w-full"
+            className="mt-1 border border-gray-300 rounded-md px-3 py-2 text-sm w-full"
             placeholder="jane@example.com"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -130,7 +130,7 @@ export default function DoNotRentManager() {
         <label className="text-sm text-gray-600">
           Phone
           <input
-            className="mt-1 border rounded px-3 py-2 w-full"
+            className="mt-1 border border-gray-300 rounded-md px-3 py-2 text-sm w-full"
             placeholder="(555) 555-5555"
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -139,7 +139,7 @@ export default function DoNotRentManager() {
         <label className="text-sm text-gray-600 md:col-span-2">
           Address
           <input
-            className="mt-1 border rounded px-3 py-2 w-full"
+            className="mt-1 border border-gray-300 rounded-md px-3 py-2 text-sm w-full"
             placeholder="123 Main St"
             value={form.address}
             onChange={(e) => setForm({ ...form, address: e.target.value })}
@@ -148,7 +148,7 @@ export default function DoNotRentManager() {
         <label className="text-sm text-gray-600">
           Reason
           <input
-            className="mt-1 border rounded px-3 py-2 w-full"
+            className="mt-1 border border-gray-300 rounded-md px-3 py-2 text-sm w-full"
             placeholder="Damaged equipment, no-show, etc."
             value={form.reason}
             onChange={(e) => setForm({ ...form, reason: e.target.value })}
@@ -156,7 +156,7 @@ export default function DoNotRentManager() {
         </label>
         <button
           type="submit"
-          className="bg-red-600 font-medium text-white px-4 py-2 rounded h-fit md:col-span-3"
+          className="bg-red-600 font-medium text-white px-4 py-2 rounded-md h-fit md:col-span-3 hover:bg-red-700"
         >
           Add Restriction
         </button>
@@ -164,12 +164,12 @@ export default function DoNotRentManager() {
 
       <form onSubmit={handleSearch} className="flex gap-2 mb-4">
         <input
-          className="border rounded px-3 py-2 flex-1"
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm flex-1"
           placeholder="Search by name, email, phone, or address"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <button type="submit" className="border rounded px-4 py-2 text-sm font-medium text-gray-700">
+        <button type="submit" className="border border-gray-300 rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
           Search
         </button>
       </form>
