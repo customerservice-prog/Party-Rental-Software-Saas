@@ -19,10 +19,10 @@ export default async function DeliveriesPage() {
       ]);
 
   return (
-        <div className="p-8">
+        <div>
               <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Deliveries & Routing</h1>
-        <Link href="/dashboard/deliveries/packing-list" className="bg-blue-600 hover:bg-blue-700 text-white rounded px-4 py-2 text-sm font-medium">Print Packing List</Link>
+        <Link href="/dashboard/deliveries/packing-list" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-4 py-2 text-sm font-medium">Print Packing List</Link>
       </div>
         
               <div className="bg-white shadow rounded-lg overflow-hidden">
