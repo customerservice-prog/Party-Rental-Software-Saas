@@ -8,6 +8,7 @@ const TABS = [
   { key: "payments", label: "Payments" },
   { key: "customers", label: "Customers" },
   { key: "inventory", label: "Inventory" },
+  { key: "cogs", label: "Cost of Goods" },
 ];
 
 function monthLabel(key: string) {
@@ -141,8 +142,6 @@ export default async function ReportsPage({
     take: 10,
   });
 
-  // Monthly sales, sorted chronologically (ascending) - fixes the jumbled
-  // month ordering bug found in the legacy reference app's Sales Overview report.
   const monthly = new Map<string, { revenue: number; collected: number; orders: number }>();
   for (const o of salesOrders) {
     const d = new Date(o.createdAt);
@@ -161,8 +160,6 @@ export default async function ReportsPage({
   const spendCustomers = await prisma.customer.findMany({ where: { id: { in: customerIds } } });
   const spendCustomerMap = new Map(spendCustomers.map((c) => [c.id, c]));
 
-  // Revenue by category, built from real order-item sales joined against
-  // current items/categories (no placeholder data).
   const categoryTotals = new Map<string, { name: string; units: number; revenue: number }>();
   for (const t of topItems) {
     const item = itemMap.get(t.itemId);
@@ -180,6 +177,27 @@ export default async function ReportsPage({
   const totalUnitsOnHand = allItems.reduce((sum, i) => sum + (i.quantity || 0), 0);
 
   const collectionRate = totalRevenue > 0 ? (totalCollected / totalRevenue) * 100 : 0;
+
+  const itemRevenueMap = new Map(topItems.map((t) => [t.itemId, t._sum.price || 0]));
+  const cogsRows = allItems
+    .map((i) => {
+      const revenue = itemRevenueMap.get(i.id) || 0;
+      const invested = i.acquisitionCost != null ? i.acquisitionCost * (i.quantity || 0) : null;
+      return {
+        id: i.id,
+        name: i.name,
+        category: i.category ? i.category.name : "Uncategorized",
+        acquisitionCost: i.acquisitionCost,
+        quantity: i.quantity,
+        invested,
+        revenue,
+      };
+    })
+    .sort((a, b) => (b.invested || 0) - (a.invested || 0));
+  const totalAcquisitionInvested = cogsRows.reduce((sum, r) => sum + (r.invested || 0), 0);
+  const itemsMissingCost = cogsRows.filter((r) => r.acquisitionCost == null).length;
+  const totalRevenueAllItems = allItems.reduce((sum, i) => sum + (itemRevenueMap.get(i.id) || 0), 0);
+  const netReturn = totalRevenueAllItems - totalAcquisitionInvested;
 
   return (
     <div>
@@ -503,6 +521,68 @@ export default async function ReportsPage({
                 {categoryRows.length === 0 && (
                   <tr>
                     <td colSpan={3} className="px-6 py-4 text-gray-500">No bookings yet.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {activeTab === "cogs" && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div className="bg-white shadow rounded-lg p-4 border-l-4 border-indigo-600">
+              <div className="text-sm text-gray-500">Total Acquisition Investment</div>
+              <div className="text-2xl font-bold text-gray-900">${totalAcquisitionInvested.toFixed(2)}</div>
+            </div>
+            <div className="bg-white shadow rounded-lg p-4 border-l-4 border-green-600">
+              <div className="text-sm text-gray-500">Revenue Earned (tracked items)</div>
+              <div className="text-2xl font-bold text-gray-900">${totalRevenueAllItems.toFixed(2)}</div>
+            </div>
+            <div className={"bg-white shadow rounded-lg p-4 border-l-4 " + (netReturn >= 0 ? "border-green-600" : "border-orange-500")}>
+              <div className="text-sm text-gray-500">Net Return vs. Investment</div>
+              <div className={"text-2xl font-bold " + (netReturn >= 0 ? "text-green-700" : "text-orange-600")}>${netReturn.toFixed(2)}</div>
+            </div>
+          </div>
+
+          {itemsMissingCost > 0 && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm rounded-lg px-4 py-3 mb-6">
+              {itemsMissingCost} item{itemsMissingCost === 1 ? "" : "s"} {itemsMissingCost === 1 ? "has" : "have"} no acquisition cost recorded yet, so {itemsMissingCost === 1 ? "it's" : "they're"} excluded from the investment total above. Add a cost in Inventory to include {itemsMissingCost === 1 ? "it" : "them"}.
+            </div>
+          )}
+
+          <div className="bg-white shadow rounded-lg overflow-hidden mb-8">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Cost of Goods by Item</h2>
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-500 border-b border-gray-200">
+                  <th className="px-6 py-2 font-medium">Item</th>
+                  <th className="px-6 py-2 font-medium">Category</th>
+                  <th className="px-6 py-2 font-medium">Acquisition Cost</th>
+                  <th className="px-6 py-2 font-medium">Qty</th>
+                  <th className="px-6 py-2 font-medium">Total Invested</th>
+                  <th className="px-6 py-2 font-medium">Revenue Earned</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {cogsRows.map((r) => (
+                  <tr key={r.id}>
+                    <td className="px-6 py-2">{r.name}</td>
+                    <td className="px-6 py-2">{r.category}</td>
+                    <td className="px-6 py-2">
+                      {r.acquisitionCost != null ? `$${r.acquisitionCost.toFixed(2)}` : <span className="text-gray-400">Not recorded</span>}
+                    </td>
+                    <td className="px-6 py-2">{r.quantity}</td>
+                    <td className="px-6 py-2">{r.invested != null ? `$${r.invested.toFixed(2)}` : "-"}</td>
+                    <td className="px-6 py-2">${r.revenue.toFixed(2)}</td>
+                  </tr>
+                ))}
+                {cogsRows.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-4 text-gray-500">No inventory items yet.</td>
                   </tr>
                 )}
               </tbody>
