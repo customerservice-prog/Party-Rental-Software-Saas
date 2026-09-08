@@ -141,7 +141,7 @@ export default function MessageTemplatesPage() {
       "form",
       {
         onSubmit: save,
-        className: "mb-8 rounded-lg border border-gray-200 bg-white p-4 space-y-3",
+        className: "mb-8 rounded-lg shadow bg-white p-4 space-y-3",
       },
       ce(
         "div",
@@ -234,7 +234,7 @@ export default function MessageTemplatesPage() {
             type: "submit",
             disabled: saving,
             className:
-              "rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50",
+              "rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50",
           },
           saving ? "Saving..." : form.id ? "Update template" : "Create template"
         ),
@@ -264,7 +264,7 @@ export default function MessageTemplatesPage() {
         )
       : ce(
           "div",
-          { className: "divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white" },
+          { className: "divide-y divide-gray-100 bg-white shadow rounded-lg overflow-hidden" },
           templates.map((t) =>
             ce(
               "div",
