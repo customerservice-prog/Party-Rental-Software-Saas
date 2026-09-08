@@ -45,7 +45,7 @@ export default async function CustomersPage({
   });
 
   return (
-        <div className="p-8">
+        <div>
               <div className="flex items-center justify-between mb-6">
                       <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
                       <div className="flex gap-2">
