@@ -66,11 +66,15 @@ export async function POST(req: NextRequest) {
       slug,
       description: typeof body.description === "string" && body.description.length > 0 ? body.description : null,
       cost: body.cost,
+      acquisitionCost:
+        typeof body.acquisitionCost === "number" && !Number.isNaN(body.acquisitionCost)
+          ? body.acquisitionCost
+          : null,
       quantity: typeof body.quantity === "number" ? body.quantity : 1,
       picture: typeof body.picture === "string" && body.picture.length > 0 ? body.picture : null,
       displayToCustomer:
         typeof body.displayToCustomer === "boolean" ? body.displayToCustomer : true,
-              status: ITEM_STATUSES.includes(body.status) ? body.status : "available",
+      status: ITEM_STATUSES.includes(body.status) ? body.status : "available",
     },
   });
 
@@ -106,25 +110,31 @@ export async function PATCH(req: NextRequest) {
     data.description = body.description.length > 0 ? body.description : null;
   }
   if (typeof body.cost === "number" && !Number.isNaN(body.cost)) data.cost = body.cost;
+  if (body.acquisitionCost !== undefined) {
+    data.acquisitionCost =
+      typeof body.acquisitionCost === "number" && !Number.isNaN(body.acquisitionCost)
+        ? body.acquisitionCost
+        : null;
+  }
   if (typeof body.quantity === "number" && !Number.isNaN(body.quantity)) data.quantity = body.quantity;
   if (typeof body.picture === "string") {
     data.picture = body.picture.length > 0 ? body.picture : null;
   }
   if (typeof body.displayToCustomer === "boolean") data.displayToCustomer = body.displayToCustomer;
   if (typeof body.categoryId === "string" && body.categoryId.length > 0) data.categoryId = body.categoryId;
-        if (typeof body.status === "string" && ITEM_STATUSES.includes(body.status)) data.status = body.status;
-        if (body.lastInspectedAt !== undefined) {
-                  data.lastInspectedAt = body.lastInspectedAt ? new Date(body.lastInspectedAt) : null;
-        }
-        if (typeof body.attentionNotes === "string") {
-                  data.attentionNotes = body.attentionNotes.length > 0 ? body.attentionNotes : null;
-        }
-        if (body.blockBookingsUntil !== undefined) {
-                  data.blockBookingsUntil = body.blockBookingsUntil ? new Date(body.blockBookingsUntil) : null;
-        }
-        if (typeof body.restrictionMessage === "string") {
-                  data.restrictionMessage = body.restrictionMessage.length > 0 ? body.restrictionMessage : null;
-        }
+  if (typeof body.status === "string" && ITEM_STATUSES.includes(body.status)) data.status = body.status;
+  if (body.lastInspectedAt !== undefined) {
+    data.lastInspectedAt = body.lastInspectedAt ? new Date(body.lastInspectedAt) : null;
+  }
+  if (typeof body.attentionNotes === "string") {
+    data.attentionNotes = body.attentionNotes.length > 0 ? body.attentionNotes : null;
+  }
+  if (body.blockBookingsUntil !== undefined) {
+    data.blockBookingsUntil = body.blockBookingsUntil ? new Date(body.blockBookingsUntil) : null;
+  }
+  if (typeof body.restrictionMessage === "string") {
+    data.restrictionMessage = body.restrictionMessage.length > 0 ? body.restrictionMessage : null;
+  }
 
   const item = await prisma.item.update({ where: { id: body.id }, data });
 
