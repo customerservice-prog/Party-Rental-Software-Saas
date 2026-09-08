@@ -76,11 +76,11 @@ export default function CouponsManager() {
   }
 
   if (loading) {
-    return <div className="p-8">Loading coupons...</div>;
+    return <div>Loading coupons...</div>;
   }
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="max-w-4xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Coupons</h1>
       <p className="text-gray-500 mb-6">
         Create discount codes customers can apply at checkout.
@@ -135,7 +135,10 @@ export default function CouponsManager() {
             onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
           />
         </label>
-        <button type="submit" className="bg-brand-600 text-white px-4 py-2 rounded h-fit">
+        <button
+          type="submit"
+          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 h-fit"
+        >
           Add Coupon
         </button>
       </form>
