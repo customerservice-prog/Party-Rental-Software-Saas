@@ -60,7 +60,7 @@ export default function HomeTasks() {
         <button
           onClick={addTask}
           disabled={saving || !draft.trim()}
-          className="bg-green-700 text-white text-sm px-3 py-1.5 rounded hover:bg-green-800 disabled:opacity-50"
+          className="bg-indigo-600 text-white text-sm px-3 py-1.5 rounded hover:bg-indigo-700 disabled:opacity-50"
         >
           Add New Task
         </button>
@@ -78,7 +78,7 @@ export default function HomeTasks() {
                 type="checkbox"
                 checked={task.isDone}
                 onChange={() => toggleDone(task)}
-                className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
               />
               <span className="text-gray-800">{task.title}</span>
             </li>
@@ -93,7 +93,7 @@ export default function HomeTasks() {
           if (e.key === "Enter") addTask();
         }}
         placeholder="Add a task..."
-        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
       />
     </div>
   );
