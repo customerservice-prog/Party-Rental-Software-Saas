@@ -88,7 +88,6 @@ export default async function ReportsPage({
 
   const last30Days = new Date();
     last30Days.setDate(last30Days.getDate() - 30);
-
   const recentOrders = await prisma.order.findMany({
         where: {
                 organizationId: organization.id,
@@ -99,225 +98,178 @@ export default async function ReportsPage({
         take: 10,
   });
 
-  return (
-        <div style={{ padding: 20 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <h1>Reports &amp; Analytics</h1>
-                  <a
-                    href={`/api/reports/export${(fromParam || toParam) ? `?from=${encodeURIComponent(fromParam)}&to=${encodeURIComponent(toParam)}` : ""}`}
-                    style={{
-                      border: "1px solid #ddd",
-                      borderRadius: 6,
-                      padding: "8px 16px",
-                      fontSize: 14,
-                      textDecoration: "none",
-                      color: "#374151",
-                    }}
-                  >
-                    Export CSV
-                  </a>
-                </div>
-        <form
-          method="get"
-          style={{ display: "flex", gap: 8, alignItems: "flex-end", margin: "16px 0" }}
-        >
-          <div>
-            <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>From</div>
-            <input
-              type="date"
-              name="from"
-              defaultValue={fromParam}
-              style={{ border: "1px solid #ddd", borderRadius: 6, padding: "6px 10px", fontSize: 14 }}
-            />
-          </div>
-          <div>
-            <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>To</div>
-            <input
-              type="date"
-              name="to"
-              defaultValue={toParam}
-              style={{ border: "1px solid #ddd", borderRadius: 6, padding: "6px 10px", fontSize: 14 }}
-            />
-          </div>
-          <button
-            type="submit"
-            style={{ border: "1px solid #2563eb", background: "#2563eb", color: "#fff", borderRadius: 6, padding: "8px 16px", fontSize: 14, cursor: "pointer" }}
-          >
-            Apply
-          </button>
-          {hasDateFilter && (
-            <a
-              href="/dashboard/reports"
-              style={{ padding: "8px 12px", fontSize: 14, color: "#6b7280", textDecoration: "none" }}
-            >
-              Clear
-            </a>
-          )}
-        </form>
-        
-              <div style={{ display: "flex", gap: 16, margin: "20px 0" }}>
-                      <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 16, flex: 1 }}>
-                                <div style={{ fontSize: 13, color: "#666" }}>Total Revenue</div>
-                                <div style={{ fontSize: 24, fontWeight: 700 }}>
-                                            ${(orderStats._sum.totalAmount || 0).toFixed(2)}
-                                </div>
-                      </div>
-                      <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 16, flex: 1 }}>
-                                <div style={{ fontSize: 13, color: "#666" }}>Amount Collected</div>
-                                <div style={{ fontSize: 24, fontWeight: 700 }}>
-                                            ${(orderStats._sum.amountPaid || 0).toFixed(2)}
-                                </div>
-                      </div>
-                      <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 16, flex: 1, background: totalOutstanding > 0 ? "#fff7ed" : "#fff" }}>
-                                <div style={{ fontSize: 13, color: "#666" }}>Outstanding Balance</div>
-                                <div style={{ fontSize: 24, fontWeight: 700, color: totalOutstanding > 0 ? "#c2410c" : "#111" }}>
-                                            ${totalOutstanding.toFixed(2)}
-                                </div>
-                      </div>
-                      <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 16, flex: 1 }}>
-                                <div style={{ fontSize: 13, color: "#666" }}>Total Orders</div>
-                                <div style={{ fontSize: 24, fontWeight: 700 }}>{orderCount}</div>
-                      </div>
-              </div>
-        
-              <h2>Orders by Status</h2>
-              <div style={{ display: "flex", gap: 12, margin: "12px 0 30px", flexWrap: "wrap" }}>
-                {statusGroups.length === 0 ? (
-                  <div style={{ color: "#666" }}>No orders yet.</div>
-                ) : (
-                  statusGroups.map((s) => (
-                    <div key={s.status} style={{ border: "1px solid #eee", borderRadius: 6, padding: "8px 14px", minWidth: 90 }}>
-                      <div style={{ fontSize: 12, color: "#666", textTransform: "capitalize" }}>{s.status}</div>
-                      <div style={{ fontSize: 20, fontWeight: 700 }}>{s._count._all}</div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <h2>Receivables (unpaid balances)</h2>
-              <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 30 }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Order</th>
-                    <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Customer</th>
-                    <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Total</th>
-                    <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Paid</th>
-                    <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Balance Due</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {receivables.map((rr) => (
-                    <tr key={rr.order.id}>
-                      <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>{rr.order.orderNumber}</td>
-                      <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>{rr.order.customer.firstName} {rr.order.customer.lastName}</td>
-                      <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>${rr.order.totalAmount.toFixed(2)}</td>
-                      <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>${rr.order.amountPaid.toFixed(2)}</td>
-                      <td style={{ padding: 8, borderBottom: "1px solid #eee", fontWeight: 600, color: "#c2410c" }}>${rr.balance.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                  {receivables.length === 0 && (
-                    <tr>
-                      <td colSpan={5} style={{ padding: 8, color: "#666" }}>No outstanding balances. All orders are paid in full.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-
-              <h2>Top Rented Items</h2>
-              <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 30 }}>
-                      <thead>
-                                <tr>
-                                            <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Item</th>
-                                            <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>
-                                                          Units Booked
-                                            </th>
-                                            <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>
-                                                          Revenue
-                                            </th>
-                                </tr>
-                      </thead>
-                      <tbody>
-                        {topItems.map((t) => {
-                      const item = itemMap.get(t.itemId);
-                      return (
-                                      <tr key={t.itemId}>
-                                                      <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>
-                                                        {item ? item.name : "Unknown item"}
-                                                      </td>
-                                                      <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>
-                                                        {t._sum.quantity || 0}
-                                                      </td>
-                                                      <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>
-                                                                        ${(t._sum.price || 0).toFixed(2)}
-                                                      </td>
-                                      </tr>
-                                    );
-        })}
-                        {topItems.length === 0 && (
-                      <tr>
-                                    <td colSpan={3} style={{ padding: 8, color: "#666" }}>
-                                                    No bookings yet.
-                                    </td>
-                      </tr>
-                                )}
-                      </tbody>
-              </table>
-        
-              <h2>Recent Orders (last 30 days)</h2>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                      <thead>
-                                <tr>
-                                            <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>
-                                                          Order #
-                                            </th>
-                                            <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>
-                                                          Customer
-                                            </th>
-                                            <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>
-                                                          Total
-                                            </th>
-                                            <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>
-                                                          Status
-                                            </th>
-                                </tr>
-                      </thead>
-                      <tbody>
-                        {recentOrders.map((order) => (
-                      <tr key={order.id}>
-                                    <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>{order.orderNumber}</td>
-                                    <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>
-                                      {order.customer.firstName} {order.customer.lastName}
-                                    </td>
-                                    <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>
-                                                    ${order.totalAmount.toFixed(2)}
-                                    </td>
-                                    <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>{order.status}</td>
-                      </tr>
-                    ))}
-                        {recentOrders.length === 0 && (
-                      <tr>
-                                    <td colSpan={4} style={{ padding: 8, color: "#666" }}>
-                                                    No orders in the last 30 days.
-                                    </td>
-                      </tr>
-                                )}
-                      </tbody>
-              </table>
-              <div className="mt-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Leads by Source</h2>
-                <div className="bg-white shadow rounded-lg divide-y divide-gray-100">
-                  {leadSourceGroups.length === 0 ? (
-                    <p className="px-4 py-3 text-sm text-gray-500">No customer data yet.</p>
-                  ) : (
-                    leadSourceGroups.map((g) => (
-                      <div key={g.leadSource} className="flex items-center justify-between px-4 py-3 text-sm">
-                        <span className="capitalize text-gray-700">{g.leadSource}</span>
-                        <span className="font-medium text-gray-900">{g._count._all}</span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-        </div>
+return (
+  <div>
+  <div className="flex items-center justify-between mb-6">
+  <h1 className="text-2xl font-bold text-gray-900">Reports &amp; Analytics</h1>
+  <a
+    href={`/api/reports/export${(fromParam || toParam) ? `?from=${encodeURIComponent(fromParam)}&to=${encodeURIComponent(toParam)}` : ""}`}
+    className="border border-gray-300 rounded-md px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+    >
+  Export CSV
+  </a>
+  </div>
+  
+  <form method="get" className="flex gap-3 items-end mb-6 bg-white shadow rounded-lg p-4">
+  <div>
+  <div className="text-xs text-gray-500 mb-1">From</div>
+  <input type="date" name="from" defaultValue={fromParam} className="border border-gray-300 rounded-md px-3 py-1.5 text-sm" />
+  </div>
+  <div>
+  <div className="text-xs text-gray-500 mb-1">To</div>
+  <input type="date" name="to" defaultValue={toParam} className="border border-gray-300 rounded-md px-3 py-1.5 text-sm" />
+  </div>
+  <button type="submit" className="bg-indigo-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-indigo-700">
+  Apply
+  </button>
+    {hasDateFilter && (
+    <a href="/dashboard/reports" className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">
+    Clear
+    </a>
+  )}
+  </form>
+  
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  <div className="bg-white shadow rounded-lg p-4 border-l-4 border-indigo-600">
+  <div className="text-sm text-gray-500">Total Revenue</div>
+  <div className="text-2xl font-bold text-gray-900">${(orderStats._sum.totalAmount || 0).toFixed(2)}</div>
+  </div>
+  <div className="bg-white shadow rounded-lg p-4 border-l-4 border-green-600">
+  <div className="text-sm text-gray-500">Amount Collected</div>
+  <div className="text-2xl font-bold text-gray-900">${(orderStats._sum.amountPaid || 0).toFixed(2)}</div>
+  </div>
+  <div className={"bg-white shadow rounded-lg p-4 border-l-4 " + (totalOutstanding > 0 ? "border-orange-500" : "border-gray-300")}>
+  <div className="text-sm text-gray-500">Outstanding Balance</div>
+  <div className={"text-2xl font-bold " + (totalOutstanding > 0 ? "text-orange-600" : "text-gray-900")}>${totalOutstanding.toFixed(2)}</div>
+  </div>
+  <div className="bg-white shadow rounded-lg p-4 border-l-4 border-blue-600">
+  <div className="text-sm text-gray-500">Total Orders</div>
+  <div className="text-2xl font-bold text-gray-900">{orderCount}</div>
+  </div>
+  </div>
+  
+  <h2 className="text-lg font-semibold text-gray-900 mb-3">Orders by Status</h2>
+  <div className="flex gap-3 flex-wrap mb-8">
+    {statusGroups.length === 0 ? (
+    <div className="text-sm text-gray-500">No orders yet.</div>
+    ) : (
+    statusGroups.map((s) => (
+      <div key={s.status} className="bg-white shadow rounded-lg px-4 py-2 min-w-[90px]">
+      <div className="text-xs text-gray-500 capitalize">{s.status}</div>
+      <div className="text-xl font-bold text-gray-900">{s._count._all}</div>
+      </div>
+      ))
+    )}
+  </div>
+  <div className="bg-white shadow rounded-lg overflow-hidden mb-8">
+  <div className="px-6 py-4 border-b border-gray-200">
+  <h2 className="text-lg font-semibold text-gray-900">Receivables (unpaid balances)</h2>
+  </div>
+  <table className="w-full text-sm">
+  <thead>
+    <tr className="text-left text-gray-500 border-b border-gray-200">
+    <th className="px-6 py-2 font-medium">Order</th>
+    <th className="px-6 py-2 font-medium">Customer</th>
+    <th className="px-6 py-2 font-medium">Total</th>
+    <th className="px-6 py-2 font-medium">Paid</th>
+    <th className="px-6 py-2 font-medium">Balance Due</th>
+    </tr>
+  </thead>
+  <tbody className="divide-y divide-gray-100">
+    {receivables.map((rr) => (
+    <tr key={rr.order.id}>
+    <td className="px-6 py-2">{rr.order.orderNumber}</td>
+    <td className="px-6 py-2">{rr.order.customer.firstName} {rr.order.customer.lastName}</td>
+    <td className="px-6 py-2">${rr.order.totalAmount.toFixed(2)}</td>
+    <td className="px-6 py-2">${rr.order.amountPaid.toFixed(2)}</td>
+    <td className="px-6 py-2 font-semibold text-orange-600">${rr.balance.toFixed(2)}</td>
+    </tr>
+    ))}
+    {receivables.length === 0 && (
+    <tr>
+    <td colSpan={5} className="px-6 py-4 text-gray-500">No outstanding balances. All orders are paid in full.</td>
+    </tr>
+  )}
+  </tbody>
+  </table>
+  </div>
+  <div className="bg-white shadow rounded-lg overflow-hidden mb-8">
+  <div className="px-6 py-4 border-b border-gray-200">
+  <h2 className="text-lg font-semibold text-gray-900">Top Rented Items</h2>
+  </div>
+  <table className="w-full text-sm">
+  <thead>
+  <tr className="text-left text-gray-500 border-b border-gray-200">
+  <th className="px-6 py-2 font-medium">Item</th>
+  <th className="px-6 py-2 font-medium">Units Booked</th>
+  <th className="px-6 py-2 font-medium">Revenue</th>
+  </tr>
+  </thead>
+  <tbody className="divide-y divide-gray-100">
+    {topItems.map((t) => {
+    const item = itemMap.get(t.itemId);
+    return (
+      <tr key={t.itemId}>
+      <td className="px-6 py-2">{item ? item.name : "Unknown item"}</td>
+      <td className="px-6 py-2">{t._sum.quantity || 0}</td>
+      <td className="px-6 py-2">${(t._sum.price || 0).toFixed(2)}</td>
+      </tr>
       );
+  })}
+    {topItems.length === 0 && (
+    <tr>
+    <td colSpan={3} className="px-6 py-4 text-gray-500">No bookings yet.</td>
+    </tr>
+  )}
+  </tbody>
+  </table>
+  </div>
+  <div className="bg-white shadow rounded-lg overflow-hidden mb-8">
+  <div className="px-6 py-4 border-b border-gray-200">
+  <h2 className="text-lg font-semibold text-gray-900">Recent Orders (last 30 days)</h2>
+  </div>
+  <table className="w-full text-sm">
+  <thead>
+  <tr className="text-left text-gray-500 border-b border-gray-200">
+  <th className="px-6 py-2 font-medium">Order #</th>
+  <th className="px-6 py-2 font-medium">Customer</th>
+  <th className="px-6 py-2 font-medium">Total</th>
+  <th className="px-6 py-2 font-medium">Status</th>
+  </tr>
+  </thead>
+  <tbody className="divide-y divide-gray-100">
+    {recentOrders.map((order) => (
+    <tr key={order.id}>
+    <td className="px-6 py-2">{order.orderNumber}</td>
+    <td className="px-6 py-2">{order.customer.firstName} {order.customer.lastName}</td>
+    <td className="px-6 py-2">${order.totalAmount.toFixed(2)}</td>
+    <td className="px-6 py-2 capitalize">{order.status}</td>
+    </tr>
+    ))}
+    {recentOrders.length === 0 && (
+    <tr>
+    <td colSpan={4} className="px-6 py-4 text-gray-500">No orders in the last 30 days.</td>
+    </tr>
+  )}
+  </tbody>
+  </table>
+  </div>
+  <div>
+  <h2 className="text-lg font-semibold text-gray-900 mb-3">Leads by Source</h2>
+  <div className="bg-white shadow rounded-lg divide-y divide-gray-100">
+    {leadSourceGroups.length === 0 ? (
+    <p className="px-4 py-3 text-sm text-gray-500">No customer data yet.</p>
+    ) : (
+    leadSourceGroups.map((g) => (
+      <div key={g.leadSource} className="flex items-center justify-between px-4 py-3 text-sm">
+      <span className="capitalize text-gray-700">{g.leadSource}</span>
+      <span className="font-medium text-gray-900">{g._count._all}</span>
+      </div>
+      ))
+    )}
+  </div>
+  </div>
+  </div>
+  
+);
 }
