@@ -155,7 +155,7 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold mb-1">Messages</h1>
       <p className="text-sm text-gray-500 mb-6">
         Compose an email or SMS to a customer. Messages are queued and will be
@@ -173,7 +173,7 @@ export default function MessagesPage() {
         </div>
       )}
 
-      <form onSubmit={onSend} className="bg-white border rounded-lg p-5 mb-8 space-y-4">
+      <form onSubmit={onSend} className="bg-white shadow rounded-lg p-5 mb-8 space-y-4">
         <div className="flex gap-4">
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -277,7 +277,7 @@ export default function MessagesPage() {
         <button
           type="submit"
           disabled={sending}
-          className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium disabled:opacity-50"
+          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
         >
           {sending ? "Queuing..." : "Queue message"}
         </button>
@@ -287,7 +287,7 @@ export default function MessagesPage() {
       {history.length === 0 ? (
         <p className="text-sm text-gray-500">No messages yet.</p>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="bg-white shadow rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-left">
               <tr>
