@@ -120,7 +120,7 @@ export default function StaffPage() {
 
   return (
     <div className="max-w-3xl">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Staff Accounts</h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -128,7 +128,7 @@ export default function StaffPage() {
             custom permission role that controls what they can see and do.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <Link
             href="/dashboard/roles"
             className="rounded-md border px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -151,7 +151,7 @@ export default function StaffPage() {
       )}
 
       {showForm && (
-        <form onSubmit={handleCreate} className="mb-6 rounded-lg border bg-white p-4 space-y-3">
+        <form onSubmit={handleCreate} className="mb-6 rounded-lg shadow bg-white p-4 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Full name</label>
@@ -222,7 +222,7 @@ export default function StaffPage() {
       {loading ? (
         <p className="text-sm text-gray-500">Loading...</p>
       ) : (
-        <div className="rounded-lg border bg-white divide-y">
+        <div className="bg-white shadow rounded-lg overflow-hidden divide-y">
           {users.length === 0 && (
             <p className="p-4 text-sm text-gray-500">No staff accounts yet.</p>
           )}
