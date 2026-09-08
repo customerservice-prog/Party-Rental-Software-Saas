@@ -103,11 +103,11 @@ export default function TasksManager() {
   ).length;
 
   if (loading) {
-    return <div className="p-8">Loading tasks...</div>;
+    return <div>Loading tasks...</div>;
   }
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="max-w-4xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Tasks</h1>
       <p className="text-gray-500 mb-6">
         Follow-ups and to-dos for your team. {overdueCount > 0 && (
@@ -169,7 +169,10 @@ export default function TasksManager() {
             ))}
           </select>
         </label>
-        <button type="submit" className="bg-brand-600 text-white px-4 py-2 rounded h-fit">
+        <button
+          type="submit"
+          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 h-fit"
+        >
           Add Task
         </button>
       </form>
