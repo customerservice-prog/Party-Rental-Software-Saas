@@ -22,11 +22,11 @@ type Item = {
   quantity: number;
   picture: string | null;
   displayToCustomer: boolean;
-    status: string;
-    lastInspectedAt: string | null;
-    attentionNotes: string | null;
-    blockBookingsUntil: string | null;
-    restrictionMessage: string | null;
+  status: string;
+  lastInspectedAt: string | null;
+  attentionNotes: string | null;
+  blockBookingsUntil: string | null;
+  restrictionMessage: string | null;
 };
 
 type Category = {
@@ -52,11 +52,11 @@ type ItemFormState = {
   quantity: string;
   picture: string;
   displayToCustomer: boolean;
-    status: string;
-    lastInspectedAt: string;
-    attentionNotes: string;
-    blockBookingsUntil: string;
-    restrictionMessage: string;
+  status: string;
+  lastInspectedAt: string;
+  attentionNotes: string;
+  blockBookingsUntil: string;
+  restrictionMessage: string;
 };
 
 type AddonFormState = {
@@ -72,11 +72,11 @@ const emptyItemForm: ItemFormState = {
   quantity: "1",
   picture: "",
   displayToCustomer: true,
-    status: "available",
-    lastInspectedAt: "",
-    attentionNotes: "",
-    blockBookingsUntil: "",
-    restrictionMessage: "",
+  status: "available",
+  lastInspectedAt: "",
+  attentionNotes: "",
+  blockBookingsUntil: "",
+  restrictionMessage: "",
 };
 
 const emptyAddonForm: AddonFormState = { name: "", price: "", isRequired: false };
@@ -212,11 +212,11 @@ export default function InventoryPage() {
       quantity: String(item.quantity),
       picture: item.picture || "",
       displayToCustomer: item.displayToCustomer,
-            status: item.status || "available",
-            lastInspectedAt: item.lastInspectedAt ? item.lastInspectedAt.slice(0, 10) : "",
-            attentionNotes: item.attentionNotes || "",
-            blockBookingsUntil: item.blockBookingsUntil ? item.blockBookingsUntil.slice(0, 10) : "",
-            restrictionMessage: item.restrictionMessage || "",
+      status: item.status || "available",
+      lastInspectedAt: item.lastInspectedAt ? item.lastInspectedAt.slice(0, 10) : "",
+      attentionNotes: item.attentionNotes || "",
+      blockBookingsUntil: item.blockBookingsUntil ? item.blockBookingsUntil.slice(0, 10) : "",
+      restrictionMessage: item.restrictionMessage || "",
     });
   }
 
@@ -234,11 +234,11 @@ export default function InventoryPage() {
         quantity: parseInt(editForm.quantity || "1", 10),
         picture: editForm.picture,
         displayToCustomer: editForm.displayToCustomer,
-                status: editForm.status,
-          lastInspectedAt: editForm.lastInspectedAt ? editForm.lastInspectedAt : null,
-                attentionNotes: editForm.attentionNotes,
-                blockBookingsUntil: editForm.blockBookingsUntil ? editForm.blockBookingsUntil : null,
-                restrictionMessage: editForm.restrictionMessage,
+        status: editForm.status,
+        lastInspectedAt: editForm.lastInspectedAt ? editForm.lastInspectedAt : null,
+        attentionNotes: editForm.attentionNotes,
+        blockBookingsUntil: editForm.blockBookingsUntil ? editForm.blockBookingsUntil : null,
+        restrictionMessage: editForm.restrictionMessage,
       }),
     });
     if (res.ok) {
@@ -304,7 +304,7 @@ export default function InventoryPage() {
           Export CSV
         </a>
       </div>
-      {message && <p className="text-sm text-purple-700">{message}</p>}
+      {message && <p className="text-sm text-indigo-700">{message}</p>}
 
       <div className="bg-white border rounded p-4">
         <h2 className="font-semibold text-lg mb-3">Add Category</h2>
@@ -333,7 +333,7 @@ export default function InventoryPage() {
             className="text-xs"
             onChange={(e) => readImageFile(e.target.files && e.target.files[0], (dataUrl) => setNewCategory({ ...newCategory, picture: dataUrl }))}
           />
-          <button className="bg-purple-600 text-white rounded px-4 py-2" type="submit">
+          <button className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700" type="submit">
             Add Category
           </button>
         </form>
@@ -367,7 +367,7 @@ export default function InventoryPage() {
                     <th className="py-1">Price</th>
                     <th className="py-1">Quantity</th>
                     <th className="py-1">Visible</th>
-                                                                    <th className="py-1">Condition</th>
+                    <th className="py-1">Condition</th>
                     <th className="py-1">Actions</th>
                   </tr>
                 </thead>
@@ -377,7 +377,7 @@ export default function InventoryPage() {
                     const addonForm = addonFormFor(item.id);
                     return editingItemId === item.id && editForm ? (
                       <tr key={item.id} className="border-b last:border-0">
-                                        <td className="py-2" colSpan={7}>
+                        <td className="py-2" colSpan={7}>
                           <div className="grid grid-cols-1 md:grid-cols-6 gap-2 items-center">
                             <input
                               className="border rounded px-2 py-1"
@@ -415,48 +415,46 @@ export default function InventoryPage() {
                               className="text-xs"
                               onChange={(e) => readImageFile(e.target.files && e.target.files[0], (dataUrl) => setEditForm({ ...editForm, picture: dataUrl }))}
                             />
-                                            <select
-                                                                className="border rounded px-2 py-1"
-                                                                value={editForm.status}
-                                                                onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                                                              >
-                                                              
-                                                                                                  <option value="available">Available</option>
-                                                                <option value="damaged">Damaged</option>
-                                                                <option value="needs_repair">Needs Repair</option>
-                                                                <option value="missing">Missing</option>
-                                                                <option value="out_of_service">Out of Service</option>
-                                                                <option value="retired">Retired</option>
-
-                                            </select>
-                                            <input
-                                                                type="date"
-                                                                className="border rounded px-2 py-1 text-xs"
-                                                                value={editForm.lastInspectedAt}
-                                                                onChange={(e) => setEditForm({ ...editForm, lastInspectedAt: e.target.value })}
-                                                              />
-                                            <input
-                                                                type="date"
-                                                                className="border rounded px-2 py-1 text-xs"
-                                                                value={editForm.blockBookingsUntil}
-                                                                onChange={(e) => setEditForm({ ...editForm, blockBookingsUntil: e.target.value })}
-                                                              />
-                                            <input
-                                                                className="border rounded px-2 py-1 text-xs"
-                                                                placeholder="Restriction message (optional)"
-                                                                value={editForm.restrictionMessage}
-                                                                onChange={(e) => setEditForm({ ...editForm, restrictionMessage: e.target.value })}
-                                                              />
-                                            <input
-                                                                className="border rounded px-2 py-1 text-xs"
-                                                                placeholder="Attention notes (optional)"
-                                                                value={editForm.attentionNotes}
-                                                                onChange={(e) => setEditForm({ ...editForm, attentionNotes: e.target.value })}
-                                                              />
+                            <select
+                              className="border rounded px-2 py-1"
+                              value={editForm.status}
+                              onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                            >
+                              <option value="available">Available</option>
+                              <option value="damaged">Damaged</option>
+                              <option value="needs_repair">Needs Repair</option>
+                              <option value="missing">Missing</option>
+                              <option value="out_of_service">Out of Service</option>
+                              <option value="retired">Retired</option>
+                            </select>
+                            <input
+                              type="date"
+                              className="border rounded px-2 py-1 text-xs"
+                              value={editForm.lastInspectedAt}
+                              onChange={(e) => setEditForm({ ...editForm, lastInspectedAt: e.target.value })}
+                            />
+                            <input
+                              type="date"
+                              className="border rounded px-2 py-1 text-xs"
+                              value={editForm.blockBookingsUntil}
+                              onChange={(e) => setEditForm({ ...editForm, blockBookingsUntil: e.target.value })}
+                            />
+                            <input
+                              className="border rounded px-2 py-1 text-xs"
+                              placeholder="Restriction message (optional)"
+                              value={editForm.restrictionMessage}
+                              onChange={(e) => setEditForm({ ...editForm, restrictionMessage: e.target.value })}
+                            />
+                            <input
+                              className="border rounded px-2 py-1 text-xs"
+                              placeholder="Attention notes (optional)"
+                              value={editForm.attentionNotes}
+                              onChange={(e) => setEditForm({ ...editForm, attentionNotes: e.target.value })}
+                            />
                             <div className="flex gap-2">
                               <button
                                 onClick={() => saveEdit(item.id)}
-                                className="bg-purple-600 text-white rounded px-3 py-1 text-sm"
+                                className="rounded-md bg-indigo-600 px-3 py-1 text-sm font-medium text-white hover:bg-indigo-700"
                                 type="button"
                               >
                                 Save
@@ -495,13 +493,13 @@ export default function InventoryPage() {
                               onChange={() => toggleVisible(item)}
                             />
                           </td>
-                                        
-                                        <td className="py-1">
-                                                        <span className={item.status === "available" || !item.status ? "text-green-700" : (item.status === "damaged" || item.status === "needs_repair") ? "text-yellow-700" : "text-red-700"}>
-                                                          {(item.status || "available").replace("_", " ")}
-                                                        </span>
-                                                      </td><td className="py-1 space-x-2">
-                            <button onClick={() => startEdit(item)} className="text-purple-700 hover:underline">
+                          <td className="py-1">
+                            <span className={item.status === "available" || !item.status ? "text-green-700" : (item.status === "damaged" || item.status === "needs_repair") ? "text-yellow-700" : "text-red-700"}>
+                              {(item.status || "available").replace("_", " ")}
+                            </span>
+                          </td>
+                          <td className="py-1 space-x-2">
+                            <button onClick={() => startEdit(item)} className="text-indigo-600 hover:underline">
                               Edit
                             </button>
                             <button onClick={() => deleteItem(item.id)} className="text-red-600 hover:underline">
@@ -519,7 +517,7 @@ export default function InventoryPage() {
                         </tr>
                         {expandedAddonItemId === item.id && (
                           <tr key={item.id + "-addons"} className="border-b last:border-0 bg-indigo-50">
-        <td colSpan={7} className="py-3 px-2">
+                            <td colSpan={7} className="py-3 px-2">
                               <div className="text-xs font-semibold text-gray-600 mb-2">
                                 Add-ons for {item.name}
                               </div>
@@ -572,7 +570,7 @@ export default function InventoryPage() {
                                   />
                                   Required
                                 </label>
-                                <button className="bg-indigo-600 text-white rounded px-3 py-1 text-sm" type="submit">
+                                <button className="rounded-md bg-indigo-600 px-3 py-1 text-sm font-medium text-white hover:bg-indigo-700" type="submit">
                                   Add
                                 </button>
                               </form>
@@ -632,7 +630,7 @@ export default function InventoryPage() {
                   className="text-xs"
                   onChange={(e) => readImageFile(e.target.files && e.target.files[0], (dataUrl) => setItemFormFor(category.id, { ...form, picture: dataUrl }))}
                 />
-                <button className="bg-purple-600 text-white rounded px-3 py-1 text-sm" type="submit">
+                <button className="rounded-md bg-indigo-600 px-3 py-1 text-sm font-medium text-white hover:bg-indigo-700" type="submit">
                   Add Item
                 </button>
               </form>
