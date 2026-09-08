@@ -182,11 +182,11 @@ export default function PagesManager() {
   }
 
   if (loading) {
-    return <div className="p-8">Loading pages...</div>;
+    return <div>Loading pages...</div>;
   }
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div className="max-w-5xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Website Pages</h1>
       <p className="text-gray-500 mb-6">
         Build extra pages for your public site (About Us, FAQ, Policies, etc.) and
@@ -220,7 +220,7 @@ export default function PagesManager() {
                 <td className="px-4 py-2 text-sm space-x-3">
                   <button
                     onClick={() => startEdit(page)}
-                    className="text-brand-600 hover:underline"
+                    className="text-indigo-600 hover:underline"
                   >
                     Edit
                   </button>
@@ -260,7 +260,10 @@ export default function PagesManager() {
               value={newForm.slug}
               onChange={(e) => setNewForm({ ...newForm, slug: e.target.value })}
             />
-            <button type="submit" className="bg-brand-600 text-white px-4 py-2 rounded whitespace-nowrap">
+            <button
+              type="submit"
+              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 whitespace-nowrap"
+            >
               Create Page
             </button>
           </div>
@@ -278,7 +281,7 @@ export default function PagesManager() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-brand-600 text-white px-4 py-2 rounded"
+                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save Page"}
               </button>
