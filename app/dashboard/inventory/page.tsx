@@ -2,6 +2,7 @@
 
 import { useEffect, useState, FormEvent } from "react";
 import CatalogBrowser from "./CatalogBrowser";
+import ImportCsvModal from "./ImportCsvModal";
 
 function readImageFile(file: File | undefined | null, onLoaded: (dataUrl: string) => void) {
   if (!file) return;
@@ -92,6 +93,7 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [showCatalog, setShowCatalog] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   const [newCategory, setNewCategory] = useState({ name: "", description: "", picture: "" });
   const [itemForms, setItemForms] = useState<Record<string, ItemFormState>>({});
@@ -315,6 +317,12 @@ export default function InventoryPage() {
           >
             Add from Catalog
           </button>
+          <button
+            onClick={() => setShowImport(true)}
+            className="bg-white text-gray-700 border border-gray-300 rounded px-4 py-2 text-sm font-medium hover:bg-gray-50"
+          >
+            Import CSV
+          </button>
           <a
             href="/api/items/export"
             className="bg-white text-gray-700 border border-gray-300 rounded px-4 py-2 text-sm font-medium hover:bg-gray-50"
@@ -332,6 +340,20 @@ export default function InventoryPage() {
             if (result.created.length > 0) parts.push(result.created.length + " item(s) added.");
             if (result.skipped.length > 0) parts.push(result.skipped.length + " already in your inventory.");
             setMessage(parts.join(" ") || "No items were added.");
+            load();
+          }}
+        />
+      )}
+      {showImport && (
+        <ImportCsvModal
+          onClose={() => setShowImport(false)}
+          onImported={(result) => {
+            setShowImport(false);
+            const parts: string[] = [];
+            if (result.created.length > 0) parts.push(result.created.length + " item(s) imported.");
+            if (result.skipped.length > 0) parts.push(result.skipped.length + " already in your inventory.");
+            if (result.errors.length > 0) parts.push(result.errors.length + " row(s) had errors and were skipped.");
+            setMessage(parts.join(" ") || "No items were imported.");
             load();
           }}
         />
