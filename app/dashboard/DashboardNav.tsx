@@ -182,6 +182,16 @@ function NavIcon({ name, className }: { name: string; className?: string }) {
       </svg>
     );
   }
+  if (name === "globe") {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="9" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <path d="M12 3a15 15 0 0 1 0 18" />
+        <path d="M12 3a15 15 0 0 0 0 18" />
+      </svg>
+    );
+  }
   return null;
 }
 
@@ -214,7 +224,10 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     section: "Website",
-    items: [{ href: "/dashboard/pages", label: "Website Pages", icon: "file" }],
+    items: [
+      { href: "/dashboard/website", label: "Website Editor", icon: "globe" },
+      { href: "/dashboard/pages", label: "Website Pages", icon: "file" },
+    ],
   },
 ];
 
