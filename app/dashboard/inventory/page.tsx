@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, FormEvent } from "react";
+import CatalogBrowser from "./CatalogBrowser";
 
 function readImageFile(file: File | undefined | null, onLoaded: (dataUrl: string) => void) {
   if (!file) return;
@@ -90,6 +91,7 @@ export default function InventoryPage() {
   const [addons, setAddons] = useState<Addon[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [showCatalog, setShowCatalog] = useState(false);
 
   const [newCategory, setNewCategory] = useState({ name: "", description: "", picture: "" });
   const [itemForms, setItemForms] = useState<Record<string, ItemFormState>>({});
@@ -306,13 +308,34 @@ export default function InventoryPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold">Inventory</h1>
-        <a
-          href="/api/items/export"
-          className="bg-white text-gray-700 border border-gray-300 rounded px-4 py-2 text-sm font-medium hover:bg-gray-50"
-        >
-          Export CSV
-        </a>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowCatalog(true)}
+            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          >
+            Add from Catalog
+          </button>
+          <a
+            href="/api/items/export"
+            className="bg-white text-gray-700 border border-gray-300 rounded px-4 py-2 text-sm font-medium hover:bg-gray-50"
+          >
+            Export CSV
+          </a>
+        </div>
       </div>
+      {showCatalog && (
+        <CatalogBrowser
+          onClose={() => setShowCatalog(false)}
+          onAdded={(result) => {
+            setShowCatalog(false);
+            const parts = [];
+            if (result.created.length > 0) parts.push(result.created.length + " item(s) added.");
+            if (result.skipped.length > 0) parts.push(result.skipped.length + " already in your inventory.");
+            setMessage(parts.join(" ") || "No items were added.");
+            load();
+          }}
+        />
+      )}
       {message && <p className="text-sm text-indigo-700">{message}</p>}
 
       <div className="bg-white border rounded p-4">
@@ -349,7 +372,10 @@ export default function InventoryPage() {
       </div>
 
       {categories.length === 0 && (
-        <p className="text-gray-500">No categories yet. Add your first rental category above.</p>
+        <p className="text-gray-500">
+          No categories yet. Add your first rental category above, or click "Add from Catalog" to start from a
+          professionally structured template instead of building everything from scratch.
+        </p>
       )}
 
       <div className="space-y-6">
