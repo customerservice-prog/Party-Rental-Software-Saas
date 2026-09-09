@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { requirePermission, authzErrorResponse } from "@/lib/authz";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { validateSections, buildDefaultSections } from "@/lib/websiteSections";
 
 // Powers the dashboard "Website" editor (app/dashboard/website/page.tsx).
