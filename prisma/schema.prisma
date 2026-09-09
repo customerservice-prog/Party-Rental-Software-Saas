@@ -64,6 +64,7 @@ model Organization {
   driverRuns             DriverRun[]
   doNotRentRestrictions  DoNotRentRestriction[]
   meetings               Meeting[]
+  website                Website?
 }
 
 // The tenant's own subscription to OUR platform (billing us, not their customers).
@@ -544,6 +545,23 @@ model Page {
   updatedAt      DateTime @updatedAt
 
   @@unique([organizationId, slug])
+}
+
+model Website {
+  id                String    @id @default(cuid())
+  organizationId    String    @unique
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  // Sections the tenant is currently editing. This is a JSON-encoded array
+  // of objects shaped like { id, type, visible, config } rendered by the
+  // dashboard editor - never shown directly to public storefront visitors.
+  draftSections     String    @db.Text
+  // Snapshot copied from draftSections the last time the tenant clicked
+  // Publish. The public homepage renders ONLY from this field, so
+  // in-progress edits never leak to customers. Null until first publish.
+  publishedSections String?   @db.Text
+  publishedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 model MessageTemplate {
