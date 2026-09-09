@@ -175,3 +175,34 @@ export function buildDefaultSections(org: {
     },
   ];
 }
+
+
+      // Default config for a section freshly added in the dashboard editor
+// ("+ Add Section"). Deliberately short, generic, non-fabricated starter
+// copy (no invented history/ratings/claims) - the tenant always fills in
+// their own real copy afterward. Kept alongside buildDefaultSections so
+// there's a single source of truth for "safe starter content" shapes.
+export function emptySectionConfig(type: SectionType): SectionConfig {
+    if (type === "hero") {
+          return {
+                  heading: "Your Heading Here",
+                  subheading: "",
+                  buttonLabel: "Book Now",
+                  buttonHref: "/book",
+          };
+    }
+    if (type === "categories") {
+          return { heading: "Browse Our Rentals", subheading: "" };
+    }
+    if (type === "about") {
+          return { heading: "About Us", body: "" };
+    }
+    if (type === "cta") {
+          return {
+                  heading: "Ready to book your event?",
+                  buttonLabel: "Check Availability",
+                  buttonHref: "/book",
+          };
+    }
+    return { heading: "Frequently Asked Questions", items: [] };
+}
