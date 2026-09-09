@@ -7,6 +7,7 @@ import MarketingHomePage from "./(marketing)/_components/MarketingHomePage";
 import MarketingHeader from "./(marketing)/_components/MarketingHeader";
 import MarketingFooter from "./(marketing)/_components/MarketingFooter";
 import { pageMetadata, SITE_NAME } from "@/lib/seo";
+import { WebsiteSectionRenderer } from "./WebsiteSectionRenderer";
 
 // The root route serves two very different audiences depending on how it
 // was reached: a platform visitor with no resolved tenant sees the
@@ -62,6 +63,24 @@ export default async function RootPage() {
     where: { organizationId: organization.id, displayToCustomer: true },
     orderBy: { sortOrder: "asc" },
   });
+
+  // If the tenant has published a homepage via the Website editor
+  // (dashboard "Website" section), render that instead of the fixed
+  // starter template below. Only publishedSections is ever read here -
+  // in-progress draft edits never reach public visitors.
+  const website = await prisma.website.findUnique({
+    where: { organizationId: organization.id },
+  });
+
+  if (website?.publishedSections) {
+    const sections = JSON.parse(website.publishedSections);
+    return (
+      <div>
+        <StorefrontNav organizationId={organization.id} activeSlug="" />
+        <WebsiteSectionRenderer sections={sections} categories={categories} />
+      </div>
+    );
+  }
 
   return (
     <div>
