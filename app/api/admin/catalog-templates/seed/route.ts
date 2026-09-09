@@ -40,12 +40,14 @@ export async function POST() {
         categoryKey: template.categoryKey,
         type: template.type,
         sortOrder: template.sortOrder,
+        keywords: template.keywords ?? [],
       },
       update: {
         name: template.name,
         categoryKey: template.categoryKey,
         type: template.type,
         sortOrder: template.sortOrder,
+        keywords: template.keywords ?? [],
       },
     });
     if (existing) updated += 1;
