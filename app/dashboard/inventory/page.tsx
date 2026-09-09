@@ -3,6 +3,7 @@
 import { useEffect, useState, FormEvent } from "react";
 import CatalogBrowser from "./CatalogBrowser";
 import ImportCsvModal from "./ImportCsvModal";
+import ItemUnitsPanel from "./ItemUnitsPanel";
 
 function readImageFile(file: File | undefined | null, onLoaded: (dataUrl: string) => void) {
   if (!file) return;
@@ -101,6 +102,7 @@ export default function InventoryPage() {
   const [editForm, setEditForm] = useState<ItemFormState | null>(null);
 
   const [expandedAddonItemId, setExpandedAddonItemId] = useState<string | null>(null);
+  const [expandedUnitsItemId, setExpandedUnitsItemId] = useState<string | null>(null);
   const [addonForms, setAddonForms] = useState<Record<string, AddonFormState>>({});
 
   async function load() {
@@ -581,6 +583,14 @@ export default function InventoryPage() {
                             >
                               Add-ons ({itemAddons.length})
                             </button>
+                            <button
+                              onClick={() =>
+                                setExpandedUnitsItemId(expandedUnitsItemId === item.id ? null : item.id)
+                              }
+                              className="text-emerald-700 hover:underline"
+                            >
+                              Units
+                            </button>
                           </td>
                         </tr>
                         {expandedAddonItemId === item.id && (
@@ -642,6 +652,13 @@ export default function InventoryPage() {
                                   Add
                                 </button>
                               </form>
+                            </td>
+                          </tr>
+                        )}
+                        {expandedUnitsItemId === item.id && (
+                          <tr key={item.id + "-units"} className="border-b last:border-0 bg-emerald-50">
+                            <td colSpan={7} className="py-3 px-2">
+                              <ItemUnitsPanel itemId={item.id} itemName={item.name} quantity={item.quantity} />
                             </td>
                           </tr>
                         )}
