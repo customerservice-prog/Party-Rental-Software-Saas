@@ -197,7 +197,7 @@ function Editable({
       data-placeholder={placeholder}
       className={
         className +
-        " editable-field outline-none rounded cursor-text whitespace-pre-line focus:ring-2 focus:ring-indigo-400 focus:ring-inset"
+        " editable-field relative z-20 outline-none rounded cursor-text whitespace-pre-line focus:ring-2 focus:ring-indigo-400 focus:ring-inset"
       }
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e: KeyboardEvent<HTMLElement>) => {
@@ -216,16 +216,22 @@ function Editable({
   );
 }
 
+// Hover-reveal image-replace control. pointer-events-none on the overlay
+// itself (only ever made visible/interactive via the ancestor "group"
+// hover, and the inner button opts back in with pointer-events-auto) so
+// it can safely be layered over an entire section - such as a hero's
+// full-bleed background image - without ever intercepting clicks meant
+// for editable text sitting in the same area.
 function ImageOverlay({ hasImage, onClick }: { hasImage: boolean; onClick: () => void }) {
   return (
-    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/0 opacity-0 transition-opacity hover:bg-black/30 hover:opacity-100">
+    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-black/0 opacity-0 transition-opacity group-hover:bg-black/30 group-hover:opacity-100">
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
           onClick();
         }}
-        className="rounded bg-black/70 px-3 py-1.5 text-xs font-medium text-white"
+        className="pointer-events-auto rounded bg-black/70 px-3 py-1.5 text-xs font-medium text-white"
       >
         {hasImage ? "Replace image" : "Add image"}
       </button>
@@ -275,7 +281,7 @@ function HeroSection({
   }
 
   return (
-    <section className="relative bg-brand-50 py-16 px-4 text-center" style={bgStyle}>
+    <section className="group relative bg-brand-50 py-16 px-4 text-center" style={bgStyle}>
       <ImageOverlay
         hasImage={!!config.imageUrl}
         onClick={() => onReplaceImage?.(section.id)}
@@ -294,7 +300,7 @@ function HeroSection({
         placeholder="Click to add a subheading"
         onCommit={(v) => onTextChange?.(section.id, "subheading", v)}
       />
-      <span className="relative z-10 inline-block bg-brand-600 text-white px-6 py-3 rounded font-medium">
+      <span className="relative z-20 inline-block bg-brand-600 text-white px-6 py-3 rounded font-medium">
         <Editable
           as="span"
           value={config.buttonLabel || ""}
@@ -404,7 +410,7 @@ function AboutSection({
   return (
     <section className="max-w-3xl mx-auto py-12 px-4">
       {editable ? (
-        <div className="relative mb-6 inline-block">
+        <div className="group relative mb-6 inline-block">
           {config.imageUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={config.imageUrl} alt="" className="max-h-40 object-contain" />
@@ -480,7 +486,7 @@ function CtaSection({
         config.heading && <h2 className="text-2xl font-bold mb-4">{config.heading}</h2>
       )}
       {editable ? (
-        <span className="inline-block bg-white text-gray-900 px-6 py-3 rounded font-medium">
+        <span className="relative z-20 inline-block bg-white text-gray-900 px-6 py-3 rounded font-medium">
           <Editable
             as="span"
             value={config.buttonLabel || ""}
