@@ -34,13 +34,51 @@ export async function generateMetadata(): Promise<Metadata> {
     };
   }
 
-  return {
-    title: organization.name + " — Book Your Event Rentals Online",
-    description:
-      "Browse rental categories and book your next event online with " +
+  const website = await prisma.website.findUnique({
+    where: { organizationId: organization.id },
+    select: { publishedSections: true },
+  });
+
+  // Pull the real, tenant-authored hero copy from their published
+  // homepage (never fabricated) so search results and social link
+  // previews show what the business actually put on their site. Fall
+  // back to a plain, factual description if they haven't published a
+  // custom homepage yet.
+  let heroHeading = "";
+  let heroSubheading = "";
+  if (website?.publishedSections) {
+    try {
+      const sections = JSON.parse(website.publishedSections) as Array<{
+        type: string;
+        visible?: boolean;
+        config?: { heading?: string; subheading?: string };
+      }>;
+      const hero = sections.find((s) => s.type === "hero" && s.visible !== false);
+      heroHeading = hero?.config?.heading?.trim() || "";
+      heroSubheading = hero?.config?.subheading?.trim() || "";
+    } catch {
+      // Malformed stored JSON should never break metadata generation.
+    }
+  }
+
+  const title = heroHeading || organization.name + " — Book Your Event Rentals Online";
+  const description =
+    heroSubheading ||
+    "Browse rental categories and book your next event online with " +
       organization.name +
-      ".",
-    robots: { index: false, follow: false },
+      ".";
+
+  return {
+    ...pageMetadata({
+      title,
+      description,
+      path: organization.slug ? "/t/" + organization.slug : "/",
+      // Don't let search engines index a tenant site until they've
+      // actually published real homepage content - avoids indexing
+      // empty/starter placeholder pages under the tenant's name.
+      noIndex: !website?.publishedSections,
+    }),
+    title: { absolute: title },
   };
 }
 
