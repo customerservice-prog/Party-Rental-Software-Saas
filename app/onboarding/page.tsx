@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import CatalogBrowser from "../dashboard/inventory/CatalogBrowser";
+import ImportCsvModal from "../dashboard/inventory/ImportCsvModal";
 
 const STEPS = ["Business Profile", "Branding", "Category", "Inventory", "Done"];
 
@@ -28,6 +29,7 @@ export default function OnboardingPage() {
 
   const [categoryName, setCategoryName] = useState("");
   const [showCatalog, setShowCatalog] = useState(false);
+  const [showImportCsv, setShowImportCsv] = useState(false);
   const [inventorySummary, setInventorySummary] = useState<string | null>(null);
 
   async function saveProfileAndContinue() {
@@ -219,13 +221,16 @@ export default function OnboardingPage() {
               </span>
             </button>
 
-            <div className="w-full text-left border rounded p-4 opacity-50 cursor-not-allowed">
+            <button
+              onClick={() => setShowImportCsv(true)}
+              className="w-full text-left border rounded p-4 hover:border-brand-600"
+              type="button"
+            >
               <span className="block font-medium">Import from a spreadsheet</span>
               <span className="block text-sm text-gray-500">
-                Coming soon - for established companies moving from another system. For now, use the Inventory page
-                to add items manually or from templates.
+                Best for established companies moving from another system. Upload a CSV of what you already own.
               </span>
-            </div>
+            </button>
 
             <button
               onClick={() => setStep(4)}
@@ -252,6 +257,20 @@ export default function OnboardingPage() {
                 if (result.created.length > 0) parts.push(result.created.length + " item(s) added to your inventory.");
                 if (result.skipped.length > 0) parts.push(result.skipped.length + " were already added.");
                 setInventorySummary(parts.join(" ") || "No items were added.");
+              }}
+            />
+          )}
+
+          {showImportCsv && (
+            <ImportCsvModal
+              onClose={() => setShowImportCsv(false)}
+              onImported={(result) => {
+                setShowImportCsv(false);
+                const parts: string[] = [];
+                if (result.created.length > 0) parts.push(result.created.length + " item(s) imported.");
+                if (result.skipped.length > 0) parts.push(result.skipped.length + " were already added.");
+                if (result.errors.length > 0) parts.push(result.errors.length + " row(s) had errors and were skipped.");
+                setInventorySummary(parts.join(" ") || "No items were imported.");
               }}
             />
           )}
