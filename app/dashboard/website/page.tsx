@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { WebsiteSectionRenderer, type CategoryLite } from "../../WebsiteSectionRenderer";
 import {
   SECTION_LABELS,
@@ -255,7 +255,7 @@ export default function WebsiteEditorPage() {
     fileInputRef.current?.click();
   }
 
-  function onImageFileChosen(e: React.ChangeEvent<HTMLInputElement>) {
+  function onImageFileChosen(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     const id = pendingImageSectionId.current;
     e.target.value = "";
