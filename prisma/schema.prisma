@@ -180,6 +180,15 @@ model Item {
   // this date. Independent of status.
   blockBookingsUntil  DateTime?
   restrictionMessage  String?
+  // Loose reference (NOT a hard foreign key) to the global CatalogTemplate
+  // this item was copied from, if any. Kept loose on purpose: editing or
+  // archiving a global template must never cascade into, lock, or delete a
+  // tenant's own inventory data. sourceTemplateName snapshots the
+  // template's name at copy time so it still displays correctly even if
+  // the template is later renamed or removed. See
+  // app/api/catalog-templates/add/route.ts.
+  sourceTemplateId    String?
+  sourceTemplateName  String?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
@@ -187,6 +196,45 @@ model Item {
   addons     Addon[]
 
   @@unique([organizationId, slug])
+}
+
+// ---------------------------------------------------------------------------
+// GLOBAL CATALOG TEMPLATE LIBRARY
+// Platform-owned starter catalog ("Party Rental CRM Catalog"). These rows
+// are NOT tenant data - they carry no organizationId and are never
+// rented, booked, or billed directly. A tenant "adds" a template from
+// /dashboard/inventory or /onboarding, which creates a normal tenant-owned
+// Item (organizationId set to that tenant, with quantity/price the tenant
+// explicitly typed in - never fabricated) that references this row only
+// loosely via Item.sourceTemplateId. Editing or versioning a template
+// later must never change any tenant's existing Item rows. See
+// lib/catalogTemplates.ts and app/api/catalog-templates/*.
+// ---------------------------------------------------------------------------
+model CatalogTemplate {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  // Key into the static CATALOG_CATEGORIES list in lib/catalogTemplates.ts
+  // (e.g. "tables", "chairs", "tents"). Not a DB relation - this is fixed
+  // platform taxonomy, not tenant-editable data like the real Category
+  // model above.
+  categoryKey String
+  // "rental" | "service" | "consumable" | "addon" | "package" - see
+  // CATALOG_TEMPLATE_TYPES in lib/catalogTemplates.ts.
+  type        String   @default("rental")
+  description String?
+  // Free-form structured hints (e.g. shape, size, color options) to help a
+  // tenant configure their own copy faster. Never used to fabricate a
+  // tenant's real quantity or price.
+  attributes  Json     @default("{}")
+  // Internal search keywords for the catalog browser - not customer-facing.
+  keywords    Json     @default("[]")
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([categoryKey])
 }
 
 model Customer {
