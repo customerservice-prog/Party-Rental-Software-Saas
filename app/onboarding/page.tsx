@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import CatalogBrowser from "../dashboard/inventory/CatalogBrowser";
 
-const STEPS = ["Business Profile", "Branding", "First Category", "Done"];
+const STEPS = ["Business Profile", "Branding", "Category", "Inventory", "Done"];
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -26,6 +27,8 @@ export default function OnboardingPage() {
   });
 
   const [categoryName, setCategoryName] = useState("");
+  const [showCatalog, setShowCatalog] = useState(false);
+  const [inventorySummary, setInventorySummary] = useState<string | null>(null);
 
   async function saveProfileAndContinue() {
     setSaving(true);
@@ -177,10 +180,11 @@ export default function OnboardingPage() {
         <div>
           <h2 className="text-lg font-semibold mb-2">Create your first inventory category</h2>
           <p className="text-gray-500 text-sm mb-3">
-            Examples: Bounce Houses, Tables and Chairs, Tents
+            Examples: Bounce Houses, Tables and Chairs, Tents. You can skip this - the next step can create
+            categories for you automatically.
           </p>
           <input
-            placeholder="Category name"
+            placeholder="Category name (optional)"
             value={categoryName}
             onChange={(e) => setCategoryName(e.target.value)}
             className={inputClass}
@@ -193,9 +197,72 @@ export default function OnboardingPage() {
 
       {step === 3 && (
         <div>
+          <h2 className="text-lg font-semibold mb-2">Now let's build your rental catalog</h2>
+          <p className="text-gray-500 text-sm mb-4">
+            Tell us what you actually own - we will never invent inventory or prices for you. Pick the option that
+            fits your business.
+          </p>
+
+          {inventorySummary && (
+            <p className="text-sm text-indigo-700 bg-indigo-50 rounded p-3 mb-4">{inventorySummary}</p>
+          )}
+
+          <div className="space-y-3 mb-4">
+            <button
+              onClick={() => setShowCatalog(true)}
+              className="w-full text-left border rounded p-4 hover:border-brand-600"
+              type="button"
+            >
+              <span className="block font-medium">Start with Party Rental Templates</span>
+              <span className="block text-sm text-gray-500">
+                Best for new businesses. Pick the equipment you carry, then tell us your real quantities and prices.
+              </span>
+            </button>
+
+            <div className="w-full text-left border rounded p-4 opacity-50 cursor-not-allowed">
+              <span className="block font-medium">Import from a spreadsheet</span>
+              <span className="block text-sm text-gray-500">
+                Coming soon - for established companies moving from another system. For now, use the Inventory page
+                to add items manually or from templates.
+              </span>
+            </div>
+
+            <button
+              onClick={() => setStep(4)}
+              className="w-full text-left border rounded p-4 hover:border-brand-600"
+              type="button"
+            >
+              <span className="block font-medium">I'll add my inventory manually later</span>
+              <span className="block text-sm text-gray-500">
+                Skip for now - you can add categories and items any time from the Inventory page.
+              </span>
+            </button>
+          </div>
+
+          <button onClick={() => setStep(4)} className="text-sm text-gray-500">
+            Skip this step
+          </button>
+
+          {showCatalog && (
+            <CatalogBrowser
+              onClose={() => setShowCatalog(false)}
+              onAdded={(result) => {
+                setShowCatalog(false);
+                const parts: string[] = [];
+                if (result.created.length > 0) parts.push(result.created.length + " item(s) added to your inventory.");
+                if (result.skipped.length > 0) parts.push(result.skipped.length + " were already added.");
+                setInventorySummary(parts.join(" ") || "No items were added.");
+              }}
+            />
+          )}
+        </div>
+      )}
+
+      {step === 4 && (
+        <div>
           <h2 className="text-lg font-semibold mb-2">You are all set.</h2>
           <p className="text-gray-600 mb-4">
-            Head to your dashboard to add inventory items and start taking bookings.
+            Head to your dashboard to review your inventory, invite staff, and start taking bookings.
           </p>
           <button onClick={() => router.push("/dashboard")} className={buttonClass}>
             Go to Dashboard
