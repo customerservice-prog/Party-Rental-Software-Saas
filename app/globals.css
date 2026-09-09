@@ -10,3 +10,14 @@ body {
     color: #1f2937;
     background: #ffffff;
 }
+
+
+/* Dashboard "Website" editor only: placeholder text shown inside an empty
+   contentEditable field (see app/WebsiteSectionRenderer.tsx Editable()).
+   Never affects the public storefront renderer, which never sets
+   contentEditable and therefore never matches this selector. */
+.editable-field[contenteditable]:empty:before {
+      content: attr(data-placeholder);
+      opacity: 0.5;
+      font-style: italic;
+}
