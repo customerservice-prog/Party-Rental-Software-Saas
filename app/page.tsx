@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getOrganizationFromHost } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import StorefrontNav from "./StorefrontNav";
+import StorefrontFooter from "./StorefrontFooter";
 import MarketingHomePage from "./(marketing)/_components/MarketingHomePage";
 import MarketingHeader from "./(marketing)/_components/MarketingHeader";
 import MarketingFooter from "./(marketing)/_components/MarketingFooter";
@@ -113,51 +114,57 @@ export default async function RootPage() {
   if (website?.publishedSections) {
     const sections = JSON.parse(website.publishedSections);
     return (
-      <div>
+      <div className="flex min-h-screen flex-col">
         <StorefrontNav organizationId={organization.id} activeSlug="" />
-        <WebsiteSectionRenderer sections={sections} categories={categories} />
+        <main className="flex-1">
+          <WebsiteSectionRenderer sections={sections} categories={categories} />
+        </main>
+        <StorefrontFooter organizationId={organization.id} />
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="flex min-h-screen flex-col">
       <StorefrontNav organizationId={organization.id} activeSlug="" />
-      <section className="bg-brand-50 py-16 px-4 text-center">
-        <h1 className="text-3xl font-bold mb-4">
-          Party & Event Rentals from {organization.name}
-        </h1>
-        <p className="text-gray-600 max-w-xl mx-auto mb-6">
-          Browse our rental categories below and book your next event online
-          in minutes.
-        </p>
-        <Link
-          href="/book"
-          className="inline-block bg-brand-600 text-white px-6 py-3 rounded font-medium"
-        >
-          Book Now
-        </Link>
-      </section>
+      <main className="flex-1">
+        <section className="bg-brand-50 py-16 px-4 text-center">
+          <h1 className="text-3xl font-bold mb-4">
+            Party & Event Rentals from {organization.name}
+          </h1>
+          <p className="text-gray-600 max-w-xl mx-auto mb-6">
+            Browse our rental categories below and book your next event online
+            in minutes.
+          </p>
+          <Link
+            href="/book"
+            className="inline-block bg-brand-600 text-white px-6 py-3 rounded font-medium"
+          >
+            Book Now
+          </Link>
+        </section>
 
-      <section className="max-w-5xl mx-auto py-12 px-4">
-        <h2 className="text-2xl font-bold mb-6">Browse Our Rentals</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {categories.map((category) => (
-            <Link
-              key={category.id}
-              href={"/rentals/" + category.slug}
-              className="border rounded p-4 hover:shadow-md transition"
-            >
-              <div className="font-semibold">{category.name}</div>
-              {category.description && (
-                <p className="text-sm text-gray-500 mt-1">
-                  {category.description}
-                </p>
-              )}
-            </Link>
-          ))}
-        </div>
-      </section>
+        <section className="max-w-5xl mx-auto py-12 px-4">
+          <h2 className="text-2xl font-bold mb-6">Browse Our Rentals</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {categories.map((category) => (
+              <Link
+                key={category.id}
+                href={"/rentals/" + category.slug}
+                className="border rounded p-4 hover:shadow-md transition"
+              >
+                <div className="font-semibold">{category.name}</div>
+                {category.description && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    {category.description}
+                  </p>
+                )}
+              </Link>
+            ))}
+          </div>
+        </section>
+      </main>
+      <StorefrontFooter organizationId={organization.id} />
     </div>
   );
 }
