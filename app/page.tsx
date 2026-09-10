@@ -111,13 +111,19 @@ export default async function RootPage() {
     where: { organizationId: organization.id },
   });
 
+  const accent = organization.primaryColor || "#2563eb";
+
   if (website?.publishedSections) {
     const sections = JSON.parse(website.publishedSections);
     return (
       <div className="flex min-h-screen flex-col">
         <StorefrontNav organizationId={organization.id} activeSlug="" />
         <main className="flex-1">
-          <WebsiteSectionRenderer sections={sections} categories={categories} />
+          <WebsiteSectionRenderer
+            sections={sections}
+            categories={categories}
+            accentColor={organization.primaryColor || undefined}
+          />
         </main>
         <StorefrontFooter organizationId={organization.id} />
       </div>
@@ -128,7 +134,10 @@ export default async function RootPage() {
     <div className="flex min-h-screen flex-col">
       <StorefrontNav organizationId={organization.id} activeSlug="" />
       <main className="flex-1">
-        <section className="bg-brand-50 py-16 px-4 text-center">
+        <section
+          className="py-16 px-4 text-center"
+          style={{ backgroundColor: "color-mix(in srgb, " + accent + " 8%, white)" }}
+        >
           <h1 className="text-3xl font-bold mb-4">
             Party & Event Rentals from {organization.name}
           </h1>
@@ -138,7 +147,8 @@ export default async function RootPage() {
           </p>
           <Link
             href="/book"
-            className="inline-block bg-brand-600 text-white px-6 py-3 rounded font-medium"
+            className="inline-block text-white px-6 py-3 rounded font-medium"
+            style={{ backgroundColor: accent }}
           >
             Book Now
           </Link>
