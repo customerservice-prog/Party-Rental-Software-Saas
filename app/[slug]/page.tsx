@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import StorefrontNav from "../StorefrontNav";
+import StorefrontFooter from "../StorefrontFooter";
 
 type Block =
   | { type: "heading"; text: string }
@@ -50,9 +51,9 @@ export default async function CustomPage({
   const blocks = parseBlocks(page.content);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <StorefrontNav organizationId={organization.id} activeSlug={params.slug} />
-      <div className="max-w-3xl mx-auto px-4 py-12 space-y-6">
+      <div className="max-w-3xl mx-auto px-4 py-12 space-y-6 flex-1 w-full">
         <h1 className="text-3xl font-bold text-gray-900">{page.title}</h1>
         {blocks.map((block, i) => {
           if (block.type === "heading") {
@@ -90,6 +91,7 @@ export default async function CustomPage({
           return null;
         })}
       </div>
+      <StorefrontFooter organizationId={organization.id} />
     </div>
   );
 }
