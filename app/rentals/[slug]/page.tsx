@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import StorefrontNav from "../../StorefrontNav";
+import StorefrontFooter from "../../StorefrontFooter";
 
 // Public category listing page, e.g. /rentals/bounce-houses. Linked to from
 // the storefront home page's "Browse Our Rentals" category cards.
@@ -37,7 +38,7 @@ export default async function CategoryPage({
   const accent = organization.primaryColor || "#4f46e5";
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <StorefrontNav organizationId={organization.id} activeSlug="" />
       <header className="text-white" style={{ backgroundColor: accent }}>
         <div className="max-w-6xl mx-auto px-8 py-10">
@@ -51,7 +52,7 @@ export default async function CategoryPage({
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-10">
+      <main className="max-w-6xl mx-auto px-4 py-10 flex-1 w-full">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.length === 0 && (
             <p className="text-gray-500 col-span-full">
@@ -87,6 +88,7 @@ export default async function CategoryPage({
           ))}
         </div>
       </main>
+      <StorefrontFooter organizationId={organization.id} />
     </div>
   );
 }
