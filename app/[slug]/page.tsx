@@ -49,6 +49,7 @@ export default async function CustomPage({
   }
 
   const blocks = parseBlocks(page.content);
+  const accent = organization.primaryColor || "#2563eb";
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -82,7 +83,8 @@ export default async function CustomPage({
               <a
                 key={i}
                 href={block.href}
-                className="inline-block bg-brand-600 text-white px-5 py-2 rounded font-medium"
+                className="inline-block text-white px-5 py-2 rounded font-medium"
+                style={{ backgroundColor: accent }}
               >
                 {block.label}
               </a>
