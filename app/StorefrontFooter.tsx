@@ -8,6 +8,10 @@ import { prisma } from "@/lib/prisma";
 // Only ever renders real, tenant-provided information - every contact
 // field is optional and simply omitted if the tenant hasn't filled it in
 // (never fabricated placeholder text, reviews, or claims).
+//
+// The accent color mirrors the tenant's chosen brand color
+// (Organization.primaryColor, set in Settings), matching StorefrontNav and
+// the rest of the storefront instead of a fixed platform blue.
 export default async function StorefrontFooter({
   organizationId,
 }: {
@@ -19,6 +23,7 @@ export default async function StorefrontFooter({
       select: {
         name: true,
         tagline: true,
+        primaryColor: true,
         contactEmail: true,
         contactPhone: true,
         address: true,
@@ -37,12 +42,13 @@ export default async function StorefrontFooter({
 
   if (!organization) return null;
 
+  const accent = organization.primaryColor || "#4f46e5";
   const hasContact =
     organization.address || organization.contactPhone || organization.contactEmail;
   const hasSocial = organization.facebookUrl || organization.instagramUrl;
 
   return (
-    <footer className="border-t bg-gray-50 mt-auto">
+    <footer className="border-t bg-gray-50 mt-auto" style={{ "--brand": accent } as any}>
       <div className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 sm:grid-cols-3 gap-8 text-sm">
         <div>
           <div className="font-bold text-gray-900">{organization.name}</div>
@@ -55,23 +61,23 @@ export default async function StorefrontFooter({
           <div className="font-semibold text-gray-900 mb-2">Quick Links</div>
           <ul className="space-y-1 text-gray-600">
             <li>
-              <Link href="/" className="hover:text-brand-600">
+              <Link href="/" className="hover:text-[var(--brand)]">
                 Home
               </Link>
             </li>
             <li>
-              <Link href="/book" className="hover:text-brand-600">
+              <Link href="/book" className="hover:text-[var(--brand)]">
                 Book Now
               </Link>
             </li>
             <li>
-              <Link href="/order-status" className="hover:text-brand-600">
+              <Link href="/order-status" className="hover:text-[var(--brand)]">
                 Track Order
               </Link>
             </li>
             {pages.map((page) => (
               <li key={page.id}>
-                <Link href={"/" + page.slug} className="hover:text-brand-600">
+                <Link href={"/" + page.slug} className="hover:text-[var(--brand)]">
                   {page.navLabel || page.title}
                 </Link>
               </li>
@@ -93,14 +99,14 @@ export default async function StorefrontFooter({
               )}
               {organization.contactPhone && (
                 <li>
-                  <a href={"tel:" + organization.contactPhone} className="hover:text-brand-600">
+                  <a href={"tel:" + organization.contactPhone} className="hover:text-[var(--brand)]">
                     {organization.contactPhone}
                   </a>
                 </li>
               )}
               {organization.contactEmail && (
                 <li>
-                  <a href={"mailto:" + organization.contactEmail} className="hover:text-brand-600">
+                  <a href={"mailto:" + organization.contactEmail} className="hover:text-[var(--brand)]">
                     {organization.contactEmail}
                   </a>
                 </li>
@@ -112,7 +118,7 @@ export default async function StorefrontFooter({
                       href={organization.facebookUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="hover:text-brand-600"
+                      className="hover:text-[var(--brand)]"
                     >
                       Facebook
                     </a>
@@ -122,7 +128,7 @@ export default async function StorefrontFooter({
                       href={organization.instagramUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="hover:text-brand-600"
+                      className="hover:text-[var(--brand)]"
                     >
                       Instagram
                     </a>
