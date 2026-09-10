@@ -19,6 +19,13 @@ import { SECTION_LABELS } from "@/lib/websiteSections";
 //   buttons/links. The underlying section markup is identical either way,
 //   so the editor preview can never drift from what customers will see.
 //
+// accentColor carries the tenant's chosen brand color
+// (Organization.primaryColor) so the hero/CTA backgrounds and buttons
+// match the same color already used on the book and category pages,
+// instead of a fixed platform blue. It is purely a rendering concern -
+// never stored in section config - so callers simply pass the tenant's
+// current primaryColor (or omit it to fall back to the platform default).
+//
 // Safety: contentEditable fields only ever read back plain textContent
 // (never innerHTML), so no HTML/script can be injected this way, and the
 // server independently re-validates everything in lib/websiteSections.ts
@@ -42,6 +49,7 @@ interface EditableHandlers {
 export function WebsiteSectionRenderer({
   sections,
   categories,
+  accentColor,
   editable = false,
   selectedId,
   onSelect,
@@ -51,6 +59,7 @@ export function WebsiteSectionRenderer({
 }: {
   sections: WebsiteSection[];
   categories: CategoryLite[];
+  accentColor?: string;
   editable?: boolean;
 } & EditableHandlers) {
   const visible = editable ? sections : sections.filter((section) => section.visible);
@@ -63,6 +72,7 @@ export function WebsiteSectionRenderer({
             key={section.id}
             section={section}
             categories={categories}
+            accentColor={accentColor}
             editable={false}
           />
         ))}
@@ -97,6 +107,7 @@ export function WebsiteSectionRenderer({
           <SectionBlock
             section={section}
             categories={categories}
+            accentColor={accentColor}
             editable
             onTextChange={onTextChange}
             onReplaceImage={onReplaceImage}
@@ -111,6 +122,7 @@ export function WebsiteSectionRenderer({
 function SectionBlock({
   section,
   categories,
+  accentColor,
   editable,
   onTextChange,
   onReplaceImage,
@@ -118,6 +130,7 @@ function SectionBlock({
 }: {
   section: WebsiteSection;
   categories: CategoryLite[];
+  accentColor?: string;
   editable: boolean;
   onTextChange?: (id: string, field: keyof SectionConfig, value: string) => void;
   onReplaceImage?: (id: string) => void;
@@ -127,6 +140,7 @@ function SectionBlock({
     return (
       <HeroSection
         section={section}
+        accentColor={accentColor}
         editable={editable}
         onTextChange={onTextChange}
         onReplaceImage={onReplaceImage}
@@ -241,16 +255,19 @@ function ImageOverlay({ hasImage, onClick }: { hasImage: boolean; onClick: () =>
 
 function HeroSection({
   section,
+  accentColor,
   editable,
   onTextChange,
   onReplaceImage,
 }: {
   section: WebsiteSection;
+  accentColor?: string;
   editable: boolean;
   onTextChange?: (id: string, field: keyof SectionConfig, value: string) => void;
   onReplaceImage?: (id: string) => void;
 }) {
   const { config } = section;
+  const accent = accentColor || "#2563eb";
   const bgStyle = config.imageUrl
     ? {
         backgroundImage:
@@ -259,11 +276,14 @@ function HeroSection({
         backgroundPosition: "center",
         color: "white",
       }
-    : undefined;
+    : {
+        backgroundColor: "color-mix(in srgb, " + accent + " 8%, white)",
+      };
+  const buttonStyle = { backgroundColor: accent };
 
   if (!editable) {
     return (
-      <section className="bg-brand-50 py-16 px-4 text-center" style={bgStyle}>
+      <section className="py-16 px-4 text-center" style={bgStyle}>
         {config.heading && <h1 className="text-3xl font-bold mb-4">{config.heading}</h1>}
         {config.subheading && (
           <p className="max-w-xl mx-auto mb-6 opacity-90">{config.subheading}</p>
@@ -271,7 +291,8 @@ function HeroSection({
         {config.buttonLabel && config.buttonHref && (
           <Link
             href={config.buttonHref}
-            className="inline-block bg-brand-600 text-white px-6 py-3 rounded font-medium"
+            className="inline-block text-white px-6 py-3 rounded font-medium"
+            style={buttonStyle}
           >
             {config.buttonLabel}
           </Link>
@@ -281,7 +302,7 @@ function HeroSection({
   }
 
   return (
-    <section className="group relative bg-brand-50 py-16 px-4 text-center" style={bgStyle}>
+    <section className="group relative py-16 px-4 text-center" style={bgStyle}>
       <ImageOverlay
         hasImage={!!config.imageUrl}
         onClick={() => onReplaceImage?.(section.id)}
@@ -300,7 +321,10 @@ function HeroSection({
         placeholder="Click to add a subheading"
         onCommit={(v) => onTextChange?.(section.id, "subheading", v)}
       />
-      <span className="relative z-20 inline-block bg-brand-600 text-white px-6 py-3 rounded font-medium">
+      <span
+        className="relative z-20 inline-block text-white px-6 py-3 rounded font-medium"
+        style={buttonStyle}
+      >
         <Editable
           as="span"
           value={config.buttonLabel || ""}
