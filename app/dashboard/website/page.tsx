@@ -57,6 +57,7 @@ export default function WebsiteEditorPage() {
   const [hasUnpublishedChanges, setHasUnpublishedChanges] = useState(false);
   const [categories, setCategories] = useState<CategoryLite[]>([]);
   const [orgSlug, setOrgSlug] = useState("");
+  const [accentColor, setAccentColor] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [device, setDevice] = useState<Device>("desktop");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -105,6 +106,7 @@ export default function WebsiteEditorPage() {
         if (orgRes && orgRes.ok) {
           const orgData = await orgRes.json();
           setOrgSlug(orgData.organization?.slug || "");
+          setAccentColor(orgData.organization?.primaryColor || "");
         }
       } catch {
         setLoadError("Something went wrong loading your website. Try refreshing the page.");
@@ -483,6 +485,7 @@ export default function WebsiteEditorPage() {
               <WebsiteSectionRenderer
                 sections={[section]}
                 categories={categories}
+                accentColor={accentColor || undefined}
                 editable
                 selectedId={selectedId}
                 onSelect={setSelectedId}
