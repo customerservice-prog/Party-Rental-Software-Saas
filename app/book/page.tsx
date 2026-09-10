@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import StorefrontNav from "../StorefrontNav";
+import StorefrontFooter from "../StorefrontFooter";
 
 const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -24,7 +25,7 @@ export default async function BookPage() {
   const accent = organization.primaryColor || "#4f46e5";
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <StorefrontNav organizationId={organization.id} activeSlug="book" />
       <header
         className="text-white"
@@ -83,7 +84,7 @@ export default async function BookPage() {
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto p-8">
+      <div className="max-w-6xl mx-auto p-8 flex-1 w-full">
         {organization.aboutText && (
           <div className="bg-white rounded-lg shadow p-6 mb-10">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">About Us</h2>
@@ -164,6 +165,7 @@ export default async function BookPage() {
           </div>
         </div>
       </div>
+      <StorefrontFooter organizationId={organization.id} />
     </div>
   );
 }
