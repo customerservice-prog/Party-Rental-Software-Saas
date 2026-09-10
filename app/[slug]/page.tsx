@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { getCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
+import { pageMetadata } from "@/lib/seo";
 import StorefrontNav from "../StorefrontNav";
 import StorefrontFooter from "../StorefrontFooter";
 
@@ -18,6 +20,48 @@ function parseBlocks(content: string): Block[] {
     // ignore malformed content, render nothing rather than crash
   }
   return [];
+}
+
+// Pulls a short, real excerpt from the page's own authored content for use
+// as a meta description, instead of a generic fallback. Never fabricated -
+// it's just the tenant's first paragraph block, trimmed to a sane length.
+function excerptFromBlocks(blocks: Block[]): string {
+  const firstParagraph = blocks.find(
+    (b): b is { type: "paragraph"; text: string } =>
+      b.type === "paragraph" && !!b.text?.trim()
+  );
+  const text = firstParagraph?.text?.trim() || "";
+  if (text.length <= 160) return text;
+  return text.slice(0, 157).trimEnd() + "...";
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const organization = await getCurrentOrganization().catch(() => null);
+  if (!organization) return {};
+
+  const page = await prisma.page.findFirst({
+    where: { organizationId: organization.id, slug: params.slug, isPublished: true },
+  });
+  if (!page) return {};
+
+  const blocks = parseBlocks(page.content);
+  const title = page.title + " — " + organization.name;
+  const description =
+    excerptFromBlocks(blocks) ||
+    page.title + " — " + organization.name + ".";
+
+  return {
+    ...pageMetadata({
+      title,
+      description,
+      path: "/t/" + organization.slug + "/" + params.slug,
+    }),
+    title: { absolute: title },
+  };
 }
 
 // Public-facing renderer for tenant-created custom pages (About Us, FAQ,
