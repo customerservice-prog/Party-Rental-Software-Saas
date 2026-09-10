@@ -50,6 +50,10 @@ export default function SettingsPage() {
     instagramUrl: "",
     showHoursOnSite: true,
   });
+  const [seo, setSeo] = useState({
+    seoTitle: "",
+    seoDescription: "",
+  });
   const [hours, setHours] = useState<BusinessHour[]>(
     Array.from({ length: 7 }, (_, i) => ({
       dayOfWeek: i,
@@ -65,9 +69,11 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingSite, setSavingSite] = useState(false);
+  const [savingSeo, setSavingSeo] = useState(false);
   const [savingHours, setSavingHours] = useState(false);
   const [message, setMessage] = useState("");
   const [siteMessage, setSiteMessage] = useState("");
+  const [seoMessage, setSeoMessage] = useState("");
   const [hoursMessage, setHoursMessage] = useState("");
   const [stripeStatus, setStripeStatus] = useState<{
     connected: boolean;
@@ -118,6 +124,10 @@ export default function SettingsPage() {
           instagramUrl: organization.instagramUrl || "",
           showHoursOnSite:
             organization.showHoursOnSite === undefined ? true : organization.showHoursOnSite,
+        });
+        setSeo({
+          seoTitle: organization.seoTitle || "",
+          seoDescription: organization.seoDescription || "",
         });
         setOrgSlug(organization.slug || "");
         setPricing((prev) => ({
@@ -198,6 +208,24 @@ export default function SettingsPage() {
       setSiteMessage(e.message || "Something went wrong");
     } finally {
       setSavingSite(false);
+    }
+  }
+
+  async function handleSaveSeo() {
+    setSavingSeo(true);
+    setSeoMessage("");
+    try {
+      const res = await fetch("/api/organizations", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(seo),
+      });
+      if (!res.ok) throw new Error("Failed to save SEO settings");
+      setSeoMessage("SEO settings saved.");
+    } catch (e: any) {
+      setSeoMessage(e.message || "Something went wrong");
+    } finally {
+      setSavingSeo(false);
     }
   }
 
@@ -487,6 +515,40 @@ export default function SettingsPage() {
         </label>
         <button disabled={savingSite} onClick={handleSaveSite} className={buttonClass}>
           {savingSite ? "Saving..." : "Save Website"}
+        </button>
+      </div>
+
+      <div className={sectionClass}>
+        <h2 className={sectionTitleClass}>Search Engine Optimization (SEO)</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Controls the title and description search engines and social media links show for
+          your public homepage. Leave blank to automatically use your published homepage's
+          headline instead.
+        </p>
+        {seoMessage && <p className="mb-4 text-sm text-green-700">{seoMessage}</p>}
+        <label className={labelClass}>
+          <span className={labelTextClass}>SEO title</span>
+          <input
+            value={seo.seoTitle}
+            onChange={(e) => setSeo({ ...seo, seoTitle: e.target.value })}
+            placeholder="e.g. Marty Rentals - Bounce Houses & Party Rentals in Anytown"
+            maxLength={70}
+            className={inputClass}
+          />
+        </label>
+        <label className={labelClass}>
+          <span className={labelTextClass}>SEO description</span>
+          <textarea
+            value={seo.seoDescription}
+            onChange={(e) => setSeo({ ...seo, seoDescription: e.target.value })}
+            rows={3}
+            maxLength={160}
+            placeholder="A short, honest summary of your business shown under your title in search results."
+            className={inputClass}
+          />
+        </label>
+        <button disabled={savingSeo} onClick={handleSaveSeo} className={buttonClass}>
+          {savingSeo ? "Saving..." : "Save SEO Settings"}
         </button>
       </div>
 
