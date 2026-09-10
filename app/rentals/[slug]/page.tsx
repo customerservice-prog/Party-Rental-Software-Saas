@@ -1,12 +1,51 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
+import { pageMetadata } from "@/lib/seo";
 import StorefrontNav from "../../StorefrontNav";
 import StorefrontFooter from "../../StorefrontFooter";
 
 // Public category listing page, e.g. /rentals/bounce-houses. Linked to from
 // the storefront home page's "Browse Our Rentals" category cards.
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const organization = await requireCurrentOrganization().catch(() => null);
+  if (!organization) return {};
+
+  const category = await prisma.category.findFirst({
+    where: {
+      organizationId: organization.id,
+      slug: params.slug,
+      displayToCustomer: true,
+    },
+  });
+  if (!category) return {};
+
+  const title = category.name + " Rentals — " + organization.name;
+  const description =
+    category.description?.trim() ||
+    "Browse " +
+      category.name +
+      " rentals and book online with " +
+      organization.name +
+      ".";
+
+  return {
+    ...pageMetadata({
+      title,
+      description,
+      path: "/t/" + organization.slug + "/rentals/" + params.slug,
+    }),
+    title: { absolute: title },
+  };
+}
+
 export default async function CategoryPage({
   params,
 }: {
