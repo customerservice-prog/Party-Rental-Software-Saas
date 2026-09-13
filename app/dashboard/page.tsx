@@ -6,6 +6,8 @@ import HomeTasks from "./HomeTasks";
 import HomeWeather from "./HomeWeather";
 import HomeScreen from "./HomeScreen";
 import HomeMeetings from "./HomeMeetings";
+import BestSellersChart from "./BestSellersChart";
+import MonthlyPaymentsChart from "./MonthlyPaymentsChart";
 import { getOrganizationWeather } from "@/lib/weather";
 
 function monthRange(year: number, month: number) {
@@ -108,8 +110,9 @@ export default async function DashboardHomePage({
   });
   const bestSellers = Array.from(bestSellerMap.entries())
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-  const maxBestSeller = bestSellers.length > 0 ? bestSellers[0][1] : 0;
+    .slice(0, 5)
+    .map(([name, qty]) => ({ name, qty }));
+
   const monthlyPayments: { label: string; total: number }[] = [];
   for (let i = 11; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -124,7 +127,7 @@ export default async function DashboardHomePage({
       monthlyPayments[idx].total += o.amountPaid;
     }
   });
-  const maxMonthlyPayment = monthlyPayments.reduce((m, p) => Math.max(m, p.total), 0);
+  const hasMonthlyPayments = monthlyPayments.some((p) => p.total > 0);
 
   return (
     <div>
@@ -158,39 +161,24 @@ export default async function DashboardHomePage({
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-600">
-            <div className="text-sm text-gray-500">Collected Today</div>
-            <div className="text-3xl font-bold text-gray-900">${collectedToday.toFixed(2)}</div>
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-[6px] border-admin-green">
+            <p className="text-base text-gray-500 font-medium">Collected Today</p>
+            <p className="text-4xl font-bold text-dark mt-1">${collectedToday.toFixed(2)}</p>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-600">
-            <div className="text-sm text-gray-500">Inventory Count (items $65+)</div>
-            <div className="text-3xl font-bold text-gray-900">{highValueItemCount}</div>
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-[6px] border-secondary">
+            <p className="text-base text-gray-500 font-medium">Inventory Count (items $65+)</p>
+            <p className="text-4xl font-bold text-dark mt-1">{highValueItemCount}</p>
           </div>
 
           <HomeTasks />
 
-          <div className="bg-white rounded-lg shadow p-4">
-            <h2 className="font-semibold text-gray-900 mb-3">Best Sellers (Last 60 Days)</h2>
+          <div className="bg-white rounded shadow p-4">
+            <h3 className="font-bold text-dark text-sm mb-3">Best Sellers (Last 60 Days)</h3>
             {bestSellers.length === 0 ? (
               <p className="text-sm text-gray-400">No rental activity in the last 60 days.</p>
             ) : (
-              <div className="space-y-2">
-                {bestSellers.map(([name, qty]) => (
-                  <div key={name} className="flex items-center gap-2 text-xs">
-                    <div className="w-32 shrink-0 text-gray-600 truncate" title={name}>{name}</div>
-                    <div className="flex-1 bg-gray-100 rounded h-3 overflow-hidden">
-                      <div
-                        className="bg-green-700 h-3 rounded"
-                        style={{
-                          width: (maxBestSeller > 0 ? (qty / maxBestSeller) * 100 : 0) + "%",
-                        }}
-                      />
-                    </div>
-                    <div className="w-8 text-right text-gray-600">{qty}</div>
-                  </div>
-                ))}
-              </div>
+              <BestSellersChart data={bestSellers} />
             )}
           </div>
 
@@ -264,33 +252,14 @@ export default async function DashboardHomePage({
         </div>
       </div>
 
-    <div className="mt-8 bg-white shadow rounded-lg p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Monthly Payments Received</h2>
-      {maxMonthlyPayment === 0 ? (
-        <p className="text-sm text-gray-400">No payments recorded in the last 12 months.</p>
-      ) : (
-        <div>
-          <div className="h-48 flex items-end gap-1">
-            {monthlyPayments.map((m) => (
-              <div key={m.label} className="flex-1 flex flex-col items-center justify-end h-full">
-                <div
-                  className="w-full bg-blue-600 rounded-t"
-                  style={{ height: (maxMonthlyPayment > 0 ? (m.total / maxMonthlyPayment) * 100 : 0) + "%" }}
-                  title={"$" + m.total.toFixed(2)}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-1 mt-1">
-            {monthlyPayments.map((m) => (
-              <span key={m.label} className="flex-1 text-center text-[9px] text-gray-500">
-                {m.label}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+      <div className="mt-8 bg-white shadow rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Monthly Payments Received</h2>
+        {!hasMonthlyPayments ? (
+          <p className="text-sm text-gray-400">No payments recorded in the last 12 months.</p>
+        ) : (
+          <MonthlyPaymentsChart data={monthlyPayments} />
+        )}
+      </div>
     </div>
   );
 }
