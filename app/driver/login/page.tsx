@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // Driver sign-in: business subdomain + PIN. Completely separate from the
-// staff /login page - drivers are not User accounts.
-export default function DriverLoginPage() {
+// staff /login page - drivers are not User accounts. Supports an optional
+// ?business=<slug> query param (used by the QR code on the dashboard
+// Deliveries page) to pre-fill the subdomain field so a driver only has to
+// type their PIN.
+function DriverLoginForm() {
   const router = useRouter();
-  const [tenantSlug, setTenantSlug] = useState("");
+  const searchParams = useSearchParams();
+  const [tenantSlug, setTenantSlug] = useState(searchParams.get("business") || "");
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -85,5 +89,13 @@ export default function DriverLoginPage() {
         </button>
       </form>
     </div>
+  );
+}
+
+export default function DriverLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <DriverLoginForm />
+    </Suspense>
   );
 }
