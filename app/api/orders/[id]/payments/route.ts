@@ -90,3 +90,48 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   return NextResponse.json({ payment, amountPaid: newAmountPaid });
 }
+
+// Deletes a payment/refund entry that was recorded in error, reversing its
+// effect on Order.amountPaid. Uses the same "orders.manage" permission as
+// recording one - this is a correction tool for staff, not a customer
+// self-service action, and every deletion here is an explicit staff choice
+// (never automatic).
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  const organization = await requireCurrentOrganization();
+  try {
+    await requirePermission(organization.id, "orders.manage");
+  } catch (err) {
+    return authzErrorResponse(err);
+  }
+
+  const order = await prisma.order.findFirst({
+    where: { id: params.id, organizationId: organization.id },
+  });
+  if (!order) {
+    return NextResponse.json({ error: "Order not found" }, { status: 404 });
+  }
+
+  const paymentId = request.nextUrl.searchParams.get("paymentId");
+  if (!paymentId) {
+    return NextResponse.json({ error: "Missing paymentId" }, { status: 400 });
+  }
+
+  const payment = await prisma.payment.findFirst({
+    where: { id: paymentId, orderId: order.id, organizationId: organization.id },
+  });
+  if (!payment) {
+    return NextResponse.json({ error: "Payment not found" }, { status: 404 });
+  }
+
+  await prisma.payment.delete({ where: { id: payment.id } });
+
+  const delta = payment.type === "refund" ? payment.amount : -payment.amount;
+  const newAmountPaid = Math.max(0, Math.round((order.amountPaid + delta) * 100) / 100);
+
+  await prisma.order.update({
+    where: { id: order.id },
+    data: { amountPaid: newAmountPaid },
+  });
+
+  return NextResponse.json({ ok: true, amountPaid: newAmountPaid });
+}
