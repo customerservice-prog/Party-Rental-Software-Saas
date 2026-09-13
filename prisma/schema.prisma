@@ -71,6 +71,7 @@ model Organization {
   tenantRoles            TenantRole[]
   driverRuns             DriverRun[]
   doNotRentRestrictions  DoNotRentRestriction[]
+  blockedBookingAttempts BlockedBookingAttempt[]
   meetings               Meeting[]
   website                Website?
 }
@@ -406,6 +407,26 @@ model DoNotRentRestriction {
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+// Logged automatically whenever an online checkout or a staff-created
+// manual order is blocked because it matched an active
+// DoNotRentRestriction. Purely an audit trail powering the Do Not Rent
+// stats panel - never affects booking logic itself and never shown
+// publicly. See app/api/checkout/route.ts and app/api/orders/route.ts.
+model BlockedBookingAttempt {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  restrictionId  String?
+  name           String?
+  email          String?
+  phone          String?
+  address        String?
+  source         String   @default("checkout")
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
 }
 
 // Records platform-admin actions taken against tenant organizations
