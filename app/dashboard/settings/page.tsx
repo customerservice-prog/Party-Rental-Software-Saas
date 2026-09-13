@@ -54,6 +54,15 @@ export default function SettingsPage() {
     seoTitle: "",
     seoDescription: "",
   });
+  const [emailSettings, setEmailSettings] = useState({
+    senderName: "",
+    senderEmail: "",
+    resendApiKey: "",
+  });
+  const [emailProviderConfigured, setEmailProviderConfigured] = useState(false);
+  const [resendApiKeyLast4, setResendApiKeyLast4] = useState("");
+  const [savingEmail, setSavingEmail] = useState(false);
+  const [emailMessage, setEmailMessage] = useState("");
   const [hours, setHours] = useState<BusinessHour[]>(
     Array.from({ length: 7 }, (_, i) => ({
       dayOfWeek: i,
@@ -130,6 +139,13 @@ export default function SettingsPage() {
           seoDescription: organization.seoDescription || "",
         });
         setOrgSlug(organization.slug || "");
+        setEmailSettings({
+          senderName: organization.senderName || "",
+          senderEmail: organization.senderEmail || "",
+          resendApiKey: "",
+        });
+        setEmailProviderConfigured(Boolean(organization.emailProviderConfigured));
+        setResendApiKeyLast4(organization.resendApiKeyLast4 || "");
         setPricing((prev) => ({
           ...prev,
           flatDeliveryFee: String(organization.flatDeliveryFee || 0),
@@ -226,6 +242,56 @@ export default function SettingsPage() {
       setSeoMessage(e.message || "Something went wrong");
     } finally {
       setSavingSeo(false);
+    }
+  }
+
+  async function handleSaveEmail() {
+    setSavingEmail(true);
+    setEmailMessage("");
+    try {
+      const payload: Record<string, string> = {
+        senderName: emailSettings.senderName,
+        senderEmail: emailSettings.senderEmail,
+      };
+      if (emailSettings.resendApiKey.trim()) {
+        payload.resendApiKey = emailSettings.resendApiKey.trim();
+      }
+      const res = await fetch("/api/organizations", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to save email settings");
+      const { organization } = await res.json();
+      setEmailProviderConfigured(Boolean(organization.emailProviderConfigured));
+      setResendApiKeyLast4(organization.resendApiKeyLast4 || "");
+      setEmailSettings((prev) => ({ ...prev, resendApiKey: "" }));
+      setEmailMessage("Email settings saved.");
+    } catch (e: any) {
+      setEmailMessage(e.message || "Something went wrong");
+    } finally {
+      setSavingEmail(false);
+    }
+  }
+
+  async function handleDisconnectEmail() {
+    if (!confirm("Disconnect your email provider? Messages will go back to draft-only until you reconnect.")) return;
+    setSavingEmail(true);
+    setEmailMessage("");
+    try {
+      const res = await fetch("/api/organizations", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ disconnectEmailProvider: true }),
+      });
+      if (!res.ok) throw new Error("Failed to disconnect email provider");
+      setEmailProviderConfigured(false);
+      setResendApiKeyLast4("");
+      setEmailMessage("Email provider disconnected. Messages will be saved as drafts only.");
+    } catch (e: any) {
+      setEmailMessage(e.message || "Something went wrong");
+    } finally {
+      setSavingEmail(false);
     }
   }
 
@@ -713,6 +779,70 @@ export default function SettingsPage() {
           <button onClick={handleAddClosedDate} className={buttonClass}>
             Add
           </button>
+        </div>
+      </div>
+
+      <div className={sectionClass}>
+        <h2 className={sectionTitleClass}>Email Sending</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Connect your own Resend account to send real marketing and customer emails from
+          Marketing and Messages. Until connected, messages are saved as drafts only and
+          nothing is sent.
+        </p>
+        {emailMessage && <p className="mb-4 text-sm text-green-700">{emailMessage}</p>}
+        {emailProviderConfigured ? (
+          <p className="text-sm text-green-700 mb-4">
+            Connected (key ending in ...{resendApiKeyLast4})
+          </p>
+        ) : (
+          <p className="text-sm text-gray-500 mb-4">Not connected yet.</p>
+        )}
+        <div className="grid grid-cols-2 gap-3">
+          <label className={labelClass}>
+            <span className={labelTextClass}>From name</span>
+            <input
+              value={emailSettings.senderName}
+              onChange={(e) => setEmailSettings({ ...emailSettings, senderName: e.target.value })}
+              placeholder="e.g. Marty Rentals"
+              className={inputClass}
+            />
+          </label>
+          <label className={labelClass}>
+            <span className={labelTextClass}>From email</span>
+            <input
+              value={emailSettings.senderEmail}
+              onChange={(e) => setEmailSettings({ ...emailSettings, senderEmail: e.target.value })}
+              placeholder="e.g. hello@yourbusiness.com"
+              className={inputClass}
+            />
+          </label>
+        </div>
+        <label className={labelClass}>
+          <span className={labelTextClass}>Resend API key</span>
+          <input
+            type="password"
+            value={emailSettings.resendApiKey}
+            onChange={(e) => setEmailSettings({ ...emailSettings, resendApiKey: e.target.value })}
+            placeholder={emailProviderConfigured ? "Enter a new key to replace the connected one" : "re_xxxxxxxxxxxxxxxx"}
+            className={inputClass}
+          />
+          <span className="text-xs text-gray-400 mt-1 block">
+            Get a free API key at resend.com. Your key is never shown back to you once saved.
+          </span>
+        </label>
+        <div className="flex items-center gap-3">
+          <button disabled={savingEmail} onClick={handleSaveEmail} className={buttonClass}>
+            {savingEmail ? "Saving..." : "Save Email Settings"}
+          </button>
+          {emailProviderConfigured && (
+            <button
+              disabled={savingEmail}
+              onClick={handleDisconnectEmail}
+              className="text-sm text-red-600 hover:underline"
+            >
+              Disconnect
+            </button>
+          )}
         </div>
       </div>
 
