@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { useState } from "react";
 
 function NavIcon({ name, className }: { name: string; className?: string }) {
   const common = {
@@ -269,6 +270,7 @@ export default function DashboardNav({
   role?: string;
 }) {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
 
   function renderLink(item: NavItem) {
     const active = pathname === item.href;
@@ -276,66 +278,94 @@ export default function DashboardNav({
       <Link
         key={item.href}
         href={item.href}
+        onClick={() => setOpen(false)}
         className={
-          "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors " +
+          "flex items-center gap-3 px-6 py-3.5 border-b border-gray-100 transition-colors " +
           (active
-            ? "bg-green-800 text-[#f5c518] font-medium"
-            : "text-green-50 hover:bg-green-700")
+            ? "bg-green-50 text-[#2d6a2d] font-semibold"
+            : "text-gray-800 hover:bg-gray-50")
         }
       >
-        <NavIcon name={item.icon} className="w-4 h-4 shrink-0" />
+        <NavIcon name={item.icon} className="w-5 h-5 shrink-0" />
         <span className="truncate">{item.label}</span>
       </Link>
     );
   }
 
   return (
-    <div className="fixed top-0 left-0 bottom-0 w-64 bg-[#2d6a2d] text-white flex flex-col z-50 shadow-xl">
-      <div className="px-4 h-16 flex items-center border-b border-green-800 shrink-0">
-        <Link href="/dashboard" className="font-bold text-lg tracking-tight truncate">
+    <>
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 h-20 bg-[#2d6a2d] border-b-[3px] border-[#4CAF50]">
+        <Link
+          href="/dashboard"
+          onClick={() => setOpen(false)}
+          className="font-bold text-xl tracking-tight text-white truncate"
+        >
           {orgName || "Dashboard"}
         </Link>
-      </div>
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-green-900 [&::-webkit-scrollbar-thumb]:rounded-full">
-        {NAV_GROUPS.map((group) => (
-          <div key={group.section || "main"}>
-            {group.section && (
-              <p className="px-3 text-xs font-semibold text-green-200 uppercase tracking-wide mb-1">
-                {group.section}
-              </p>
-            )}
-            <div className="space-y-1">{group.items.map((item) => renderLink(item))}</div>
-          </div>
-        ))}
-
-        {showSettings && (
-          <div className="pt-4 border-t border-green-800 space-y-6">
-            {SETTINGS_GROUPS.map((group) => (
-              <div key={group.section}>
-                <p className="px-3 text-xs font-semibold text-green-200 uppercase tracking-wide mb-1">
-                  {group.section}
-                </p>
-                <div className="space-y-1">{group.items.map((item) => renderLink(item))}</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      <div className="px-4 py-4 border-t border-green-800 shrink-0">
-        {userName && (
-          <p className="text-xs text-green-100 mb-2 truncate">
-            Signed in as <strong>{userName}</strong>
-            {role ? " (" + role.charAt(0).toUpperCase() + role.slice(1) + ")" : ""}
-          </p>
-        )}
         <button
           type="button"
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="w-full border border-white rounded px-3 py-1.5 text-sm hover:bg-green-700 transition-colors"
+          onClick={() => setOpen((v) => !v)}
+          aria-label={open ? "Close menu" : "Open menu"}
+          className="text-white p-2 -mr-2 shrink-0"
         >
-          Logout
+          {open ? (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="18" y1="6" x2="6" y2="18" />
+            </svg>
+          ) : (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          )}
         </button>
       </div>
-    </div>
+
+      {open && (
+        <div className="fixed top-20 left-0 right-0 bottom-0 z-40 bg-white overflow-y-auto">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.section || "main"}>
+              {group.section && (
+                <p className="px-6 pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide bg-gray-50">
+                  {group.section}
+                </p>
+              )}
+              {group.items.map((item) => renderLink(item))}
+            </div>
+          ))}
+
+          {showSettings && (
+            <>
+              {SETTINGS_GROUPS.map((group) => (
+                <div key={group.section}>
+                  <p className="px-6 pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide bg-gray-50">
+                    {group.section}
+                  </p>
+                  {group.items.map((item) => renderLink(item))}
+                </div>
+              ))}
+            </>
+          )}
+
+          <div className="px-6 py-5 border-t border-gray-100">
+            {userName && (
+              <p className="text-xs text-gray-500 mb-2 truncate">
+                Signed in as <strong>{userName}</strong>
+                {role ? " (" + role.charAt(0).toUpperCase() + role.slice(1) + ")" : ""}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
