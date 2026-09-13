@@ -24,7 +24,7 @@ export default async function MarketingPage() {
     throw err;
   }
 
-  const [customers, restrictions, activeTemplateCount, queuedMessageCount] = await Promise.all([
+  const [customers, restrictions, activeTemplateCount, queuedMessageCount, automatedMessageCount] = await Promise.all([
     prisma.customer.findMany({
       where: { organizationId: organization.id },
       select: {
@@ -43,6 +43,9 @@ export default async function MarketingPage() {
     }),
     prisma.sentMessage.count({
       where: { organizationId: organization.id, status: "queued" },
+    }),
+    prisma.sentMessage.count({
+      where: { organizationId: organization.id, automationType: { not: null } },
     }),
   ]);
 
@@ -99,7 +102,7 @@ export default async function MarketingPage() {
     { label: "Overview", href: "/dashboard/marketing", active: true },
     { label: "Campaigns", href: "/dashboard/message-templates" },
     { label: "Audiences", href: "/dashboard/customers" },
-    { label: "Automations", href: "/dashboard/messages" },
+    { label: "Automations", href: "/dashboard/automations" },
     { label: "Performance", href: "/dashboard/analytics" },
     { label: "Settings", href: "/dashboard/settings" },
   ];
@@ -195,7 +198,9 @@ export default async function MarketingPage() {
       <div style={sectionStyle}>
         <div style={sectionLabelStyle}>What Marketing Has Produced</div>
         <p style={{ color: "#555", fontSize: 14, margin: 0 }}>
-          No marketing campaigns have been sent yet. Once outbound sending is enabled and campaigns go out, bookings and revenue attributed to them will appear here.
+          {automatedMessageCount > 0
+            ? `${automatedMessageCount} automated booking confirmation/reminder email(s) have been sent so far. See the Automations tab for details.`
+            : "No marketing campaigns have been sent yet. Once outbound sending is enabled and campaigns go out, bookings and revenue attributed to them will appear here."}
         </p>
       </div>
 
@@ -222,6 +227,10 @@ export default async function MarketingPage() {
           <div>
             <div style={valueStyle}>{activeTemplateCount}</div>
             <div style={labelStyle}>Active Message Templates</div>
+          </div>
+          <div>
+            <div style={valueStyle}>{automatedMessageCount}</div>
+            <div style={labelStyle}>Automated Messages Sent</div>
           </div>
         </div>
       </div>
