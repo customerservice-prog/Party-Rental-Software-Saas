@@ -64,6 +64,7 @@ model Organization {
   customers              Customer[]
   drivers                Driver[]
   orders                 Order[]
+  payments                 Payment[]
   coupons                Coupon[]
   depositRules           DepositRule[]
   subscription           PlatformSubscription?
@@ -355,6 +356,7 @@ model Order {
 
   items            OrderItem[]
   orderAddons      OrderAddon[]
+  payments      Payment[]
   deliveryAddress  String?
   stripeSessionId  String?  @unique
   contract         Contract?
@@ -511,6 +513,25 @@ model OrderAddon {
 // Digital rental contract tied to a single Order. Tracks whether the
 // customer has signed yet, mirroring the "Signed / Unsigned" contract
 // views seen in comparable rental platforms.
+
+model Payment {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id])
+  amount         Float
+  type           String   @default("payment") // "payment" | "refund"
+  method         String   @default("card") // "card" | "cash" | "check" | "other"
+  tip            Float    @default(0)
+  note           String?
+  recordedBy     String?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([orderId])
+}
+
 model Contract {
   id              String   @id @default(cuid())
   organizationId  String
