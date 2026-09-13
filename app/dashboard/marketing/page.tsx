@@ -154,13 +154,15 @@ export default async function MarketingPage() {
         ))}
       </div>
 
-      <div style={{ border: "1px solid #cfe0fb", background: "#eef4ff", borderRadius: 8, padding: 16, marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+      <div style={{ border: organization.resendApiKey ? "1px solid #c7ebd6" : "1px solid #cfe0fb", background: organization.resendApiKey ? "#eefbf3" : "#eef4ff", borderRadius: 8, padding: 16, marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
         <div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#3454b4", letterSpacing: 0.5, marginBottom: 6 }}>
-            AUTOMATION MODE: DRAFT ONLY
+          <div style={{ fontSize: 12, fontWeight: 700, color: organization.resendApiKey ? "#1f8a53" : "#3454b4", letterSpacing: 0.5, marginBottom: 6 }}>
+            {organization.resendApiKey ? "AUTOMATION MODE: LIVE" : "AUTOMATION MODE: DRAFT ONLY"}
           </div>
           <div style={{ color: "#444", fontSize: 14 }}>
-            Outbound marketing is disabled while messaging is not yet connected. No customer will receive an email or text from this page.
+            {organization.resendApiKey
+              ? "Outbound email is connected. Messages sent from Messages and Campaigns will be delivered to real customers."
+              : "Outbound marketing is disabled while messaging is not yet connected. No customer will receive an email or text from this page."}
           </div>
         </div>
         <Link href="/dashboard/settings" style={{ fontSize: 13, color: "#4f46e5", whiteSpace: "nowrap" }}>
