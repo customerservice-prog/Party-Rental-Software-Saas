@@ -4,30 +4,30 @@ import { requireOwnerSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/audit";
 
-export async function GET() {
-  const organization = await requireCurrentOrganization();
+// Never send the raw Resend API key back to the browser - only a boolean
+// and a last-4-characters hint. Used by both GET and PATCH responses so
+// the Settings page can show "Connected (...ab12)" without ever
+// round-tripping the real secret. See app/dashboard/settings/page.tsx.
+function toSafeOrganization(organization: any) {
   const {
     name, slug, logoUrl, primaryColor, tagline, heroImageUrl, seoTitle,
     seoDescription, aboutText, contractTerms, facebookUrl, instagramUrl,
     showHoursOnSite, flatDeliveryFee, taxRate, contactEmail, contactPhone,
     address, city, state, zip, timezone, resendApiKey, senderEmail, senderName,
   } = organization;
-  // The Resend API key is a tenant-owned secret the tenant typed in
-  // themselves - never send the raw value back to the browser. Only a
-  // masked hint (last 4 characters) and a boolean are exposed, so the
-  // Settings page can show "Connected (...ab12)" without ever displaying
-  // or round-tripping the real key. See app/dashboard/settings/page.tsx.
-  const emailProviderConfigured = Boolean(resendApiKey);
-  const resendApiKeyLast4 = resendApiKey ? resendApiKey.slice(-4) : "";
-  return NextResponse.json({
-    organization: {
-      name, slug, logoUrl, primaryColor, tagline, heroImageUrl, seoTitle,
-      seoDescription, aboutText, contractTerms, facebookUrl, instagramUrl,
-      showHoursOnSite, flatDeliveryFee, taxRate, contactEmail, contactPhone,
-      address, city, state, zip, timezone, senderEmail, senderName,
-      emailProviderConfigured, resendApiKeyLast4,
-    },
-  });
+  return {
+    name, slug, logoUrl, primaryColor, tagline, heroImageUrl, seoTitle,
+    seoDescription, aboutText, contractTerms, facebookUrl, instagramUrl,
+    showHoursOnSite, flatDeliveryFee, taxRate, contactEmail, contactPhone,
+    address, city, state, zip, timezone, senderEmail, senderName,
+    emailProviderConfigured: Boolean(resendApiKey),
+    resendApiKeyLast4: resendApiKey ? String(resendApiKey).slice(-4) : "",
+  };
+}
+
+export async function GET() {
+  const organization = await requireCurrentOrganization();
+  return NextResponse.json({ organization: toSafeOrganization(organization) });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -103,5 +103,5 @@ export async function PATCH(req: NextRequest) {
     performedBy: session.id,
     action: "Updated business settings",
   });
-  return NextResponse.json({ organization: updated });
+  return NextResponse.json({ organization: toSafeOrganization(updated) });
 }
