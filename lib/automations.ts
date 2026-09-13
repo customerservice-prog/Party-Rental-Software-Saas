@@ -27,13 +27,18 @@ type RunResult = {
 // truly was. See app/api/automations/route.ts and
 // app/dashboard/automations/page.tsx for the settings/activity UI.
 export async function runBookingAutomations(organizationId: string): Promise<RunResult> {
-  const organization = await prisma.organization.findUnique({ where: { id: organizationId } });
-  if (!organization) return { ran: false, confirmationsSent: 0, remindersSent: 0 };
+  const orgRow = await prisma.organization.findUnique({ where: { id: organizationId } });
+  if (!orgRow) return { ran: false, confirmationsSent: 0, remindersSent: 0 };
+  // Bind to a variable whose declared type is never nullable, so
+  // TypeScript's null-check narrowing survives being referenced inside the
+  // nested closures below (narrowing on a variable declared outside a
+  // closure does not carry into the closure body).
+  const org = orgRow;
 
   const now = new Date();
   if (
-    organization.automationsLastRunAt &&
-    now.getTime() - organization.automationsLastRunAt.getTime() < MIN_INTERVAL_MS
+    org.automationsLastRunAt &&
+    now.getTime() - org.automationsLastRunAt.getTime() < MIN_INTERVAL_MS
   ) {
     return { ran: false, confirmationsSent: 0, remindersSent: 0 };
   }
@@ -48,8 +53,10 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
   let confirmationsSent = 0;
   let remindersSent = 0;
 
-  const canDeliver = Boolean(organization.resendApiKey && organization.senderEmail);
-  const fromName = organization.senderName || organization.name;
+  const canDeliver = Boolean(org.resendApiKey && org.senderEmail);
+  const fromName = org.senderName || org.name;
+  const resendApiKey = org.resendApiKey || "";
+  const senderEmail = org.senderEmail || "";
 
   const restrictions = await prisma.doNotRentRestriction.findMany({
     where: { organizationId, isActive: true },
@@ -71,8 +78,8 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
     let providerError: string | null = null;
     if (canDeliver) {
       const result = await sendEmailViaResend({
-        apiKey: organization.resendApiKey as string,
-        from: `${fromName} <${organization.senderEmail}>`,
+        apiKey: resendApiKey,
+        from: `${fromName} <${senderEmail}>`,
         to: args.toAddress,
         subject: args.subject,
         html: textToHtml(args.bodyText),
@@ -101,7 +108,7 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
     });
   }
 
-  if (organization.autoConfirmationEnabled) {
+  if (org.autoConfirmationEnabled) {
     const candidates = await prisma.order.findMany({
       where: {
         organizationId,
@@ -128,7 +135,7 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
       const subject = `Booking confirmed - Order #${order.orderNumber}`;
       const bodyText =
         `Hi ${order.customer.firstName},\n\n` +
-        `Your booking with ${organization.name} is confirmed for ${eventDateStr}.\n\n` +
+        `Your booking with ${org.name} is confirmed for ${eventDateStr}.\n\n` +
         `Order #: ${order.orderNumber}\n` +
         `Total: $${order.totalAmount.toFixed(2)}\n` +
         `Paid so far: $${order.amountPaid.toFixed(2)}\n\n` +
@@ -146,8 +153,8 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
     }
   }
 
-  if (organization.autoReminderEnabled) {
-    const windowEnd = new Date(now.getTime() + organization.reminderDaysBefore * DAY_MS);
+  if (org.autoReminderEnabled) {
+    const windowEnd = new Date(now.getTime() + org.reminderDaysBefore * DAY_MS);
     const candidates = await prisma.order.findMany({
       where: {
         organizationId,
@@ -177,7 +184,7 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
       const subject = `Reminder: your event is coming up - Order #${order.orderNumber}`;
       const bodyText =
         `Hi ${order.customer.firstName},\n\n` +
-        `This is a reminder that your event with ${organization.name} is on ${eventDateStr}.\n\n` +
+        `This is a reminder that your event with ${org.name} is on ${eventDateStr}.\n\n` +
         `Order #: ${order.orderNumber}\n` +
         `Balance due: $${balanceDue.toFixed(2)}\n\n` +
         `We look forward to seeing you!`;
