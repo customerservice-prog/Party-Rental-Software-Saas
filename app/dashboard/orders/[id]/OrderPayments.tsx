@@ -78,6 +78,13 @@ export default function OrderPayments({ orderId }: { orderId: string }) {
     router.refresh();
   }
 
+  async function handleDelete(paymentId: string) {
+    if (!confirm("Delete this payment entry? This cannot be undone.")) return;
+    await fetch("/api/orders/" + orderId + "/payments?paymentId=" + paymentId, { method: "DELETE" });
+    await load();
+    router.refresh();
+  }
+
   return (
     <div>
       <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 mb-4 items-end">
@@ -160,6 +167,7 @@ export default function OrderPayments({ orderId }: { orderId: string }) {
               <th className="py-1">Tip</th>
               <th className="py-1">Recorded By</th>
               <th className="py-1">Note</th>
+              <th className="py-1"></th>
             </tr>
           </thead>
           <tbody>
@@ -174,11 +182,19 @@ export default function OrderPayments({ orderId }: { orderId: string }) {
                 <td className="py-2">{p.tip > 0 ? "$" + p.tip.toFixed(2) : "-"}</td>
                 <td className="py-2">{p.recordedBy || "-"}</td>
                 <td className="py-2 text-gray-500">{p.note || "-"}</td>
+                <td className="py-2">
+                  <button
+                    onClick={() => handleDelete(p.id)}
+                    className="text-xs text-red-600 hover:underline"
+                  >
+                    Delete
+                  </button>
+                </td>
               </tr>
             ))}
             {payments.length === 0 && (
               <tr>
-                <td colSpan={7} className="py-2 text-gray-400">
+                <td colSpan={8} className="py-2 text-gray-400">
                   No payments recorded yet.
                 </td>
               </tr>
