@@ -13,75 +13,84 @@ datasource db {
 
 // One row per rental business ("tenant") using the platform.
 model Organization {
-  id                String    @id @default(cuid())
-  name              String
-  slug              String    @unique
-  customDomain      String?   @unique
-  planTier          String    @default("launch")
-  stripeAccountId   String?   @unique
-  status            String    @default("active")
-  trialEndsAt       DateTime?
-  logoUrl           String?
-  primaryColor      String?
-  tagline           String?
-  heroImageUrl      String?
+  id                  String   @id @default(cuid())
+  name                String
+  slug                String   @unique
+  customDomain        String?  @unique
+  planTier            String   @default("launch")
+  stripeAccountId     String?  @unique
+  status              String   @default("active")
+  trialEndsAt         DateTime?
+  logoUrl             String?
+  primaryColor        String?
+  tagline             String?
+  heroImageUrl        String?
   // Owner-editable SEO overrides for the public homepage. When set, these
   // take priority over the auto-derived title/description (which falls
   // back to the published hero section's heading/subheading, then to a
   // generic default). Optional and never fabricated - purely what the
   // owner typed in Settings > Website / Site Builder. See app/page.tsx
   // generateMetadata() and app/api/organizations/route.ts.
-  seoTitle          String?
-  seoDescription    String?
-  aboutText         String?
-  contractTerms     String?
-  facebookUrl       String?
-  instagramUrl      String?
-  showHoursOnSite   Boolean   @default(true)
-  flatDeliveryFee   Float     @default(0)
-  taxRate           Float     @default(0)
-  contactEmail      String?
-  contactPhone      String?
+  seoTitle            String?
+  seoDescription       String?
+  aboutText           String?
+  contractTerms       String?
+  facebookUrl         String?
+  instagramUrl        String?
+  showHoursOnSite     Boolean  @default(true)
+  flatDeliveryFee     Float    @default(0)
+  taxRate             Float    @default(0)
+  contactEmail        String?
+  contactPhone        String?
   // Tenant's own outbound email provider connection (Resend). The tenant
   // enters their own API key in Settings > Email Sending - never fabricated
   // or entered by anyone else. When resendApiKey is null, messages are
   // saved as drafts only (see app/api/messages/route.ts, lib/email.ts).
-  resendApiKey      String?
-  senderEmail       String?
-  senderName        String?
-  address           String?
-  city              String?
-  state             String?
-  zip               String?
-  timezone          String    @default("America/New_York")
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  resendApiKey        String?
+  senderEmail         String?
+  senderName          String?
+  // Booking-lifecycle email automation (Phase 5 of ROADMAP.md). Real sends
+  // only happen once resendApiKey/senderEmail above are connected; before
+  // that, automation runs still execute and are recorded as "queued"
+  // SentMessage rows exactly like a manual message would be - never
+  // fabricated as delivered. See lib/automations.ts.
+  autoConfirmationEnabled Boolean  @default(true)
+  autoReminderEnabled     Boolean  @default(true)
+  reminderDaysBefore      Int      @default(3)
+  automationsLastRunAt    DateTime?
+  address              String?
+  city                String?
+  state               String?
+  zip                 String?
+  timezone            String   @default("America/New_York")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  users                  User[]
-  categories             Category[]
-  items                  Item[]
-  itemUnits              ItemUnit[]
-  customers              Customer[]
-  drivers                Driver[]
-  orders                 Order[]
+  users                    User[]
+  categories               Category[]
+  items                    Item[]
+  itemUnits                ItemUnit[]
+  customers                Customer[]
+  drivers                  Driver[]
+  orders                   Order[]
   payments                 Payment[]
-  coupons                Coupon[]
-  depositRules           DepositRule[]
-  subscription           PlatformSubscription?
-  businessHours          BusinessHours[]
-  closedDates            ClosedDate[]
-  addons                 Addon[]
-  contracts              Contract[]
-  tasks                  Task[]
-  pages                  Page[]
-  messageTemplates       MessageTemplate[]
-  sentMessages           SentMessage[]
-  tenantRoles            TenantRole[]
-  driverRuns             DriverRun[]
-  doNotRentRestrictions  DoNotRentRestriction[]
-  blockedBookingAttempts BlockedBookingAttempt[]
-  meetings               Meeting[]
-  website                Website?
+  coupons                  Coupon[]
+  depositRules             DepositRule[]
+  subscription             PlatformSubscription?
+  businessHours            BusinessHours[]
+  closedDates              ClosedDate[]
+  addons                   Addon[]
+  contracts                Contract[]
+  tasks                    Task[]
+  pages                    Page[]
+  messageTemplates         MessageTemplate[]
+  sentMessages             SentMessage[]
+  tenantRoles              TenantRole[]
+  driverRuns               DriverRun[]
+  doNotRentRestrictions    DoNotRentRestriction[]
+  blockedBookingAttempts   BlockedBookingAttempt[]
+  meetings                 Meeting[]
+  website                  Website?
 }
 
 // The tenant's own subscription to OUR platform (billing us, not their customers).
@@ -147,7 +156,7 @@ model TenantRole {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  users User[]
+  users          User[]
 
   @@unique([organizationId, slug])
 }
@@ -165,36 +174,35 @@ model Category {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  items Item[]
+  items             Item[]
 
   @@unique([organizationId, slug])
 }
-
 model Item {
-  id                String   @id @default(cuid())
-  organizationId    String
-  organization      Organization @relation(fields: [organizationId], references: [id])
-  categoryId        String
-  category          Category @relation(fields: [categoryId], references: [id])
-  name              String
-  slug              String
-  description       String?
-  cost              Float
+  id                 String   @id @default(cuid())
+  organizationId     String
+  organization       Organization @relation(fields: [organizationId], references: [id])
+  categoryId         String
+  category           Category @relation(fields: [categoryId], references: [id])
+  name               String
+  slug               String
+  description        String?
+  cost               Float
   // What the business actually paid to acquire/replace this item, distinct
   // from "cost" above (which is the customer-facing rental price). Optional
   // and nullable so existing items are unaffected until an owner fills it
   // in; powers the Cost of Goods report (see app/dashboard/reports).
-  acquisitionCost   Float?
-  quantity          Int      @default(1)
-  picture           String?
-  displayToCustomer Boolean  @default(true)
+  acquisitionCost    Float?
+  quantity           Int      @default(1)
+  picture            String?
+  displayToCustomer  Boolean  @default(true)
   // Physical condition tracking. "available" is normal; "missing",
   // "out_of_service", and "retired" hard-block new bookings (see
   // lib/availability.ts), while "damaged" and "needs_repair" are
   // attention-only flags staff can still choose to rent out.
-  status            String   @default("available")
-  lastInspectedAt   DateTime?
-  attentionNotes    String?
+  status             String   @default("available")
+  lastInspectedAt    DateTime?
+  attentionNotes     String?
   // If set, customers cannot book this item for any event date before
   // this date. Independent of status.
   blockBookingsUntil DateTime?
@@ -208,12 +216,12 @@ model Item {
   // app/api/catalog-templates/add/route.ts.
   sourceTemplateId   String?
   sourceTemplateName String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt          DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  orderItems OrderItem[]
-  addons     Addon[]
-  units      ItemUnit[]
+  orderItems         OrderItem[]
+  addons             Addon[]
+  units              ItemUnit[]
 
   @@unique([organizationId, slug])
 }
@@ -231,28 +239,28 @@ model Item {
 // lib/catalogTemplates.ts and app/api/catalog-templates/*.
 // ---------------------------------------------------------------------------
 model CatalogTemplate {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String
   // Key into the static CATALOG_CATEGORIES list in lib/catalogTemplates.ts
   // (e.g. "tables", "chairs", "tents"). Not a DB relation - this is fixed
   // platform taxonomy, not tenant-editable data like the real Category
   // model above.
-  categoryKey String
+  categoryKey  String
   // "rental" | "service" | "consumable" | "addon" | "package" - see
   // CATALOG_TEMPLATE_TYPES in lib/catalogTemplates.ts.
-  type        String   @default("rental")
-  description String?
+  type         String   @default("rental")
+  description  String?
   // Free-form structured hints (e.g. shape, size, color options) to help a
   // tenant configure their own copy faster. Never used to fabricate a
   // tenant's real quantity or price.
-  attributes  Json     @default("{}")
+  attributes   Json     @default("{}")
   // Internal search keywords for the catalog browser - not customer-facing.
-  keywords    Json     @default("[]")
-  sortOrder   Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  keywords     Json     @default("[]")
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([categoryKey])
 }
@@ -304,24 +312,24 @@ model Customer {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  orders Order[]
-  tasks  Task[]
+  orders         Order[]
+  tasks          Task[]
 
   @@index([organizationId, email])
 }
 
 model Driver {
-  id              String   @id @default(cuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  name            String
-  phone           String?
-  email           String?
-  isActive        Boolean  @default(true)
-  pin             String?
-  defaultStopPay  Float    @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  phone          String?
+  email          String?
+  isActive       Boolean  @default(true)
+  pin            String?
+  defaultStopPay Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   deliveryOrders Order[] @relation("DeliveryDriver")
   pickupOrders   Order[] @relation("PickupDriver")
@@ -351,17 +359,25 @@ model Order {
   deliveryDriver    Driver?  @relation("DeliveryDriver", fields: [deliveryDriverId], references: [id])
   pickupDriverId    String?
   pickupDriver      Driver?  @relation("PickupDriver", fields: [pickupDriverId], references: [id])
+  // Set the first time the booking-confirmation automation processes this
+  // order (whether the resulting email was actually delivered, queued, or
+  // failed - see lib/automations.ts), so it is never sent twice for the
+  // same order.
+  confirmationSentAt DateTime?
+  // Set the first time the event-reminder automation processes this order.
+  // Same "processed once, honestly" semantics as confirmationSentAt above.
+  reminderSentAt    DateTime?
   createdAt         DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  updatedAt         DateTime @updatedAt
 
-  items            OrderItem[]
-  orderAddons      OrderAddon[]
-  payments      Payment[]
-  deliveryAddress  String?
-  stripeSessionId  String?  @unique
-  contract         Contract?
-  tasks            Task[]
-  driverRunStops   DriverRunStop[]
+  items             OrderItem[]
+  orderAddons       OrderAddon[]
+  payments          Payment[]
+  deliveryAddress   String?
+  stripeSessionId   String?  @unique
+  contract          Contract?
+  tasks             Task[]
+  driverRunStops    DriverRunStop[]
 
   @@unique([organizationId, orderNumber])
 }
@@ -376,7 +392,6 @@ model OrderItem {
   price     Float
   createdAt DateTime @default(now())
 }
-
 model Coupon {
   id             String   @id @default(cuid())
   organizationId String
@@ -494,7 +509,7 @@ model Addon {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  orderAddons OrderAddon[]
+  orderAddons    OrderAddon[]
 }
 
 // Snapshot of an Addon selected on a specific Order, preserving the name and
@@ -546,7 +561,6 @@ model Contract {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
-
 // Simple per-organization to-do items, optionally linked to a Customer or
 // Order, backing the dashboard "Tasks" widget.
 model Task {
@@ -605,20 +619,20 @@ model Page {
 }
 
 model Website {
-  id                String    @id @default(cuid())
-  organizationId    String    @unique
-  organization      Organization @relation(fields: [organizationId], references: [id])
+  id                 String   @id @default(cuid())
+  organizationId     String   @unique
+  organization       Organization @relation(fields: [organizationId], references: [id])
   // Sections the tenant is currently editing. This is a JSON-encoded array
   // of objects shaped like { id, type, visible, config } rendered by the
   // dashboard editor - never shown directly to public storefront visitors.
-  draftSections     String    @db.Text
+  draftSections      String   @db.Text
   // Snapshot copied from draftSections the last time the tenant clicked
   // Publish. The public homepage renders ONLY from this field, so
   // in-progress edits never leak to customers. Null until first publish.
-  publishedSections String?   @db.Text
-  publishedAt       DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  publishedSections  String?  @db.Text
+  publishedAt        DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 model MessageTemplate {
@@ -652,6 +666,11 @@ model SentMessage {
   providerError  String?
   templateId     String?
   customerId     String?
+  // Set only for messages created automatically by lib/automations.ts -
+  // "booking_confirmation" or "event_reminder". Null for every manually
+  // composed message sent from /dashboard/messages, so automation
+  // activity can be reported on separately from manual staff outreach.
+  automationType String?
   createdBy      String
   createdAt      DateTime @default(now())
 
@@ -678,7 +697,7 @@ model DriverRun {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  stops DriverRunStop[]
+  stops          DriverRunStop[]
 
   @@unique([organizationId, driverId, runDate])
   @@index([organizationId, runDate])
@@ -714,11 +733,11 @@ model DriverRunStop {
 // ---------------------------------------------------------------------------
 
 model LoginThrottle {
-  id             String    @id @default(cuid())
-  ip             String    @unique
-  failCount      Int       @default(0)
+  id             String   @id @default(cuid())
+  ip             String   @unique
+  failCount      Int      @default(0)
   failExpiresAt  DateTime?
-  burstCount     Int       @default(0)
+  burstCount     Int      @default(0)
   burstExpiresAt DateTime?
-  updatedAt      DateTime  @updatedAt
+  updatedAt      DateTime @updatedAt
 }
