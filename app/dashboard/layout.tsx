@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { getCurrentOrganization } from "@/lib/tenant";
 import { getBillingStatus } from "@/lib/billing";
+import { runBookingAutomations } from "@/lib/automations";
 import DashboardNav from "./DashboardNav";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -14,6 +15,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const organization = await getCurrentOrganization();
   if (!organization || (session.user as any).organizationId !== organization.id) {
     redirect("/login");
+  }
+
+  // Best-effort booking-lifecycle automation trigger (real booking
+  // confirmations/reminders - see lib/automations.ts). There is no separate
+  // cron worker deployed for this app, so this runs whenever any staff
+  // member loads a dashboard page (rate-limited internally to once per
+  // minute per organization). Wrapped in try/catch so a failure here can
+  // never break the dashboard itself.
+  try {
+    await runBookingAutomations(organization.id);
+  } catch (err) {
+    console.error("runBookingAutomations failed:", err);
   }
 
   const billing = await getBillingStatus(organization);
