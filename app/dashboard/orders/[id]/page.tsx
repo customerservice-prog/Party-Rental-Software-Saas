@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import AssignDriverSelect from "../../deliveries/assign-driver-select";
 import OrderTasks from "./OrderTasks";
 import OrderStatusSelect from "./OrderStatusSelect";
+import OrderPayments from "./OrderPayments";
 
 export default async function OrderDetailPage({
   params,
@@ -132,6 +133,11 @@ export default async function OrderDetailPage({
             <span>${balanceDue.toFixed(2)}</span>
           </div>
         </div>
+      </div>
+
+      <div className="bg-white shadow rounded-lg p-5 mb-6">
+        <h2 className="font-semibold text-gray-900 mb-3">Payments</h2>
+        <OrderPayments orderId={order.id} />
       </div>
 
       <div className="bg-white shadow rounded-lg p-5 mb-6">
