@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 function NavIcon({ name, className }: { name: string; className?: string }) {
   const common = {
@@ -279,6 +280,10 @@ export default function DashboardNav({
 }) {
   const pathname = usePathname();
   const [adminOpen, setAdminOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const adminBtnRef = useRef<HTMLButtonElement>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const adminGroups = showSettings
     ? [...ADMIN_GROUPS_BASE, ...ADMIN_GROUPS_SETTINGS]
@@ -302,6 +307,49 @@ export default function DashboardNav({
     );
   }
 
+  function openAdminMenu() {
+    if (adminBtnRef.current) {
+      const rect = adminBtnRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 4, left: rect.left });
+    }
+    setAdminOpen((v) => !v);
+  }
+
+  const dropdownPanel = adminOpen ? (
+    <>
+      <div className="fixed inset-0 z-40" onClick={() => setAdminOpen(false)} />
+      <div
+        className="fixed z-50 bg-white text-gray-800 shadow-xl rounded-md border border-gray-200 p-4 grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-1 w-[260px] sm:w-[520px] max-h-[70vh] overflow-y-auto"
+        style={{ top: menuPos.top, left: Math.min(menuPos.left, (typeof window !== "undefined" ? window.innerWidth : 1000) - 540) }}
+      >
+        {adminGroups.map((group) => (
+          <div key={group.section}>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+              {group.section}
+            </p>
+            {group.items.map((item) => {
+              const active = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setAdminOpen(false)}
+                  className={
+                    "flex items-center gap-2 py-1.5 text-sm rounded transition-colors " +
+                    (active ? "text-[#2d6a2d] font-semibold" : "text-gray-700 hover:text-[#2d6a2d]")
+                  }
+                >
+                  <NavIcon name={item.icon} className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </>
+  ) : null;
+
   return (
     <div className="fixed top-0 left-0 right-0 z-50 h-20 bg-[#2d6a2d] border-b-[3px] border-[#4CAF50] flex items-center px-3 sm:px-6 gap-2 overflow-hidden">
       <Link
@@ -316,57 +364,21 @@ export default function DashboardNav({
           <TopItem key={item.href} item={item} />
         ))}
 
-        <div className="relative shrink-0">
-          <button
-            type="button"
-            onClick={() => setAdminOpen((v) => !v)}
-            className={
-              "flex flex-col items-center justify-center gap-1 px-2.5 py-1.5 rounded-md text-center min-w-[58px] shrink-0 transition-colors " +
-              (adminActive ? "text-amber-300" : "text-white/90 hover:text-white hover:bg-white/10")
-            }
-          >
-            <NavIcon name="gear" className="w-5 h-5 shrink-0" />
-            <span className="text-[10px] font-semibold leading-none flex items-center gap-0.5 whitespace-nowrap">
-              Admin
-              <NavIcon name="chevron" className="w-3 h-3" />
-            </span>
-          </button>
-
-          {adminOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setAdminOpen(false)}
-              />
-              <div className="absolute left-0 top-full mt-1 z-50 bg-white text-gray-800 shadow-xl rounded-md border border-gray-200 p-4 grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-1 w-[260px] sm:w-[520px] max-h-[70vh] overflow-y-auto">
-                {adminGroups.map((group) => (
-                  <div key={group.section}>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                      {group.section}
-                    </p>
-                    {group.items.map((item) => {
-                      const active = pathname === item.href;
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setAdminOpen(false)}
-                          className={
-                            "flex items-center gap-2 py-1.5 text-sm rounded transition-colors " +
-                            (active ? "text-[#2d6a2d] font-semibold" : "text-gray-700 hover:text-[#2d6a2d]")
-                          }
-                        >
-                          <NavIcon name={item.icon} className="w-4 h-4 shrink-0" />
-                          <span className="truncate">{item.label}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        <button
+          ref={adminBtnRef}
+          type="button"
+          onClick={openAdminMenu}
+          className={
+            "flex flex-col items-center justify-center gap-1 px-2.5 py-1.5 rounded-md text-center min-w-[58px] shrink-0 transition-colors " +
+            (adminActive ? "text-amber-300" : "text-white/90 hover:text-white hover:bg-white/10")
+          }
+        >
+          <NavIcon name="gear" className="w-5 h-5 shrink-0" />
+          <span className="text-[10px] font-semibold leading-none flex items-center gap-0.5 whitespace-nowrap">
+            Admin
+            <NavIcon name="chevron" className="w-3 h-3" />
+          </span>
+        </button>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-1 pl-1">
@@ -384,6 +396,8 @@ export default function DashboardNav({
           Logout
         </button>
       </div>
+
+      {mounted && dropdownPanel ? createPortal(dropdownPanel, document.body) : null}
     </div>
   );
 }
