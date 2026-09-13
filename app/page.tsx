@@ -62,8 +62,16 @@ export async function generateMetadata(): Promise<Metadata> {
     }
   }
 
-  const title = heroHeading || organization.name + " — Book Your Event Rentals Online";
+  // Owner-set SEO title/description (Settings > Website / Site Builder)
+  // always win when present - they are an explicit, deliberate override.
+  // Otherwise fall back to the real published hero copy, then to a
+  // generic factual default. Never fabricated at any step.
+  const title =
+    organization.seoTitle?.trim() ||
+    heroHeading ||
+    organization.name + " — Book Your Event Rentals Online";
   const description =
+    organization.seoDescription?.trim() ||
     heroSubheading ||
     "Browse rental categories and book your next event online with " +
       organization.name +
