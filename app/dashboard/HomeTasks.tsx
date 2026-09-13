@@ -54,13 +54,13 @@ export default function HomeTasks() {
   const openTasks = tasks.filter((t) => !t.isDone);
 
   return (
-    <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-600">
+    <div className="bg-white rounded shadow p-4">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-semibold text-gray-900">Tasks</h2>
+        <h3 className="font-bold text-dark text-lg">Tasks</h3>
         <button
           onClick={addTask}
           disabled={saving || !draft.trim()}
-          className="bg-indigo-600 text-white text-sm px-3 py-1.5 rounded hover:bg-indigo-700 disabled:opacity-50"
+          className="text-sm bg-admin-green text-white px-3 py-1.5 rounded hover:opacity-90 disabled:opacity-50"
         >
           Add New Task
         </button>
@@ -78,7 +78,7 @@ export default function HomeTasks() {
                 type="checkbox"
                 checked={task.isDone}
                 onChange={() => toggleDone(task)}
-                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                className="h-4 w-4 rounded border-gray-300 text-admin-green focus:ring-admin-green cursor-pointer"
               />
               <span className="text-gray-800">{task.title}</span>
             </li>
@@ -93,7 +93,7 @@ export default function HomeTasks() {
           if (e.key === "Enter") addTask();
         }}
         placeholder="Add a task..."
-        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-admin-green focus:border-admin-green"
       />
     </div>
   );
