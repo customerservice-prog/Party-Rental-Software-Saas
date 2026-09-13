@@ -42,6 +42,13 @@ model Organization {
   taxRate           Float     @default(0)
   contactEmail      String?
   contactPhone      String?
+  // Tenant's own outbound email provider connection (Resend). The tenant
+  // enters their own API key in Settings > Email Sending - never fabricated
+  // or entered by anyone else. When resendApiKey is null, messages are
+  // saved as drafts only (see app/api/messages/route.ts, lib/email.ts).
+  resendApiKey      String?
+  senderEmail       String?
+  senderName        String?
   address           String?
   city              String?
   state             String?
@@ -619,6 +626,9 @@ model SentMessage {
   subject        String?
   body           String
   status         String   @default("queued")
+  // Populated only when status is "failed" - the real error message
+  // returned by the email/SMS provider, never fabricated. Null otherwise.
+  providerError  String?
   templateId     String?
   customerId     String?
   createdBy      String
