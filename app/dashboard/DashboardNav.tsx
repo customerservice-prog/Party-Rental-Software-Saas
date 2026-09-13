@@ -278,7 +278,6 @@ export default function DashboardNav({
   role?: string;
 }) {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
 
   const adminGroups = showSettings
@@ -293,178 +292,98 @@ export default function DashboardNav({
       <Link
         href={item.href}
         className={
-          "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md text-center min-w-[64px] transition-colors " +
+          "flex flex-col items-center justify-center gap-1 px-2.5 py-1.5 rounded-md text-center min-w-[58px] shrink-0 transition-colors " +
           (active ? "text-amber-300" : "text-white/90 hover:text-white hover:bg-white/10")
         }
       >
-        <NavIcon name={item.icon} className="w-6 h-6 shrink-0" />
-        <span className="text-[11px] font-semibold leading-none whitespace-nowrap">{item.label}</span>
-      </Link>
-    );
-  }
-
-  function MobileLink({ item }: { item: NavItem }) {
-    const active = pathname === item.href;
-    return (
-      <Link
-        key={item.href}
-        href={item.href}
-        onClick={() => setOpen(false)}
-        className={
-          "flex items-center gap-3 px-6 py-3.5 border-b border-gray-100 transition-colors " +
-          (active
-            ? "bg-green-50 text-[#2d6a2d] font-semibold"
-            : "text-gray-800 hover:bg-gray-50")
-        }
-      >
         <NavIcon name={item.icon} className="w-5 h-5 shrink-0" />
-        <span className="truncate">{item.label}</span>
+        <span className="text-[10px] font-semibold leading-none whitespace-nowrap">{item.label}</span>
       </Link>
     );
   }
 
   return (
-    <>
-      <div className="fixed top-0 left-0 right-0 z-50 h-24 bg-[#2d6a2d] border-b-[3px] border-[#4CAF50] flex items-center px-4 lg:px-6 gap-2">
-        <Link
-          href="/dashboard"
-          onClick={() => setOpen(false)}
-          className="font-bold text-lg lg:text-xl text-white truncate shrink-0 mr-2"
-        >
-          {orgName || "Dashboard"}
-        </Link>
+    <div className="fixed top-0 left-0 right-0 z-50 h-20 bg-[#2d6a2d] border-b-[3px] border-[#4CAF50] flex items-center px-3 sm:px-6 gap-2 overflow-hidden">
+      <Link
+        href="/dashboard"
+        className="font-bold text-base sm:text-lg text-white truncate shrink-0 mr-1 max-w-[110px] sm:max-w-none"
+      >
+        {orgName || "Dashboard"}
+      </Link>
 
-        <div className="hidden lg:flex items-center gap-0.5 flex-1 overflow-x-auto">
-          {PRIMARY_ITEMS.map((item) => (
-            <TopItem key={item.href} item={item} />
-          ))}
+      <div className="flex items-center gap-0.5 flex-1 min-w-0 overflow-x-auto overflow-y-hidden whitespace-nowrap">
+        {PRIMARY_ITEMS.map((item) => (
+          <TopItem key={item.href} item={item} />
+        ))}
 
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setAdminOpen((v) => !v)}
-              className={
-                "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md text-center min-w-[64px] transition-colors " +
-                (adminActive ? "text-amber-300" : "text-white/90 hover:text-white hover:bg-white/10")
-              }
-            >
-              <NavIcon name="gear" className="w-6 h-6 shrink-0" />
-              <span className="text-[11px] font-semibold leading-none flex items-center gap-0.5">
-                Admin
-                <NavIcon name="chevron" className="w-3 h-3" />
-              </span>
-            </button>
-
-            {adminOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setAdminOpen(false)}
-                />
-                <div className="absolute left-0 top-full mt-1 z-50 bg-white text-gray-800 shadow-xl rounded-md border border-gray-200 p-4 grid grid-cols-3 gap-x-8 gap-y-1 min-w-[520px]">
-                  {adminGroups.map((group) => (
-                    <div key={group.section}>
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                        {group.section}
-                      </p>
-                      {group.items.map((item) => {
-                        const active = pathname === item.href;
-                        return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setAdminOpen(false)}
-                            className={
-                              "flex items-center gap-2 py-1.5 text-sm rounded transition-colors " +
-                              (active ? "text-[#2d6a2d] font-semibold" : "text-gray-700 hover:text-[#2d6a2d]")
-                            }
-                          >
-                            <NavIcon name={item.icon} className="w-4 h-4 shrink-0" />
-                            <span className="truncate">{item.label}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="hidden lg:flex items-center gap-3 shrink-0 ml-auto pl-2">
-          {userName && (
-            <span className="text-xs text-white/90 whitespace-nowrap">
-              Signed in as <strong>{userName}</strong>
-              {role ? " (" + role.charAt(0).toUpperCase() + role.slice(1) + ")" : ""}
-            </span>
-          )}
+        <div className="relative shrink-0">
           <button
             type="button"
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="border border-white/70 text-white text-sm px-3 py-1.5 rounded hover:bg-white/10 transition-colors whitespace-nowrap"
+            onClick={() => setAdminOpen((v) => !v)}
+            className={
+              "flex flex-col items-center justify-center gap-1 px-2.5 py-1.5 rounded-md text-center min-w-[58px] shrink-0 transition-colors " +
+              (adminActive ? "text-amber-300" : "text-white/90 hover:text-white hover:bg-white/10")
+            }
           >
-            Logout
+            <NavIcon name="gear" className="w-5 h-5 shrink-0" />
+            <span className="text-[10px] font-semibold leading-none flex items-center gap-0.5 whitespace-nowrap">
+              Admin
+              <NavIcon name="chevron" className="w-3 h-3" />
+            </span>
           </button>
-        </div>
 
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-label={open ? "Close menu" : "Open menu"}
-          className="lg:hidden text-white p-2 -mr-2 shrink-0 ml-auto"
-        >
-          {open ? (
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="6" y1="6" x2="18" y2="18" />
-              <line x1="18" y1="6" x2="6" y2="18" />
-            </svg>
-          ) : (
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
+          {adminOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setAdminOpen(false)}
+              />
+              <div className="absolute left-0 top-full mt-1 z-50 bg-white text-gray-800 shadow-xl rounded-md border border-gray-200 p-4 grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-1 w-[260px] sm:w-[520px] max-h-[70vh] overflow-y-auto">
+                {adminGroups.map((group) => (
+                  <div key={group.section}>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                      {group.section}
+                    </p>
+                    {group.items.map((item) => {
+                      const active = pathname === item.href;
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setAdminOpen(false)}
+                          className={
+                            "flex items-center gap-2 py-1.5 text-sm rounded transition-colors " +
+                            (active ? "text-[#2d6a2d] font-semibold" : "text-gray-700 hover:text-[#2d6a2d]")
+                          }
+                        >
+                          <NavIcon name={item.icon} className="w-4 h-4 shrink-0" />
+                          <span className="truncate">{item.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </>
           )}
-        </button>
+        </div>
       </div>
 
-      {open && (
-        <div className="lg:hidden fixed top-24 left-0 right-0 bottom-0 z-40 bg-white overflow-y-auto">
-          <div>
-            {PRIMARY_ITEMS.map((item) => (
-              <MobileLink key={item.href} item={item} />
-            ))}
-          </div>
-
-          {adminGroups.map((group) => (
-            <div key={group.section}>
-              <p className="px-6 pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide bg-gray-50">
-                {group.section}
-              </p>
-              {group.items.map((item) => (
-                <MobileLink key={item.href} item={item} />
-              ))}
-            </div>
-          ))}
-
-          <div className="px-6 py-5 border-t border-gray-100">
-            {userName && (
-              <p className="text-xs text-gray-500 mb-2 truncate">
-                Signed in as <strong>{userName}</strong>
-                {role ? " (" + role.charAt(0).toUpperCase() + role.slice(1) + ")" : ""}
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      )}
-    </>
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-1 pl-1">
+        {userName && (
+          <span className="hidden md:inline text-xs text-white/90 whitespace-nowrap">
+            Signed in as <strong>{userName}</strong>
+            {role ? " (" + role.charAt(0).toUpperCase() + role.slice(1) + ")" : ""}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="border border-white/70 text-white text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 rounded hover:bg-white/10 transition-colors whitespace-nowrap shrink-0"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
   );
 }
