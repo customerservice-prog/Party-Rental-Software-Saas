@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { requireStaffSession, requireOwnerSession, authzErrorResponse } from "@/lib/authz";
 import { logActivity } from "@/lib/audit";
+import { sendEmailViaResend, textToHtml } from "@/lib/email";
 
 export async function GET() {
   try {
@@ -46,9 +47,31 @@ export async function POST(request: Request) {
       );
     }
 
-    // NOTE: Actual delivery (email/SMS provider) is not yet wired up.
-    // Messages are persisted with status "queued" and will be sent once
-    // provider credentials are configured.
+    // Real delivery: only attempted for email, and only when the tenant has
+    // connected their own Resend API key in Settings > Email Sending (see
+    // app/dashboard/settings/page.tsx, app/api/organizations/route.ts).
+    // SMS has no provider wired up yet, and email with no key configured
+    // stays "queued" exactly as before - this never fabricates a send.
+    let status = "queued";
+    let providerError: string | null = null;
+
+    if (channel === "email" && organization.resendApiKey && organization.senderEmail) {
+      const fromName = organization.senderName || organization.name;
+      const result = await sendEmailViaResend({
+        apiKey: organization.resendApiKey,
+        from: `${fromName} <${organization.senderEmail}>`,
+        to: toAddress,
+        subject: subject || "Message from " + organization.name,
+        html: textToHtml(bodyText),
+      });
+      if (result.success) {
+        status = "sent";
+      } else {
+        status = "failed";
+        providerError = result.error;
+      }
+    }
+
     const message = await prisma.sentMessage.create({
       data: {
         organizationId: organization.id,
@@ -57,7 +80,8 @@ export async function POST(request: Request) {
         toAddress,
         subject,
         body: bodyText,
-        status: "queued",
+        status,
+        providerError,
         templateId: data.templateId ? String(data.templateId) : null,
         customerId: data.customerId ? String(data.customerId) : null,
         createdBy: session.id,
@@ -67,8 +91,8 @@ export async function POST(request: Request) {
     await logActivity({
       organizationId: organization.id,
       performedBy: session.id,
-      action: "Queued message",
-      details: `${channel} to ${message.toAddress}`,
+      action: status === "sent" ? "Sent message" : status === "failed" ? "Failed to send message" : "Queued message",
+      details: `${channel} to ${message.toAddress}${providerError ? " - " + providerError : ""}`,
     });
 
     return NextResponse.json({ message });
