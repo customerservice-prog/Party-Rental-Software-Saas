@@ -554,7 +554,7 @@ return (
 </div>
 <div className="bg-white shadow rounded-lg p-4 border-l-4 border-blue-600">
 <div className="text-sm text-gray-500">Current Tax Rate</div>
-<div className="text-2xl font-bold text-gray-900">{(organization.taxRate * 100).toFixed(2)}%</div>
+<div className="text-2xl font-bold text-gray-900">{organization.taxRate.toFixed(2)}%</div>
 </div>
 </div>
 
