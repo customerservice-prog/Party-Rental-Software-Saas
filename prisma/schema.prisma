@@ -7,5 +7,737 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Core schema omitted in this update is intentionally not safe to reconstruct.
-// This commit is aborted/replaced by a complete schema update in the next commit.
+// ---------------------------------------------------------------------------
+// PLATFORM / TENANCY MODELS
+// ---------------------------------------------------------------------------
+
+// One row per rental business ("tenant") using the platform.
+model Organization {
+  id                  String   @id @default(cuid())
+  name                String
+  slug                String   @unique
+  customDomain        String?  @unique
+  planTier            String   @default("launch")
+  stripeAccountId     String?  @unique
+  status              String   @default("active")
+  trialEndsAt         DateTime?
+  logoUrl             String?
+  primaryColor        String?
+  tagline             String?
+  heroImageUrl        String?
+  // Owner-editable SEO overrides for the public homepage. When set, these
+  // take priority over the auto-derived title/description (which falls
+  // back to the published hero section's heading/subheading, then to a
+  // generic default). Optional and never fabricated - purely what the
+  // owner typed in Settings > Website / Site Builder. See app/page.tsx
+  // generateMetadata() and app/api/organizations/route.ts.
+  seoTitle            String?
+  seoDescription       String?
+  aboutText           String?
+  contractTerms       String?
+  facebookUrl         String?
+  instagramUrl        String?
+  showHoursOnSite     Boolean  @default(true)
+  flatDeliveryFee     Float    @default(0)
+  taxRate             Float    @default(0)
+  contactEmail        String?
+  contactPhone        String?
+  // Tenant's own outbound email provider connection (Resend). The tenant
+  // enters their own API key in Settings > Email Sending - never fabricated
+  // or entered by anyone else. When resendApiKey is null, messages are
+  // saved as drafts only (see app/api/messages/route.ts, lib/email.ts).
+  resendApiKey        String?
+  senderEmail         String?
+  senderName          String?
+  // Booking-lifecycle email automation (Phase 5 of ROADMAP.md). Real sends
+  // only happen once resendApiKey/senderEmail above are connected; before
+  // that, automation runs still execute and are recorded as "queued"
+  // SentMessage rows exactly like a manual message would be - never
+  // fabricated as delivered. See lib/automations.ts.
+  autoConfirmationEnabled Boolean  @default(true)
+  autoReminderEnabled     Boolean  @default(true)
+  reminderDaysBefore      Int      @default(3)
+  automationsLastRunAt    DateTime?
+  address              String?
+  city                String?
+  state               String?
+  zip                 String?
+  timezone            String   @default("America/New_York")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  users                    User[]
+  categories               Category[]
+  items                    Item[]
+  itemUnits                ItemUnit[]
+  customers                Customer[]
+  drivers                  Driver[]
+  orders                   Order[]
+  payments                 Payment[]
+  coupons                  Coupon[]
+  depositRules             DepositRule[]
+  subscription             PlatformSubscription?
+  businessHours            BusinessHours[]
+  closedDates              ClosedDate[]
+  addons                   Addon[]
+  contracts                Contract[]
+  tasks                    Task[]
+  pages                    Page[]
+  messageTemplates         MessageTemplate[]
+  sentMessages             SentMessage[]
+  tenantRoles              TenantRole[]
+  driverRuns               DriverRun[]
+  doNotRentRestrictions    DoNotRentRestriction[]
+  blockedBookingAttempts   BlockedBookingAttempt[]
+  meetings                 Meeting[]
+  website                  Website?
+}
+
+// The tenant's own subscription to OUR platform (billing us, not their customers).
+model PlatformSubscription {
+  id                       String    @id @default(cuid())
+  organizationId           String    @unique
+  organization             Organization @relation(fields: [organizationId], references: [id])
+  planTier                 String    @default("launch")
+  stripeCustomerId         String?
+  stripeSubId              String?
+  status                   String    @default("trialing")
+  currentPeriodEnd         DateTime?
+  // Set when status first transitions to "past_due" so we can enforce a
+  // grace period before locking the account out (see lib/billing.ts).
+  // Cleared back to null whenever status moves away from "past_due".
+  pastDueSince             DateTime?
+  // Billing interval selected at signup/upgrade time. Only meaningful once
+  // real subscription billing is turned on.
+  billingInterval          String    @default("monthly")
+  // True for the first cohort of paying customers who locked in the
+  // Founding Customer price. See lib/plans.ts FOUNDING_OFFER and
+  // lib/founding.ts for eligibility/counting logic.
+  foundingCustomer         Boolean   @default(false)
+  foundingPriceLockedUntil DateTime?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// TENANT-SCOPED BUSINESS MODELS
+// Every model below carries an organizationId so tenant data is fully isolated.
+// ---------------------------------------------------------------------------
+
+model User {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  username       String
+  password       String
+  name           String
+  role           String   @default("staff")
+  tenantRoleId   String?
+  tenantRole     TenantRole? @relation(fields: [tenantRoleId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, username])
+}
+
+// Customizable staff role per organization. Permissions are a flat list of
+// stable string codes (see lib/permissions.ts PERMISSION_CATALOG). Lets an
+// owner create roles like "Dispatcher" or "Front Desk" with only the access
+// they need, instead of every staff login being all-or-nothing.
+model TenantRole {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  slug           String
+  permissions    Json     @default("[]")
+  isSystem       Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  users          User[]
+
+  @@unique([organizationId, slug])
+}
+
+model Category {
+  id                String   @id @default(cuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  name              String
+  slug              String
+  description       String?
+  picture           String?
+  displayToCustomer Boolean  @default(true)
+  sortOrder         Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  items             Item[]
+
+  @@unique([organizationId, slug])
+}
+model Item {
+  id                 String   @id @default(cuid())
+  organizationId     String
+  organization       Organization @relation(fields: [organizationId], references: [id])
+  categoryId         String
+  category           Category @relation(fields: [categoryId], references: [id])
+  name               String
+  slug               String
+  description        String?
+  cost               Float
+  // What the business actually paid to acquire/replace this item, distinct
+  // from "cost" above (which is the customer-facing rental price). Optional
+  // and nullable so existing items are unaffected until an owner fills it
+  // in; powers the Cost of Goods report (see app/dashboard/reports).
+  acquisitionCost    Float?
+  quantity           Int      @default(1)
+  picture            String?
+  displayToCustomer  Boolean  @default(true)
+  // Physical condition tracking. "available" is normal; "missing",
+  // "out_of_service", and "retired" hard-block new bookings (see
+  // lib/availability.ts), while "damaged" and "needs_repair" are
+  // attention-only flags staff can still choose to rent out.
+  status             String   @default("available")
+  lastInspectedAt    DateTime?
+  attentionNotes     String?
+  // If set, customers cannot book this item for any event date before
+  // this date. Independent of status.
+  blockBookingsUntil DateTime?
+  restrictionMessage String?
+  // Loose reference (NOT a hard foreign key) to the global CatalogTemplate
+  // this item was copied from, if any. Kept loose on purpose: editing or
+  // archiving a global template must never cascade into, lock, or delete a
+  // tenant's own inventory data. sourceTemplateName snapshots the
+  // template's name at copy time so it still displays correctly even if
+  // the template is later renamed or removed. See
+  // app/api/catalog-templates/add/route.ts.
+  sourceTemplateId   String?
+  sourceTemplateName String?
+  createdAt          DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  orderItems         OrderItem[]
+  addons             Addon[]
+  units              ItemUnit[]
+
+  @@unique([organizationId, slug])
+}
+
+// ---------------------------------------------------------------------------
+// GLOBAL CATALOG TEMPLATE LIBRARY
+// Platform-owned starter catalog ("Party Rental CRM Catalog"). These rows
+// are NOT tenant data - they carry no organizationId and are never
+// rented, booked, or billed directly. A tenant "adds" a template from
+// /dashboard/inventory or /onboarding, which creates a normal tenant-owned
+// Item (organizationId set to that tenant, with quantity/price the tenant
+// explicitly typed in - never fabricated) that references this row only
+// loosely via Item.sourceTemplateId. Editing or versioning a template
+// later must never change any tenant's existing Item rows. See
+// lib/catalogTemplates.ts and app/api/catalog-templates/*.
+// ---------------------------------------------------------------------------
+model CatalogTemplate {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String
+  // Key into the static CATALOG_CATEGORIES list in lib/catalogTemplates.ts
+  // (e.g. "tables", "chairs", "tents"). Not a DB relation - this is fixed
+  // platform taxonomy, not tenant-editable data like the real Category
+  // model above.
+  categoryKey  String
+  // "rental" | "service" | "consumable" | "addon" | "package" - see
+  // CATALOG_TEMPLATE_TYPES in lib/catalogTemplates.ts.
+  type         String   @default("rental")
+  description  String?
+  // Free-form structured hints (e.g. shape, size, color options) to help a
+  // tenant configure their own copy faster. Never used to fabricate a
+  // tenant's real quantity or price.
+  attributes   Json     @default("{}")
+  // Internal search keywords for the catalog browser - not customer-facing.
+  keywords     Json     @default("[]")
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([categoryKey])
+}
+
+// ---------------------------------------------------------------------------
+// SERIALIZED ASSET / INDIVIDUAL UNIT TRACKING (optional, per-item)
+// Lets a tenant optionally track individual physical units of an Item (e.g.
+// "Tent #3", an asset tag, a serial number) with its own status/condition.
+// This is purely an informational registry for staff record-keeping - it is
+// NOT wired into the booking/availability engine (see lib/availability.ts),
+// which continues to reserve strictly by aggregate Item.quantity. Tenants
+// who don't use this feature simply have zero ItemUnit rows; nothing here
+// changes existing behavior for anyone who doesn't opt in. See
+// app/api/item-units/route.ts and app/dashboard/inventory/ItemUnitsPanel.tsx.
+// ---------------------------------------------------------------------------
+model ItemUnit {
+  id              String   @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  itemId          String
+  item            Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  identifier      String
+  // "available" | "rented" | "maintenance" | "retired" - staff-set only,
+  // never changed automatically by the booking flow.
+  status          String   @default("available")
+  conditionNotes  String?
+  lastInspectedAt DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([itemId, identifier])
+  @@index([organizationId, itemId])
+}
+
+model Customer {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  firstName      String
+  lastName       String
+  email          String
+  phone          String?
+  address        String?
+  city           String?
+  state          String?
+  zip            String?
+  leadSource     String   @default("other")
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  orders         Order[]
+  tasks          Task[]
+
+  @@index([organizationId, email])
+}
+
+model Driver {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  phone          String?
+  email          String?
+  isActive       Boolean  @default(true)
+  pin            String?
+  defaultStopPay Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  deliveryOrders Order[] @relation("DeliveryDriver")
+  pickupOrders   Order[] @relation("PickupDriver")
+  driverRuns     DriverRun[]
+
+  @@unique([organizationId, pin])
+}
+
+model Order {
+  id                String   @id @default(cuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  orderNumber       String
+  customerId        String
+  customer          Customer @relation(fields: [customerId], references: [id])
+  status            String   @default("active")
+  source            String   @default("online")
+  eventDate         DateTime
+  eventEndDate      DateTime?
+  deliveryType      String   @default("delivery")
+  deliveryFee       Float    @default(0)
+  subtotal          Float    @default(0)
+  taxAmount         Float    @default(0)
+  totalAmount       Float    @default(0)
+  amountPaid        Float    @default(0)
+  deliveryDriverId  String?
+  deliveryDriver    Driver?  @relation("DeliveryDriver", fields: [deliveryDriverId], references: [id])
+  pickupDriverId    String?
+  pickupDriver      Driver?  @relation("PickupDriver", fields: [pickupDriverId], references: [id])
+  // Set the first time the booking-confirmation automation processes this
+  // order (whether the resulting email was actually delivered, queued, or
+  // failed - see lib/automations.ts), so it is never sent twice for the
+  // same order.
+  confirmationSentAt DateTime?
+  // Set the first time the event-reminder automation processes this order.
+  // Same "processed once, honestly" semantics as confirmationSentAt above.
+  reminderSentAt    DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  items             OrderItem[]
+  orderAddons       OrderAddon[]
+  payments          Payment[]
+  deliveryAddress   String?
+  stripeSessionId   String?  @unique
+  contract          Contract?
+  tasks             Task[]
+  driverRunStops    DriverRunStop[]
+
+  @@unique([organizationId, orderNumber])
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id])
+  quantity  Int      @default(1)
+  price     Float
+  createdAt DateTime @default(now())
+}
+model Coupon {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  code           String
+  discountType   String   @default("percentage")
+  discountAmount Float
+  expiresAt      DateTime?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  @@unique([organizationId, code])
+}
+
+model DepositRule {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  type           String   @default("percentage")
+  amount         Float    @default(25)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+}
+
+// Blocks a customer from booking again. Matched by email and/or phone at
+// checkout (see lib/doNotRent.ts) -- either match is enough to block, so
+// staff can restrict by whichever contact info they have on hand.
+model DoNotRentRestriction {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String?
+  email          String?
+  phone          String?
+  address        String?
+  reason         String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// Logged automatically whenever an online checkout or a staff-created
+// manual order is blocked because it matched an active
+// DoNotRentRestriction. Purely an audit trail powering the Do Not Rent
+// stats panel - never affects booking logic itself and never shown
+// publicly. See app/api/checkout/route.ts and app/api/orders/route.ts.
+model BlockedBookingAttempt {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  restrictionId  String?
+  name           String?
+  email          String?
+  phone          String?
+  address        String?
+  source         String   @default("checkout")
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+}
+
+// Records platform-admin actions taken against tenant organizations
+// (e.g. suspending a tenant, changing plan tier) for accountability.
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String?
+  action         String
+  performedBy    String
+  details        String?
+  createdAt      DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// SCHEDULING / CALENDAR SUPPORT
+// ---------------------------------------------------------------------------
+
+// Weekly operating hours per organization, used to render the booking
+// calendar's default open/closed state for each day of the week.
+model BusinessHours {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  dayOfWeek      Int
+  isClosed       Boolean  @default(false)
+  openTime       String?
+  closeTime      String?
+
+  @@unique([organizationId, dayOfWeek])
+}
+
+// Specific closed dates / holidays that override BusinessHours for a
+// single day (e.g. Thanksgiving, a snow day, an owner-declared day off).
+model ClosedDate {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  date           DateTime
+  note           String?
+  createdAt      DateTime @default(now())
+
+  @@unique([organizationId, date])
+}
+
+// Optional add-ons a customer can attach to a rented Item (e.g. a generator
+// with a tent, linens with a table). Priced and toggled per organization.
+model Addon {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  itemId         String
+  item           Item     @relation(fields: [itemId], references: [id])
+  name           String
+  price          Float    @default(0)
+  isRequired     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  orderAddons    OrderAddon[]
+}
+
+// Snapshot of an Addon selected on a specific Order, preserving the name and
+// price at the time of booking even if the underlying Addon is later edited.
+model OrderAddon {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  addonId   String
+  addon     Addon    @relation(fields: [addonId], references: [id])
+  name      String
+  price     Float
+  createdAt DateTime @default(now())
+}
+
+// Digital rental contract tied to a single Order. Tracks whether the
+// customer has signed yet, mirroring the "Signed / Unsigned" contract
+// views seen in comparable rental platforms.
+
+model Payment {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id])
+  amount         Float
+  type           String   @default("payment") // "payment" | "refund"
+  method         String   @default("card") // "card" | "cash" | "check" | "other"
+  tip            Float    @default(0)
+  note           String?
+  recordedBy     String?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([orderId])
+}
+
+model Contract {
+  id              String   @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  orderId         String   @unique
+  order           Order    @relation(fields: [orderId], references: [id])
+  templateVersion String   @default("v1")
+  contractText    String?
+  signedAt        DateTime?
+  signatureName   String?
+  signatureIp     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+// Simple per-organization to-do items, optionally linked to a Customer or
+// Order, backing the dashboard "Tasks" widget.
+model Task {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  title          String
+  isDone         Boolean  @default(false)
+  dueDate        DateTime?
+  assignedTo     String?
+  customerId     String?
+  customer       Customer? @relation(fields: [customerId], references: [id])
+  orderId        String?
+  order          Order?   @relation(fields: [orderId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// Simple per-organization scheduled meeting, backing the dashboard
+// "Upcoming Meetings" widget (Home page).
+model Meeting {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  title          String
+  scheduledAt    DateTime
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId, scheduledAt])
+}
+
+// NOTE: Order.status is a free-form String for flexibility, but the
+// application should treat it as one of: "quote" | "incomplete" | "active"
+// | "canceled" | "completed". The booking calendar's filter tabs
+// (Active, Active-Deliver, Active-Pickup, Sent Quotes, Canceled,
+// Orders Created) are derived from this field combined with deliveryType
+// and createdAt/eventDate.
+
+model Page {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  slug           String
+  title          String
+  navLabel       String?
+  navOrder       Int      @default(0)
+  showInNav      Boolean  @default(true)
+  isPublished    Boolean  @default(true)
+  content        String   @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, slug])
+}
+
+model Website {
+  id                 String   @id @default(cuid())
+  organizationId     String   @unique
+  organization       Organization @relation(fields: [organizationId], references: [id])
+  // Sections the tenant is currently editing. This is a JSON-encoded array
+  // of objects shaped like { id, type, visible, config } rendered by the
+  // dashboard editor - never shown directly to public storefront visitors.
+  draftSections      String   @db.Text
+  // Snapshot copied from draftSections the last time the tenant clicked
+  // Publish. The public homepage renders ONLY from this field, so
+  // in-progress edits never leak to customers. Null until first publish.
+  publishedSections  String?  @db.Text
+  publishedAt        DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model MessageTemplate {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  channel        String   @default("email")
+  subject        String?
+  body           String
+  category       String   @default("general")
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, name])
+}
+
+model SentMessage {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  channel        String   @default("email")
+  toName         String
+  toAddress      String
+  subject        String?
+  body           String
+  status         String   @default("queued")
+  // Populated only when status is "failed" - the real error message
+  // returned by the email/SMS provider, never fabricated. Null otherwise.
+  providerError  String?
+  templateId     String?
+  customerId     String?
+  // Set only for messages created automatically by lib/automations.ts -
+  // "booking_confirmation" or "event_reminder". Null for every manually
+  // composed message sent from /dashboard/messages, so automation
+  // activity can be reported on separately from manual staff outreach.
+  automationType String?
+  createdBy      String
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// DISPATCH / DRIVER ROUTING
+// A DriverRun is one driver's route for a single day; DriverRunStop ties an
+// Order to that run with an explicit order position and live status, so the
+// dispatch board can group and reorder stops instead of just flatly
+// assigning a driver to an order (see lib/driverRuns.ts, app/dashboard/dispatch).
+// ---------------------------------------------------------------------------
+
+model DriverRun {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  driverId       String
+  driver         Driver   @relation(fields: [driverId], references: [id])
+  runDate        DateTime
+  notes          String?
+  totalMiles     Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  stops          DriverRunStop[]
+
+  @@unique([organizationId, driverId, runDate])
+  @@index([organizationId, runDate])
+}
+
+model DriverRunStop {
+  id                 String   @id @default(cuid())
+  driverRunId        String
+  driverRun          DriverRun @relation(fields: [driverRunId], references: [id], onDelete: Cascade)
+  orderId            String
+  order              Order    @relation(fields: [orderId], references: [id])
+  stopOrder          Int      @default(1)
+  stopNotes          String?
+  status             String   @default("")
+  attentionStatus    String   @default("")
+  attentionNotes     String?
+  driverInternalNote String?
+  stopPayOverride    Float?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([driverRunId, orderId])
+  @@index([driverRunId, stopOrder])
+}
+
+// ---------------------------------------------------------------------------
+// LOGIN SECURITY / BRUTE-FORCE PROTECTION
+// One row per client IP address. Tracks a rolling 15-minute failed-login
+// counter (locks sign-in after too many wrong passwords from that IP) and a
+// separate 60-second burst counter (caps how many login POSTs, right or
+// wrong, an IP can send per minute). Mirrors the reference app's
+// control_login_throttle.py. See lib/loginSecurity.ts.
+// ---------------------------------------------------------------------------
+
+model LoginThrottle {
+  id             String   @id @default(cuid())
+  ip             String   @unique
+  failCount      Int      @default(0)
+  failExpiresAt  DateTime?
+  burstCount     Int      @default(0)
+  burstExpiresAt DateTime?
+  updatedAt      DateTime @updatedAt
+}
