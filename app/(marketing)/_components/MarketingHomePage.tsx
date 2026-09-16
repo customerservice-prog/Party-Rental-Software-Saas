@@ -1,328 +1,164 @@
 import Link from "next/link";
 
-const CONNECTED_STAGES = [
-  "🛒 Online Booking",
-  "📦 Inventory",
-  "📅 Scheduling",
-  "🚚 Delivery & Drivers",
-  "💳 Payments",
-  "📊 Reporting",
+const capabilities = [
+  ["Inventory", "Know what is available before you promise it.", "Live quantities, categories and availability tied directly to orders."],
+  ["Orders & quotes", "Move from inquiry to confirmed order faster.", "Keep event details, rental items, totals and balances together."],
+  ["Delivery", "Give busy weekends one operating plan.", "Organize deliveries, pickups, drivers and event timing from the same system."],
+  ["Online booking", "Let customers shop when your office is closed.", "Give every rental company a branded storefront connected to its inventory."],
+  ["Customers", "Keep the full customer history in one place.", "Contact information and rental history stay connected to the work."],
+  ["Payments", "See what is paid and what is still owed.", "Balances and collected payments live with the order instead of another spreadsheet."],
 ];
 
-const FRAGMENTED_TOOLS = [
-  "A spreadsheet for inventory",
-  "A separate calendar for events",
-  "Paper or emailed contracts",
-  "Text messages with drivers about addresses",
-  "A different tool for taking payments",
-  "No single place to see what’s actually happening today",
+const workflow = [
+  ["01", "Customer books", "An online request becomes part of the same system your team uses."],
+  ["02", "Inventory is checked", "Availability stays connected to the event date and order."],
+  ["03", "Team prepares", "Staff can work from shared order and schedule information."],
+  ["04", "Driver delivers", "Delivery and pickup details stay attached to the job."],
+  ["05", "You get paid", "Track the balance without rebuilding the order somewhere else."],
 ];
 
-const FEATURES: { title: string; description: string }[] = [
-  {
-    title: "🛒 Online booking & storefront",
-    description:
-      "Every tenant gets its own branded storefront where customers can browse categories, check availability, and book online — instead of relying on phone calls and back-and-forth messages.",
-  },
-  {
-    title: "📦 Inventory & categories",
-    description:
-      "Track every rental item and category in one place, so you always know what you actually own and what’s already booked before you confirm another order.",
-  },
-  {
-    title: "🧾 Order & quote management",
-    description:
-      "See every order’s status, items, delivery details, and balance in one screen instead of piecing it together from texts and paper.",
-  },
-  {
-    title: "📅 Scheduling & calendar",
-    description:
-      "A shared calendar view of every event date keeps deliveries, pickups, and staff from colliding on the same day.",
-  },
-  {
-    title: "🚚 Delivery & driver dispatch",
-    description:
-      "Turn tomorrow’s orders into an organized driver plan, with delivery and pickup tracked as part of the order itself, not a side conversation.",
-  },
-  {
-    title: "💳 Payments & balances",
-    description:
-      "Track what’s been collected against every order and see payments received over time, so outstanding balances don’t get lost.",
-  },
-  {
-    title: "👥 Staff roles & permissions",
-    description:
-      "Give office staff, warehouse staff, and drivers their own logins with the access they need — without handing everyone the keys to everything.",
-  },
-  {
-    title: "📊 Reports & analytics",
-    description:
-      "See recent orders, best-selling items, and inventory counts from a single dashboard instead of reconstructing them by hand at month end.",
-  },
-  {
-    title: "✅ Tasks & team coordination",
-    description:
-      "Keep a running list of what still needs to happen — for an order, a delivery, or the business in general — so nothing depends on someone remembering it.",
-  },
+const faqs = [
+  ["Is Party Rental CRM made specifically for event rental companies?", "Yes. The product is organized around rental inventory, event dates, customers, orders, delivery and pickup, staff and payments."],
+  ["Can customers book rentals online?", "Yes. Accounts can use a customer-facing storefront so customers can browse rental categories and submit bookings online."],
+  ["Can I manage different rental categories together?", "Yes. Tents, tables, chairs, inflatables, linens and other rental inventory can be organized in the same account."],
+  ["Can staff have their own access?", "Yes. Staff roles and permissions let an owner control access without sharing one owner login."],
+  ["How much does it cost?", "Plans start at $49 per month with a 14-day free trial. See the Pricing page for current plan details."],
 ];
 
-const FAQS: { question: string; answer: string }[] = [
-  {
-    question: "Is this built specifically for party and event rental companies?",
-    answer:
-      "Yes. It is modeled on how rental businesses actually operate day to day — inventory, availability, delivery and pickup, deposits, and event dates — rather than being a generic booking or CRM tool.",
-  },
-  {
-    question: "Can I manage tents, tables, chairs, inflatables, and other categories together?",
-    answer:
-      "Yes. Categories and inventory items are flexible, so a single account can manage bounce houses, tables and chairs, linens, and other rental categories side by side.",
-  },
-  {
-    question: "Can my customers book online?",
-    answer:
-      "Yes. Every account gets its own storefront where customers can browse categories and submit bookings without you taking the request over the phone.",
-  },
-  {
-    question: "Can my staff and drivers have their own logins?",
-    answer:
-      "Yes. Staff accounts and roles are separate from the owner account, so you can control who sees what.",
-  },
-  {
-    question: "Is my business’s data kept separate from other companies using the platform?",
-    answer:
-      "Yes. Every account’s data — customers, orders, inventory, and staff — is isolated from every other account on the platform.",
-  },
-  {
-    question: "Can I bring in my existing customers and inventory?",
-    answer:
-      "We are still building out guided data import. In the meantime our team can help you get your inventory and customer list into the system during setup.",
-  },
-  {
-    question: "What does it cost?",
-    answer:
-"See the Pricing page for full plan details. Plans start at $49/month with a 14-day free trial \u2014 no credit card required.",
-  },
-  {
-    question: "Do I need to be technical to use this?",
-    answer:
-      "No. It is built to be run by whoever manages your rental business day to day, not by a developer.",
-  },
-];
+const Check = () => (
+  <svg viewBox="0 0 20 20" aria-hidden="true" className="h-5 w-5 shrink-0 fill-current"><path fillRule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4l3.3 3.3 6.8-6.8a1 1 0 0 1 1.4 0Z" clipRule="evenodd" /></svg>
+);
 
 export default function MarketingHomePage() {
   return (
-    <div>
-      <section className="bg-brand-50">
-        <div className="max-w-6xl mx-auto px-4 py-20 grid md:grid-cols-2 gap-10 items-center">
-          <div>
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-gray-900">
-              Party & event rental software built to run your whole rental business
+    <div className="overflow-hidden bg-white text-slate-950">
+      <section className="relative border-b border-slate-200 bg-[radial-gradient(circle_at_80%_10%,rgba(37,99,235,.13),transparent_34%),linear-gradient(to_bottom,#f8fbff,#ffffff)]">
+        <div className="mx-auto max-w-7xl px-5 pb-16 pt-16 sm:px-6 sm:pb-24 sm:pt-24 lg:px-8">
+          <div className="mx-auto max-w-4xl text-center">
+            <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
+              Built for party & event rental companies
+            </div>
+            <h1 className="text-balance text-4xl font-black tracking-[-0.04em] text-slate-950 sm:text-6xl lg:text-7xl">
+              Run your rental business without running six different systems.
             </h1>
-            <p className="mt-6 text-lg text-gray-600">
-              Manage bookings, inventory, customers, scheduling, delivery,
-              drivers, payments, staff, and reporting from one system —
-              instead of a spreadsheet, a calendar, a contract folder, and a
-              phone full of texts.
+            <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-slate-600 sm:text-xl">
+              Bookings, inventory, customers, scheduling, deliveries, payments and staff — connected in one place built around the way rental companies actually work.
             </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                href="/signup"
-                className="bg-brand-600 text-white px-6 py-3 rounded font-semibold hover:bg-brand-700"
-              >
-                Get Started
-              </Link>
-              <Link
-                href="/demo"
-                className="border border-gray-300 bg-white px-6 py-3 rounded font-semibold text-gray-800 hover:border-brand-600 hover:text-brand-600"
-              >
-                See Product Tour
-              </Link>
+            <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
+              <Link href="/signup" className="rounded-xl bg-blue-600 px-7 py-4 text-base font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">Start free for 14 days</Link>
+              <Link href="/demo" className="rounded-xl border border-slate-300 bg-white px-7 py-4 text-base font-bold text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50">See the product</Link>
             </div>
-            <p className="mt-4 text-sm text-gray-500">
-              No credit card required to create an account.
-            </p>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-500">
+              <span>No credit card required</span><span>•</span><span>Plans from $49/month</span><span>•</span><span>Built for rental operations</span>
+            </div>
           </div>
 
-                <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
-        <div className="flex items-center gap-1.5 border-b bg-gray-50 px-4 py-2.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-gray-300" />
-          <span className="h-2.5 w-2.5 rounded-full bg-gray-300" />
-          <span className="h-2.5 w-2.5 rounded-full bg-gray-300" />
-          <span className="ml-3 text-xs text-gray-400">partyrentalcrm.com/dashboard</span>
-        </div>
-        <img
-          src="/marketing/screenshots/dashboard-home.png"
-          alt="Party Rental CRM dashboard showing a real calendar, collected payments, inventory count, and tasks"
-          className="w-full"
-        />
-        <p className="border-t px-4 py-2.5 text-xs text-gray-400">Real product screenshot from a live account. Not a mockup.</p>
-      </div>
-        </div>
-      </section>
-
-
-      <section className="bg-white border-b">
-        <div className="max-w-6xl mx-auto px-4 py-16">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center">This is the actual product</h2>
-          <p className="mt-3 text-center text-gray-600 max-w-2xl mx-auto">No mockups. These are real screens from a live Party Rental CRM account.</p>
-          <div className="mt-10 grid sm:grid-cols-2 md:grid-cols-3 gap-8">
-            <div>
-              <div className="border rounded-lg overflow-hidden shadow-sm">
-                <img src="/marketing/screenshots/dashboard-orders.png" alt="Orders list showing order numbers, customers, event dates, status, and payment totals" className="w-full" />
+          <div className="relative mx-auto mt-14 max-w-6xl">
+            <div className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-blue-100/60 blur-3xl" />
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_30px_90px_-35px_rgba(15,23,42,.4)]">
+              <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3">
+                <span className="h-2.5 w-2.5 rounded-full bg-slate-300"/><span className="h-2.5 w-2.5 rounded-full bg-slate-300"/><span className="h-2.5 w-2.5 rounded-full bg-slate-300"/>
+                <div className="ml-3 rounded-md border border-slate-200 bg-white px-4 py-1 text-xs text-slate-400">partyrentalcrm.com/dashboard</div>
               </div>
-              <div className="mt-3 font-semibold text-gray-900">Orders</div>
-              <div className="text-sm text-gray-600">Every order's status, items, and balance in one screen.</div>
-            </div>
-            <div>
-              <div className="border rounded-lg overflow-hidden shadow-sm">
-                <img src="/marketing/screenshots/dashboard-inventory.png" alt="Inventory screen showing rental categories and items with pricing, quantity, and condition" className="w-full" />
-              </div>
-              <div className="mt-3 font-semibold text-gray-900">Inventory</div>
-              <div className="text-sm text-gray-600">Track every item, category, and quantity you own.</div>
-            </div>
-            <div>
-              <div className="border rounded-lg overflow-hidden shadow-sm">
-                <img src="/marketing/screenshots/dashboard-customers.png" alt="Customers screen showing customer names, contact information, order counts, and join dates" className="w-full" />
-              </div>
-              <div className="mt-3 font-semibold text-gray-900">Customers</div>
-              <div className="text-sm text-gray-600">A record of every customer and their rental history.</div>
+              <img src="/marketing/screenshots/dashboard-home.png" alt="Party Rental CRM dashboard" className="block h-auto w-full" />
             </div>
           </div>
         </div>
       </section>
-      <section className="border-t border-b bg-white">
-        <div className="max-w-6xl mx-auto px-4 py-10">
-          <div className="flex flex-wrap items-center justify-center gap-3 text-sm font-medium text-gray-600">
-            {CONNECTED_STAGES.map((stage, i) => (
-              <div key={stage} className="flex items-center gap-3">
-                <span className="px-3 py-1.5 rounded-full border border-brand-200 bg-brand-50 text-brand-700">
-                  {stage}
-                </span>
-                {i < CONNECTED_STAGES.length - 1 && (
-                  <span className="text-gray-400">&rarr;</span>
-                )}
-              </div>
-            ))}
-          </div>
-          <p className="mt-4 text-center text-gray-500 text-sm">
-            One connected system, not a booking widget bolted onto everything else you already use.
-          </p>
+
+      <section className="border-b border-slate-200 bg-slate-950 text-white">
+        <div className="mx-auto grid max-w-7xl gap-8 px-5 py-10 text-center sm:grid-cols-3 sm:px-6 lg:px-8">
+          <div><div className="text-2xl font-black">One system</div><div className="mt-1 text-sm text-slate-400">from booking through return</div></div>
+          <div><div className="text-2xl font-black">Real product</div><div className="mt-1 text-sm text-slate-400">built around rental operations</div></div>
+          <div><div className="text-2xl font-black">14-day trial</div><div className="mt-1 text-sm text-slate-400">start without a credit card</div></div>
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-4 py-20">
-        <div className="grid md:grid-cols-2 gap-12 items-start">
+      <section className="mx-auto max-w-7xl px-5 py-20 sm:px-6 sm:py-28 lg:px-8">
+        <div className="max-w-3xl">
+          <p className="text-sm font-bold uppercase tracking-[.18em] text-blue-600">Built for the busy weekend</p>
+          <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Everything important stays connected.</h2>
+          <p className="mt-5 text-lg leading-8 text-slate-600">Rental software should do more than store names and dates. It should help your office, warehouse and drivers work from the same information.</p>
+        </div>
+        <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {capabilities.map(([title, headline, body]) => (
+            <div key={title} className="group rounded-2xl border border-slate-200 bg-white p-7 transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-slate-200/60">
+              <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 font-black text-blue-600">✓</div>
+              <div className="text-sm font-bold uppercase tracking-wider text-blue-600">{title}</div>
+              <h3 className="mt-2 text-xl font-bold tracking-tight">{headline}</h3>
+              <p className="mt-3 leading-7 text-slate-600">{body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="border-y border-slate-200 bg-slate-50">
+        <div className="mx-auto max-w-7xl px-5 py-20 sm:px-6 sm:py-28 lg:px-8">
+          <div className="grid items-center gap-12 lg:grid-cols-[.85fr_1.15fr]">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[.18em] text-blue-600">See the work, not a feature list</p>
+              <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Orders your team can actually operate from.</h2>
+              <p className="mt-5 text-lg leading-8 text-slate-600">Keep the customer, event, items, timing and money tied together so the next person does not have to hunt through texts, paper and separate apps.</p>
+              <ul className="mt-7 space-y-4">
+                {["See order status and event details together", "Keep rental items attached to the job", "Track totals and balances", "Give staff one source of truth"].map((item) => <li key={item} className="flex gap-3 font-medium text-slate-700"><span className="text-blue-600"><Check/></span>{item}</li>)}
+              </ul>
+              <Link href="/features" className="mt-8 inline-flex font-bold text-blue-600 hover:text-blue-700">Explore all features →</Link>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-300/50">
+              <img src="/marketing/screenshots/dashboard-orders.png" alt="Party Rental CRM orders screen" className="w-full" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-5 py-20 sm:px-6 sm:py-28 lg:px-8">
+        <div className="text-center">
+          <p className="text-sm font-bold uppercase tracking-[.18em] text-blue-600">One connected workflow</p>
+          <h2 className="mx-auto mt-4 max-w-3xl text-3xl font-black tracking-tight sm:text-5xl">From the first click to the final pickup.</h2>
+        </div>
+        <div className="mt-12 grid gap-4 lg:grid-cols-5">
+          {workflow.map(([num,title,body]) => <div key={num} className="relative rounded-2xl border border-slate-200 p-6"><div className="text-sm font-black text-blue-600">{num}</div><h3 className="mt-5 text-lg font-bold">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{body}</p></div>)}
+        </div>
+      </section>
+
+      <section className="bg-blue-600 text-white">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-5 py-16 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-20">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-              Your rental business shouldn’t require six different systems
-            </h2>
-            <p className="mt-4 text-gray-600">
-              Most rental companies didn’t choose to run this way —
-              it just grew into this over time.
-            </p>
-            <ul className="mt-6 space-y-2 text-gray-600">
-              {FRAGMENTED_TOOLS.map((tool) => (
-                <li key={tool} className="flex items-start gap-2">
-                  <span className="text-gray-400">&times;</span>
-                  <span>{tool}</span>
-                </li>
-              ))}
-            </ul>
+            <p className="text-sm font-bold uppercase tracking-[.18em] text-blue-100">Your storefront is part of the system</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Take rental requests while you are setting up the next event.</h2>
+            <p className="mt-4 max-w-xl text-lg leading-8 text-blue-100">Customers can browse your rental categories online while your team manages the business behind the scenes.</p>
           </div>
-          <div className="bg-brand-50 border border-brand-100 rounded-xl p-8">
-            <h3 className="font-semibold text-gray-900 mb-4">
-              With everything in one system
-            </h3>
-            <ul className="space-y-3 text-gray-700">
-              <li>✓ Bookings create orders automatically</li>
-              <li>✓ Inventory updates as orders are placed</li>
-              <li>✓ Every delivery has a driver and a route</li>
-              <li>✓ Every order shows what’s been paid</li>
-              <li>✓ Everyone sees the same calendar</li>
-            </ul>
+          <div className="flex flex-col gap-3 sm:flex-row lg:justify-end"><Link href="/signup" className="rounded-xl bg-white px-7 py-4 text-center font-bold text-blue-700 hover:bg-blue-50">Create your account</Link><Link href="/pricing" className="rounded-xl border border-blue-300 px-7 py-4 text-center font-bold text-white hover:bg-blue-700">View pricing</Link></div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-5 py-20 sm:px-6 sm:py-28 lg:px-8">
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          <div className="order-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl lg:order-1"><img src="/marketing/screenshots/dashboard-inventory.png" alt="Party Rental CRM inventory screen" className="w-full" /></div>
+          <div className="order-1 lg:order-2">
+            <p className="text-sm font-bold uppercase tracking-[.18em] text-blue-600">Inventory that belongs to the operation</p>
+            <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Stop finding out about conflicts after the customer calls.</h2>
+            <p className="mt-5 text-lg leading-8 text-slate-600">Organize rental categories, items and quantities in the same platform handling your customers and orders.</p>
+            <Link href="/signup" className="mt-8 inline-flex rounded-xl bg-slate-950 px-6 py-3.5 font-bold text-white hover:bg-slate-800">Start building your account</Link>
           </div>
         </div>
       </section>
 
-      <section className="bg-gray-50 border-t border-b">
-        <div className="max-w-6xl mx-auto px-4 py-20">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center">
-            Everything a rental business actually needs to run
-          </h2>
-          <div className="mt-10 grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {FEATURES.map((feature) => (
-              <div key={feature.title} className="bg-white border rounded-lg p-5">
-                <h3 className="font-semibold text-gray-900">{feature.title}</h3>
-                <p className="mt-2 text-sm text-gray-600">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-8 text-center">
-            <Link href="/features" className="text-brand-600 font-medium hover:underline">
-              See everything it does &rarr;
-            </Link>
+      <section className="border-y border-slate-200 bg-slate-50">
+        <div className="mx-auto max-w-4xl px-5 py-20 sm:px-6 sm:py-24">
+          <div className="text-center"><p className="text-sm font-bold uppercase tracking-[.18em] text-blue-600">Questions before you switch?</p><h2 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">Straight answers.</h2></div>
+          <div className="mt-10 divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white px-6 sm:px-8">
+            {faqs.map(([q,a]) => <details key={q} className="group py-6"><summary className="flex cursor-pointer list-none items-center justify-between gap-5 font-bold text-slate-900">{q}<span className="text-xl text-blue-600 transition group-open:rotate-45">+</span></summary><p className="mt-3 max-w-3xl leading-7 text-slate-600">{a}</p></details>)}
           </div>
         </div>
       </section>
 
-      <section className="max-w-4xl mx-auto px-4 py-20">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center">
-          Built for how rental companies actually work, not fake polish
-        </h2>
-        <div className="mt-8 space-y-4 text-gray-600">
-          <p>
-            We are a newly launched platform, and we would rather tell you
-            that plainly than dress up an empty testimonials section. What we
-            can show you instead: a real product, transparent pricing, and a
-            straightforward explanation of how your data is kept separate
-            from every other business on the platform.
-          </p>
-          <p>
-            Every account’s customers, orders, inventory, and staff are
-            isolated from every other account. See the{" "}
-            <Link href="/security" className="text-brand-600 hover:underline">
-              Security page
-            </Link>{" "}
-            for details.
-          </p>
-        </div>
-      </section>
-
-      <section className="bg-gray-50 border-t">
-        <div className="max-w-3xl mx-auto px-4 py-20">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center">
-            Frequently asked questions
-          </h2>
-          <dl className="mt-10 space-y-8">
-            {FAQS.map((faq) => (
-              <div key={faq.question}>
-                <dt className="font-semibold text-gray-900">{faq.question}</dt>
-                <dd className="mt-2 text-gray-600">{faq.answer}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
-
-      <section className="bg-brand-600">
-        <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-          <h2 className="text-3xl font-bold text-white">
-            Ready to run your rental business from one place?
-          </h2>
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Link
-              href="/signup"
-              className="bg-white text-brand-700 px-6 py-3 rounded font-semibold hover:bg-gray-100"
-            >
-              Get Started
-            </Link>
-            <Link
-              href="/pricing"
-              className="border border-white text-white px-6 py-3 rounded font-semibold hover:bg-brand-700"
-            >
-              See Pricing
-            </Link>
-          </div>
+      <section className="bg-slate-950 text-white">
+        <div className="mx-auto max-w-5xl px-5 py-20 text-center sm:px-6 sm:py-24">
+          <h2 className="text-3xl font-black tracking-tight sm:text-5xl">Your next busy weekend should feel more organized than your last one.</h2>
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-300">Put bookings, inventory, customers, delivery and payments in one operating system for your rental business.</p>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row"><Link href="/signup" className="rounded-xl bg-blue-600 px-7 py-4 font-bold text-white hover:bg-blue-500">Start your 14-day free trial</Link><Link href="/demo" className="rounded-xl border border-slate-700 px-7 py-4 font-bold text-white hover:bg-slate-900">See product tour</Link></div>
+          <p className="mt-4 text-sm text-slate-400">No credit card required.</p>
         </div>
       </section>
     </div>
