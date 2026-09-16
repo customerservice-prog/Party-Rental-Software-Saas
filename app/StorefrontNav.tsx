@@ -1,80 +1,34 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
-// Shared navigation bar for tenant storefront pages (home, book, and any
-// custom Pages the tenant has created). Always resolves nav links from the
-// database so tenant-created pages show up automatically.
-//
-// This also renders the tenant's brand name. It intentionally does NOT rely
-// on the root layout for branding (that layout is shared with platform
-// marketing pages and must stay tenant-neutral), so this is the one place
-// storefront pages get their business name from.
-//
-// The accent color mirrors the tenant's chosen brand color
-// (Organization.primaryColor, set in Settings) so the nav always matches
-// the same color used elsewhere on the storefront (book/category page
-// headers, buttons) instead of a fixed platform blue.
-export default async function StorefrontNav({
-  organizationId,
-  activeSlug,
-}: {
-  organizationId: string;
-  activeSlug?: string;
-}) {
+export default async function StorefrontNav({ organizationId, activeSlug }: { organizationId: string; activeSlug?: string }) {
   const [organization, pages] = await Promise.all([
-    prisma.organization.findUnique({
-      where: { id: organizationId },
-      select: { name: true, primaryColor: true },
-    }),
-    prisma.page.findMany({
-      where: { organizationId, showInNav: true, isPublished: true },
-      orderBy: { navOrder: "asc" },
-    }),
+    prisma.organization.findUnique({ where: { id: organizationId }, select: { name: true, primaryColor: true, logoUrl: true } }),
+    prisma.page.findMany({ where: { organizationId, showInNav: true, isPublished: true }, orderBy: { navOrder: "asc" } }),
   ]);
-
   const accent = organization?.primaryColor || "#4f46e5";
-
-  const linkClass = (slug: string) =>
-    "hover:text-[var(--brand)] " +
-    (activeSlug === slug ? "font-semibold" : "text-gray-700");
-
-  const linkStyle = (slug: string) =>
-    activeSlug === slug ? { color: accent } : undefined;
+  const linkClass = (slug: string) => `rounded-lg px-3 py-2 text-sm font-semibold transition hover:bg-slate-100 ${activeSlug === slug ? "bg-slate-100 text-slate-950" : "text-slate-600 hover:text-slate-950"}`;
 
   return (
-    <div className="bg-white border-b" style={{ "--brand": accent } as any}>
-      <div className="max-w-6xl mx-auto px-4 pt-3">
-        <Link href="/" className="font-bold text-lg" style={{ color: accent }}>
-          {organization?.name || "Rental Storefront"}
+    <header className="sticky top-0 z-40 border-b border-slate-200/90 bg-white/95 shadow-sm backdrop-blur" style={{ "--brand": accent } as React.CSSProperties}>
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <Link href="/" className="flex min-w-0 items-center gap-3">
+          {organization?.logoUrl ? <img src={organization.logoUrl} alt="" className="h-10 w-10 shrink-0 rounded-lg object-contain" /> : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg font-black text-white" style={{ backgroundColor: accent }}>{organization?.name?.charAt(0) || "R"}</span>}
+          <span className="truncate text-base font-black tracking-tight text-slate-950 sm:text-lg">{organization?.name || "Rental Storefront"}</span>
         </Link>
+
+        <nav className="hidden items-center gap-1 md:flex">
+          <Link href="/" className={linkClass("")}>Home</Link>
+          <Link href="/book" className={linkClass("book")}>Rentals</Link>
+          <Link href="/order-status" className={linkClass("order-status")}>Track Order</Link>
+          {pages.map((page) => <Link key={page.id} href={`/${page.slug}`} className={linkClass(page.slug)}>{page.navLabel || page.title}</Link>)}
+        </nav>
+
+        <Link href="/book" className="shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:brightness-95" style={{ backgroundColor: accent }}>Check availability</Link>
       </div>
-      <nav>
-        <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap gap-5 text-sm">
-          <Link href="/" className={linkClass("")} style={linkStyle("")}>
-            Home
-          </Link>
-          <Link href="/book" className={linkClass("book")} style={linkStyle("book")}>
-            Book Now
-          </Link>
-          <Link
-            href="/order-status"
-            className={linkClass("order-status")}
-            style={linkStyle("order-status")}
-          >
-            Track Order
-          </Link>
-          {pages.map((page) => (
-            <Link
-              key={page.id}
-              href={"/" + page.slug}
-              className={linkClass(page.slug)}
-              style={linkStyle(page.slug)}
-            >
-              {page.navLabel || page.title}
-            </Link>
-          ))}
-        </div>
+      <nav className="flex gap-1 overflow-x-auto border-t border-slate-100 px-3 py-2 md:hidden">
+        <Link href="/" className={linkClass("")}>Home</Link><Link href="/book" className={linkClass("book")}>Rentals</Link><Link href="/order-status" className={linkClass("order-status")}>Track Order</Link>{pages.map((page) => <Link key={page.id} href={`/${page.slug}`} className={`${linkClass(page.slug)} whitespace-nowrap`}>{page.navLabel || page.title}</Link>)}
       </nav>
-    </div>
+    </header>
   );
 }
