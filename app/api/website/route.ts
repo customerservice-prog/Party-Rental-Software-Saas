@@ -2,134 +2,95 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
-import { validateSections, buildDefaultSections } from "@/lib/websiteSections";
+import { validateSections, buildDefaultSections, type WebsiteSection } from "@/lib/websiteSections";
 
-// Powers the dashboard "Website" editor (app/dashboard/website/page.tsx).
-// The public homepage (app/page.tsx) reads Website rows directly with
-// Prisma and never calls this route - this is authenticated tenant-staff
-// tooling only, gated on the existing "pages.manage" permission (the same
-// one that already governs Website Pages / branding).
+type OrgLite = { name: string; heroImageUrl: string | null; aboutText: string | null; logoUrl: string | null };
 
-type OrgLite = {
-  name: string;
-  heroImageUrl: string | null;
-  aboutText: string | null;
-  logoUrl: string | null;
-};
+function parseSections(value: string | null | undefined): WebsiteSection[] | null {
+  if (!value) return null;
+  try { return validateSections(JSON.parse(value)); } catch { return null; }
+}
+
+async function authorize() {
+  const organization = await requireCurrentOrganization();
+  try {
+    await requirePermission(organization.id, "pages.manage");
+    return { organization, error: null };
+  } catch (err) {
+    return { organization, error: authzErrorResponse(err) };
+  }
+}
 
 async function getOrCreateWebsite(organizationId: string, org: OrgLite) {
   const existing = await prisma.website.findUnique({ where: { organizationId } });
   if (existing) return existing;
-
-  // Idempotent: if two requests race to create the first draft for this
-  // organization, upsert ensures we never end up with duplicate rows (the
-  // organizationId column is unique).
   return prisma.website.upsert({
     where: { organizationId },
     update: {},
-    create: {
-      organizationId,
-      draftSections: JSON.stringify(buildDefaultSections(org)),
-    },
+    create: { organizationId, draftSections: JSON.stringify(buildDefaultSections(org)) },
   });
 }
 
 export async function GET() {
-  const organization = await requireCurrentOrganization();
-  try {
-    await requirePermission(organization.id, "pages.manage");
-  } catch (err) {
-    return authzErrorResponse(err);
-  }
-
+  const { organization, error } = await authorize();
+  if (error) return error;
   const website = await getOrCreateWebsite(organization.id, organization);
-
+  const draftSections = parseSections(website.draftSections) || buildDefaultSections(organization);
+  const publishedSections = parseSections(website.publishedSections);
   return NextResponse.json({
-    draftSections: JSON.parse(website.draftSections),
-    publishedSections: website.publishedSections ? JSON.parse(website.publishedSections) : null,
+    draftSections,
+    publishedSections,
     publishedAt: website.publishedAt,
-    hasUnpublishedChanges: website.publishedSections !== website.draftSections,
+    hasUnpublishedChanges: JSON.stringify(draftSections) !== JSON.stringify(publishedSections || []),
   });
 }
 
 export async function PATCH(req: NextRequest) {
-  const organization = await requireCurrentOrganization();
-  try {
-    await requirePermission(organization.id, "pages.manage");
-  } catch (err) {
-    return authzErrorResponse(err);
-  }
-
+  const { organization, error } = await authorize();
+  if (error) return error;
   const body = await req.json().catch(() => null);
-  if (!body) {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
-  }
+  if (!body || !("sections" in body)) return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
 
-  let sections;
-  try {
-    sections = validateSections(body.sections);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Invalid sections";
-    return NextResponse.json({ error: message }, { status: 400 });
-  }
+  let sections: WebsiteSection[];
+  try { sections = validateSections(body.sections); }
+  catch (err) { return NextResponse.json({ error: err instanceof Error ? err.message : "Invalid sections" }, { status: 400 }); }
 
   await getOrCreateWebsite(organization.id, organization);
-
-  const updated = await prisma.website.update({
-    where: { organizationId: organization.id },
-    data: { draftSections: JSON.stringify(sections) },
-  });
-
+  const serialized = JSON.stringify(sections);
+  const updated = await prisma.website.update({ where: { organizationId: organization.id }, data: { draftSections: serialized } });
+  const publishedSections = parseSections(updated.publishedSections);
   return NextResponse.json({
-    draftSections: JSON.parse(updated.draftSections),
-    publishedSections: updated.publishedSections ? JSON.parse(updated.publishedSections) : null,
+    draftSections: sections,
+    publishedSections,
     publishedAt: updated.publishedAt,
-    hasUnpublishedChanges: updated.publishedSections !== updated.draftSections,
+    hasUnpublishedChanges: serialized !== JSON.stringify(publishedSections || []),
   });
 }
 
 export async function POST(req: NextRequest) {
-  const organization = await requireCurrentOrganization();
-  try {
-    await requirePermission(organization.id, "pages.manage");
-  } catch (err) {
-    return authzErrorResponse(err);
-  }
-
-  const body = await req.json().catch(() => ({}));
-  const action = body?.action;
-
+  const { organization, error } = await authorize();
+  if (error) return error;
+  const body = await req.json().catch(() => null);
+  if (!body || typeof body.action !== "string") return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   const website = await getOrCreateWebsite(organization.id, organization);
 
-  if (action === "publish") {
-    // Atomic: the public homepage only ever reads publishedSections, so
-    // customers never see a half-published mix of old and new content.
+  if (body.action === "publish") {
+    const draft = parseSections(website.draftSections);
+    if (!draft) return NextResponse.json({ error: "The current draft is invalid. Save the page again before publishing." }, { status: 409 });
+    const serialized = JSON.stringify(draft);
     const updated = await prisma.website.update({
       where: { organizationId: organization.id },
-      data: { publishedSections: website.draftSections, publishedAt: new Date() },
+      data: { draftSections: serialized, publishedSections: serialized, publishedAt: new Date() },
     });
-    return NextResponse.json({
-      draftSections: JSON.parse(updated.draftSections),
-      publishedSections: JSON.parse(updated.publishedSections as string),
-      publishedAt: updated.publishedAt,
-      hasUnpublishedChanges: false,
-    });
+    return NextResponse.json({ draftSections: draft, publishedSections: draft, publishedAt: updated.publishedAt, hasUnpublishedChanges: false });
   }
 
-  if (action === "discard") {
-    // Reset the draft back to whatever is currently live (or, if nothing
-    // has ever been published yet, back to the safe generated starter).
-    const fallback = website.publishedSections || JSON.stringify(buildDefaultSections(organization));
-    const updated = await prisma.website.update({
-      where: { organizationId: organization.id },
-      data: { draftSections: fallback },
-    });
-    return NextResponse.json({
-      draftSections: JSON.parse(updated.draftSections),
-      publishedSections: updated.publishedSections ? JSON.parse(updated.publishedSections) : null,
-      publishedAt: updated.publishedAt,
-      hasUnpublishedChanges: updated.publishedSections !== updated.draftSections,
-    });
+  if (body.action === "discard") {
+    const published = parseSections(website.publishedSections);
+    const draft = published || buildDefaultSections(organization);
+    const serialized = JSON.stringify(draft);
+    const updated = await prisma.website.update({ where: { organizationId: organization.id }, data: { draftSections: serialized } });
+    return NextResponse.json({ draftSections: draft, publishedSections: published, publishedAt: updated.publishedAt, hasUnpublishedChanges: !published });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
