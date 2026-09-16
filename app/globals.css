@@ -11,7 +11,6 @@ body {
     background: #ffffff;
 }
 
-
 /* Dashboard "Website" editor only: placeholder text shown inside an empty
    contentEditable field (see app/WebsiteSectionRenderer.tsx Editable()).
    Never affects the public storefront renderer, which never sets
@@ -20,4 +19,49 @@ body {
       content: attr(data-placeholder);
       opacity: 0.5;
       font-style: italic;
+}
+
+/* Marketing product demos: make real admin screenshots feel like a living
+   application instead of flat screenshots. Motion is intentionally subtle
+   and disabled for visitors who prefer reduced motion. */
+img[src^="/marketing/screenshots/dashboard-"] {
+    transform-origin: 50% 18%;
+    animation: dashboard-demo-breathe 9s ease-in-out infinite;
+    will-change: transform;
+}
+
+div:has(> img[src^="/marketing/screenshots/dashboard-"]) {
+    position: relative;
+    isolation: isolate;
+}
+
+div:has(> img[src^="/marketing/screenshots/dashboard-"])::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: linear-gradient(110deg, transparent 20%, rgba(255,255,255,.22) 42%, transparent 58%);
+    transform: translateX(-120%);
+    animation: dashboard-demo-sheen 7s ease-in-out infinite;
+}
+
+@keyframes dashboard-demo-breathe {
+    0%, 100% { transform: scale(1); }
+    45% { transform: scale(1.018); }
+    70% { transform: scale(1.008); }
+}
+
+@keyframes dashboard-demo-sheen {
+    0%, 58% { transform: translateX(-120%); opacity: 0; }
+    64% { opacity: .8; }
+    78% { transform: translateX(120%); opacity: 0; }
+    100% { transform: translateX(120%); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    img[src^="/marketing/screenshots/dashboard-"],
+    div:has(> img[src^="/marketing/screenshots/dashboard-"])::after {
+        animation: none !important;
+    }
 }
