@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { pageMetadata } from "@/lib/seo";
 import StorefrontNav from "../../StorefrontNav";
 import StorefrontFooter from "../../StorefrontFooter";
+import { AddToCartButton } from "../../StorefrontCartControls";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const organization = await requireCurrentOrganization().catch(() => null);
@@ -41,12 +42,12 @@ export default async function CategoryPage({ params }: { params: { slug: string 
             <div className="mt-5 max-w-3xl">
               <p className="text-xs font-bold uppercase tracking-[.18em]" style={{ color: accent }}>Browse rentals</p>
               <h1 className="mt-2 text-3xl font-black tracking-[-.035em] sm:text-5xl">{category.name}</h1>
-              <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg">{category.description || `Choose from our available ${category.name.toLowerCase()} and start your reservation online.`}</p>
+              <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg">{category.description || `Choose from our available ${category.name.toLowerCase()} and build your reservation online.`}</p>
             </div>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-slate-600">
               <span className="rounded-full bg-slate-100 px-3 py-1.5">{items.length} {items.length === 1 ? "rental" : "rentals"}</span>
-              <span className="rounded-full bg-slate-100 px-3 py-1.5">Pricing shown upfront</span>
-              <span className="rounded-full bg-slate-100 px-3 py-1.5">Check dates during reservation</span>
+              <span className="rounded-full bg-slate-100 px-3 py-1.5">Add multiple rentals to one order</span>
+              <span className="rounded-full bg-slate-100 px-3 py-1.5">Availability checked before payment</span>
             </div>
           </div>
         </section>
@@ -73,7 +74,8 @@ export default async function CategoryPage({ params }: { params: { slug: string 
                     <Link href={`/checkout?itemId=${item.id}`}><h2 className="text-lg font-bold leading-6 text-slate-950 group-hover:underline">{item.name}</h2></Link>
                     {item.description && <p className="mt-2 line-clamp-2 min-h-[40px] text-sm leading-5 text-slate-500">{item.description}</p>}
                     <div className="mt-5 border-t border-slate-100 pt-4">
-                      <div className="flex items-end justify-between gap-3"><div><p className="text-xs font-medium uppercase tracking-wide text-slate-400">Rental price</p><p className="mt-0.5 text-2xl font-black" style={{ color: accent }}>${item.cost.toFixed(2)}</p></div><Link href={`/checkout?itemId=${item.id}`} className="rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:brightness-95" style={{ backgroundColor: accent }}>Check dates</Link></div>
+                      <div className="flex items-end justify-between gap-3"><div><p className="text-xs font-medium uppercase tracking-wide text-slate-400">Rental price</p><p className="mt-0.5 text-2xl font-black" style={{ color: accent }}>${item.cost.toFixed(2)}</p></div></div>
+                      <div className="mt-4 flex gap-2"><AddToCartButton organizationId={organization.id} item={{ id: item.id, name: item.name, cost: item.cost, picture: item.picture }} accent={accent}/><Link href={`/checkout?itemId=${item.id}`} className="flex-1 rounded-xl px-4 py-2.5 text-center text-sm font-bold text-white shadow-sm transition hover:brightness-95" style={{ backgroundColor: accent }}>Book now</Link></div>
                     </div>
                   </div>
                 </article>
@@ -81,7 +83,7 @@ export default async function CategoryPage({ params }: { params: { slug: string 
             </div>
           )}
 
-          {items.length > 0 && <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-5 sm:flex sm:items-center sm:justify-between sm:p-6"><div><h3 className="font-bold text-slate-900">Not sure what you need?</h3><p className="mt-1 text-sm text-slate-600">Browse other categories or start with your event details.</p></div><div className="mt-4 flex gap-3 sm:mt-0"><Link href="/" className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700">All rentals</Link><Link href="/book" className="rounded-xl px-4 py-2.5 text-sm font-bold text-white" style={{ backgroundColor: accent }}>Start booking</Link></div></div>}
+          {items.length > 0 && <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-5 sm:flex sm:items-center sm:justify-between sm:p-6"><div><h3 className="font-bold text-slate-900">Build one complete event order</h3><p className="mt-1 text-sm text-slate-600">Add tents, tables, chairs, games and other rentals to your cart, then choose one event date and checkout once.</p></div><div className="mt-4 flex gap-3 sm:mt-0"><Link href="/" className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700">All rentals</Link><Link href="/cart" className="rounded-xl px-4 py-2.5 text-sm font-bold text-white" style={{ backgroundColor: accent }}>View cart</Link></div></div>}
         </section>
       </main>
       <StorefrontFooter organizationId={organization.id} />
