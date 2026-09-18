@@ -16,7 +16,8 @@ function normalizeLines(body:any):RequestedLine[]{
   for(const row of raw.slice(0,100)){
     const itemId=text(row?.itemId,100);if(!itemId)continue;
     const quantity=Math.max(1,Math.min(10000,Math.floor(Number(row?.quantity)||1)));
-    const addonIds=Array.isArray(row?.addonIds)?row.addonIds.filter((v:unknown):v is string=>typeof v==="string").map(v=>v.slice(0,100)).slice(0,50):[];
+    const rawAddonIds:unknown[]=Array.isArray(row?.addonIds)?row.addonIds:[];
+    const addonIds=rawAddonIds.filter((v:unknown):v is string=>typeof v==="string").map((v:string)=>v.slice(0,100)).slice(0,50);
     const existing=merged.get(itemId);
     if(existing){existing.quantity=Math.min(10000,existing.quantity+quantity);existing.addonIds=Array.from(new Set([...existing.addonIds,...addonIds]));}
     else merged.set(itemId,{itemId,quantity,addonIds:Array.from(new Set(addonIds))});
