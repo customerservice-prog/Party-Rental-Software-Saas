@@ -2,11 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { sendEmailViaResend, textToHtml } from "@/lib/email";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-// Avoid re-querying/writing on literally every page load - only actually
-// run once this many milliseconds have passed since the last run for this
-// organization.
 const MIN_INTERVAL_MS = 60 * 1000;
-
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type RunResult = {
@@ -15,24 +11,13 @@ type RunResult = {
   remindersSent: number;
 };
 
-// Real, non-fabricated booking-lifecycle automation (Phase 5 of
-// ROADMAP.md: "Automated booking confirmations/reminders"). Triggered from
-// app/dashboard/layout.tsx on every dashboard page load (there is no
-// separate cron worker deployed for this app), so it fires whenever any
-// staff member is actively using the dashboard - at most once per
-// MIN_INTERVAL_MS per organization. Every email attempt is recorded as a
-// real SentMessage row with an honest status ("sent" only if the Resend
-// API call actually succeeded, "failed" with the real provider error, or
-// "queued" if no provider is connected yet) - never marked sent unless it
-// truly was. See app/api/automations/route.ts and
-// app/dashboard/automations/page.tsx for the settings/activity UI.
+// Runs tenant booking-lifecycle email automations when dashboard activity
+// invokes it. "confirmed" is the current booking status; "active" remains
+// included for backward compatibility with older orders created before the
+// status vocabulary was standardized.
 export async function runBookingAutomations(organizationId: string): Promise<RunResult> {
   const orgRow = await prisma.organization.findUnique({ where: { id: organizationId } });
   if (!orgRow) return { ran: false, confirmationsSent: 0, remindersSent: 0 };
-  // Bind to a variable whose declared type is never nullable, so
-  // TypeScript's null-check narrowing survives being referenced inside the
-  // nested closures below (narrowing on a variable declared outside a
-  // closure does not carry into the closure body).
   const org = orgRow;
 
   const now = new Date();
@@ -43,8 +28,6 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
     return { ran: false, confirmationsSent: 0, remindersSent: 0 };
   }
 
-  // Claim this run immediately so concurrent requests (e.g. two staff
-  // members loading the dashboard at the same moment) don't double-send.
   await prisma.organization.update({
     where: { id: organizationId },
     data: { automationsLastRunAt: now },
@@ -84,9 +67,8 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
         subject: args.subject,
         html: textToHtml(args.bodyText),
       });
-      if (result.success) {
-        status = "sent";
-      } else {
+      if (result.success) status = "sent";
+      else {
         status = "failed";
         providerError = result.error;
       }
@@ -112,7 +94,7 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
     const candidates = await prisma.order.findMany({
       where: {
         organizationId,
-        status: "active",
+        status: { in: ["confirmed", "active"] },
         confirmationSentAt: null,
       },
       include: { customer: true },
@@ -158,7 +140,7 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
     const candidates = await prisma.order.findMany({
       where: {
         organizationId,
-        status: "active",
+        status: { in: ["confirmed", "active"] },
         reminderSentAt: null,
         confirmationSentAt: { not: null },
         eventDate: { gte: now, lte: windowEnd },
