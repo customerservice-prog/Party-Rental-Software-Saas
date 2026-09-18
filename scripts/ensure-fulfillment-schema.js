@@ -56,6 +56,59 @@ async function main() {
     )
   `);
   await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "RentalFulfillmentEvent_org_order_idx" ON "RentalFulfillmentEvent" ("organizationId", "orderId", "createdAt")`);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "CustomerContact" (
+      "id" TEXT PRIMARY KEY,
+      "organizationId" TEXT NOT NULL,
+      "customerId" TEXT NOT NULL,
+      "name" TEXT NOT NULL,
+      "relationship" TEXT,
+      "email" TEXT,
+      "phone" TEXT,
+      "address" TEXT,
+      "isPrimary" BOOLEAN NOT NULL DEFAULT FALSE,
+      "notes" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "CustomerContact_org_customer_idx" ON "CustomerContact" ("organizationId", "customerId")`);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "StoreCredit" (
+      "id" TEXT PRIMARY KEY,
+      "organizationId" TEXT NOT NULL,
+      "customerId" TEXT NOT NULL,
+      "sourceOrderId" TEXT,
+      "type" TEXT NOT NULL DEFAULT 'store_credit',
+      "originalAmount" DOUBLE PRECISION NOT NULL,
+      "remainingAmount" DOUBLE PRECISION NOT NULL,
+      "reason" TEXT,
+      "expiresAt" TIMESTAMP(3),
+      "status" TEXT NOT NULL DEFAULT 'active',
+      "createdBy" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "StoreCredit_org_customer_idx" ON "StoreCredit" ("organizationId", "customerId", "status")`);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "StoreCreditTransaction" (
+      "id" TEXT PRIMARY KEY,
+      "organizationId" TEXT NOT NULL,
+      "creditId" TEXT NOT NULL,
+      "customerId" TEXT NOT NULL,
+      "orderId" TEXT,
+      "type" TEXT NOT NULL,
+      "amount" DOUBLE PRECISION NOT NULL,
+      "notes" TEXT,
+      "performedBy" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "StoreCreditTransaction_credit_idx" ON "StoreCreditTransaction" ("creditId", "createdAt")`);
 }
 
 main().catch((err) => { console.error(err); process.exit(1); }).finally(async () => prisma.$disconnect());
