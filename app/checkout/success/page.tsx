@@ -1,42 +1,11 @@
 import Link from "next/link";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
+import ClearCartOnSuccess from "./ClearCartOnSuccess";
 
-export default async function CheckoutSuccessPage({
-    searchParams,
-}: {
-    searchParams: { orderId?: string };
-}) {
-    const organization = await requireCurrentOrganization();
-
-  const order = searchParams.orderId
-      ? await prisma.order.findFirst({
-                where: { id: searchParams.orderId, organizationId: organization.id },
-                include: { customer: true },
-      })
-        : null;
-
-  return (
-        <div className="max-w-xl mx-auto p-8 text-center">
-              <div className="bg-white shadow rounded-lg p-10">
-                      <div className="text-green-500 text-5xl mb-4">&#10003;</div>
-                      <h1 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h1>
-                      <p className="text-gray-600 mb-6">
-                                Thank you{order?.customer ? `, ${order.customer.firstName}` : ""}. Your rental request
-                                has been received and we will be in touch shortly to confirm the details.
-                      </p>
-                {order && (
-                    <p className="text-sm text-gray-500 mb-6">
-                                Order Number: <span className="font-medium text-gray-800">{order.orderNumber}</span>
-                    </p>
-                      )}
-                      <Link
-                                  href="/"
-                                  className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700"
-                                >
-                                Return Home
-                      </Link>
-              </div>
-        </div>
-      );
+export default async function CheckoutSuccessPage({searchParams}:{searchParams:{orderId?:string;clearCart?:string}}){
+  const organization=await requireCurrentOrganization();
+  const order=searchParams.orderId?await prisma.order.findFirst({where:{id:searchParams.orderId,organizationId:organization.id},include:{customer:true,items:{include:{item:true}}}}):null;
+  const balance=order?Math.max(0,order.totalAmount-order.amountPaid):0;
+  return <div className="min-h-screen bg-slate-50 px-5 py-12"><ClearCartOnSuccess organizationId={organization.id} enabled={searchParams.clearCart==="1"}/><div className="mx-auto max-w-2xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl"><div className="bg-emerald-50 px-6 py-8 text-center sm:px-10"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 text-2xl font-black text-white">✓</div><h1 className="mt-4 text-3xl font-black tracking-tight text-slate-950">Reservation received</h1><p className="mt-2 text-sm text-slate-600">Thank you{order?.customer?`, ${order.customer.firstName}`:""}. Your order is in the system and your rental company can now manage it from their operations dashboard.</p></div>{order&&<div className="p-6 sm:p-8"><div className="grid gap-3 sm:grid-cols-3"><div className="rounded-xl bg-slate-50 p-4"><div className="text-[10px] font-black uppercase tracking-wide text-slate-400">Order</div><div className="mt-1 font-black">#{order.orderNumber}</div></div><div className="rounded-xl bg-slate-50 p-4"><div className="text-[10px] font-black uppercase tracking-wide text-slate-400">Event</div><div className="mt-1 font-black">{order.eventDate.toLocaleDateString()}</div></div><div className="rounded-xl bg-slate-50 p-4"><div className="text-[10px] font-black uppercase tracking-wide text-slate-400">Balance</div><div className="mt-1 font-black">${balance.toFixed(2)}</div></div></div><div className="mt-6"><h2 className="text-sm font-black">Reserved rentals</h2><div className="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-200">{order.items.map(line=><div key={line.id} className="flex justify-between px-4 py-3 text-sm"><span>{line.item.name}</span><b>× {line.quantity}</b></div>)}</div></div><div className="mt-6 flex flex-col gap-2 sm:flex-row"><Link href="/" className="flex-1 rounded-xl bg-slate-950 px-4 py-3 text-center text-sm font-black text-white">Return home</Link><Link href="/order-status" className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-center text-sm font-black text-slate-700">Track order</Link></div></div>}</div></div>;
 }
