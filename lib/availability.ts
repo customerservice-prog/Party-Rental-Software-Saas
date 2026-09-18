@@ -1,9 +1,19 @@
 import { prisma } from "./prisma";
 
-const CANCELLED_STATUS = "cancelled";
+const NON_RESERVING_STATUSES = ["cancelled", "canceled", "quote", "incomplete"];
+const PENDING_HOLD_MS = 30 * 60 * 1000;
 function normalizeRange(start:Date,end:Date|null|undefined){const rangeStart=new Date(start),rangeEnd=end?new Date(end):new Date(start);return{rangeStart,rangeEnd}}
 
-export async function getBookedQuantity(organizationId:string,itemId:string,start:Date,end:Date|null|undefined,excludeOrderId?:string):Promise<number>{const{rangeStart,rangeEnd}=normalizeRange(start,end);const overlapping=await prisma.orderItem.findMany({where:{itemId,order:{organizationId,status:{not:CANCELLED_STATUS},...(excludeOrderId?{id:{not:excludeOrderId}}:{}),eventDate:{lte:rangeEnd},OR:[{eventEndDate:{gte:rangeStart}},{eventEndDate:null,eventDate:{gte:rangeStart}}]}},select:{quantity:true}});return overlapping.reduce((sum,row)=>sum+row.quantity,0)}
+// Only real/paid bookings and a short-lived online checkout hold reserve stock.
+// Quotes and incomplete orders never consume availability. Pending online
+// checkouts reserve for 30 minutes so two customers cannot buy the same stock,
+// but an abandoned Stripe checkout cannot lock inventory forever.
+export async function getBookedQuantity(organizationId:string,itemId:string,start:Date,end:Date|null|undefined,excludeOrderId?:string):Promise<number>{
+  const{rangeStart,rangeEnd}=normalizeRange(start,end);
+  const pendingCutoff=new Date(Date.now()-PENDING_HOLD_MS);
+  const overlapping=await prisma.orderItem.findMany({where:{itemId,order:{organizationId,status:{notIn:NON_RESERVING_STATUSES},...(excludeOrderId?{id:{not:excludeOrderId}}:{}),eventDate:{lte:rangeEnd},AND:[{OR:[{status:{not:"pending"}},{status:"pending",createdAt:{gte:pendingCutoff}}]},{OR:[{eventEndDate:{gte:rangeStart}},{eventEndDate:null,eventDate:{gte:rangeStart}}]}]}},select:{quantity:true}});
+  return overlapping.reduce((sum,row)=>sum+row.quantity,0)
+}
 
 // Serialized units are optional. When tenants use them, units explicitly put
 // into maintenance/retired state reduce sellable capacity without requiring
