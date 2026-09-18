@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { StorefrontCartLink } from "./StorefrontCartControls";
 
 export default async function StorefrontNav({ organizationId, activeSlug }: { organizationId: string; activeSlug?: string }) {
   const [organization, pages] = await Promise.all([
@@ -24,7 +25,10 @@ export default async function StorefrontNav({ organizationId, activeSlug }: { or
           {pages.map((page) => <Link key={page.id} href={`/${page.slug}`} className={linkClass(page.slug)}>{page.navLabel || page.title}</Link>)}
         </nav>
 
-        <Link href="/book" className="shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:brightness-95" style={{ backgroundColor: accent }}>Check availability</Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <StorefrontCartLink organizationId={organizationId} accent={accent} />
+          <Link href="/book" className="hidden rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:brightness-95 sm:inline-flex" style={{ backgroundColor: accent }}>Check availability</Link>
+        </div>
       </div>
       <nav className="flex gap-1 overflow-x-auto border-t border-slate-100 px-3 py-2 md:hidden">
         <Link href="/" className={linkClass("")}>Home</Link><Link href="/book" className={linkClass("book")}>Rentals</Link><Link href="/order-status" className={linkClass("order-status")}>Track Order</Link>{pages.map((page) => <Link key={page.id} href={`/${page.slug}`} className={`${linkClass(page.slug)} whitespace-nowrap`}>{page.navLabel || page.title}</Link>)}
