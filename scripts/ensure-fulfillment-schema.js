@@ -109,6 +109,61 @@ async function main() {
     )
   `);
   await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "StoreCreditTransaction_credit_idx" ON "StoreCreditTransaction" ("creditId", "createdAt")`);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "StaffShift" (
+      "id" TEXT PRIMARY KEY,
+      "organizationId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "orderId" TEXT,
+      "roleLabel" TEXT,
+      "startAt" TIMESTAMP(3) NOT NULL,
+      "endAt" TIMESTAMP(3) NOT NULL,
+      "location" TEXT,
+      "notes" TEXT,
+      "status" TEXT NOT NULL DEFAULT 'scheduled',
+      "createdBy" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "StaffShift_org_start_idx" ON "StaffShift" ("organizationId", "startAt")`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "StaffShift_user_start_idx" ON "StaffShift" ("userId", "startAt")`);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "TimeClockEntry" (
+      "id" TEXT PRIMARY KEY,
+      "organizationId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "shiftId" TEXT,
+      "clockInAt" TIMESTAMP(3) NOT NULL,
+      "clockOutAt" TIMESTAMP(3),
+      "notes" TEXT,
+      "createdBy" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "TimeClockEntry_org_clock_idx" ON "TimeClockEntry" ("organizationId", "clockInAt")`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "TimeClockEntry_user_clock_idx" ON "TimeClockEntry" ("userId", "clockInAt")`);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "TimeOffRequest" (
+      "id" TEXT PRIMARY KEY,
+      "organizationId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "startDate" TIMESTAMP(3) NOT NULL,
+      "endDate" TIMESTAMP(3) NOT NULL,
+      "reason" TEXT,
+      "status" TEXT NOT NULL DEFAULT 'pending',
+      "reviewedBy" TEXT,
+      "reviewedAt" TIMESTAMP(3),
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "TimeOffRequest_org_dates_idx" ON "TimeOffRequest" ("organizationId", "startDate", "endDate")`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "TimeOffRequest_user_idx" ON "TimeOffRequest" ("userId", "status")`);
 }
 
 main().catch((err) => { console.error(err); process.exit(1); }).finally(async () => prisma.$disconnect());
