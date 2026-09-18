@@ -164,6 +164,28 @@ async function main() {
   `);
   await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "TimeOffRequest_org_dates_idx" ON "TimeOffRequest" ("organizationId", "startDate", "endDate")`);
   await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "TimeOffRequest_user_idx" ON "TimeOffRequest" ("userId", "status")`);
+
+  // External payment reference makes Stripe/webhook processing idempotent.
+  // This is additive and nullable so existing payment rows remain valid.
+  await prisma.$executeRawUnsafe(`ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "externalReference" TEXT`);
+  await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Payment_org_external_ref_unique" ON "Payment" ("organizationId", "externalReference") WHERE "externalReference" IS NOT NULL`);
+
+  // Secure customer-facing order portal. Only a SHA-256 token hash is stored;
+  // the raw link token is returned once to authenticated tenant staff.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "CustomerPortalAccess" (
+      "id" TEXT PRIMARY KEY,
+      "organizationId" TEXT NOT NULL,
+      "orderId" TEXT NOT NULL,
+      "tokenHash" TEXT NOT NULL UNIQUE,
+      "createdBy" TEXT,
+      "expiresAt" TIMESTAMP(3) NOT NULL,
+      "revokedAt" TIMESTAMP(3),
+      "lastViewedAt" TIMESTAMP(3),
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "CustomerPortalAccess_org_order_idx" ON "CustomerPortalAccess" ("organizationId", "orderId", "createdAt")`);
 }
 
 main().catch((err) => { console.error(err); process.exit(1); }).finally(async () => prisma.$disconnect());
