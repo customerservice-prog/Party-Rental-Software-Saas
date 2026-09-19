@@ -10,6 +10,7 @@ type RunResult = {
   ran: boolean;
   confirmationsSent: number;
   remindersSent: number;
+  balanceRemindersSent: number;
 };
 
 // Runs tenant booking-lifecycle email automations when dashboard activity
@@ -18,7 +19,7 @@ type RunResult = {
 // status vocabulary was standardized.
 export async function runBookingAutomations(organizationId: string): Promise<RunResult> {
   const orgRow = await prisma.organization.findUnique({ where: { id: organizationId } });
-  if (!orgRow) return { ran: false, confirmationsSent: 0, remindersSent: 0 };
+  if (!orgRow) return { ran: false, confirmationsSent: 0, remindersSent: 0, balanceRemindersSent: 0 };
   const org = orgRow;
 
   const now = new Date();
@@ -26,7 +27,7 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
     org.automationsLastRunAt &&
     now.getTime() - org.automationsLastRunAt.getTime() < MIN_INTERVAL_MS
   ) {
-    return { ran: false, confirmationsSent: 0, remindersSent: 0 };
+    return { ran: false, confirmationsSent: 0, remindersSent: 0, balanceRemindersSent: 0 };
   }
 
   await prisma.organization.update({
@@ -36,6 +37,7 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
 
   let confirmationsSent = 0;
   let remindersSent = 0;
+  let balanceRemindersSent = 0;
 
   const canDeliver = Boolean(org.resendApiKey && org.senderEmail);
   const canText = Boolean(org.twilioAccountSid && org.twilioAuthToken && org.twilioFromNumber);
@@ -247,5 +249,67 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
     }
   }
 
-  return { ran: true, confirmationsSent, remindersSent };
+
+  if (org.autoBalanceReminderEnabled) {
+    const balanceWindowEnd = new Date(now.getTime() + org.balanceReminderDaysBefore * DAY_MS);
+    const candidates = await prisma.order.findMany({
+      where: {
+        organizationId,
+        status: { in: ["confirmed", "active"] },
+        balanceReminderSentAt: null,
+        eventDate: { gte: now, lte: balanceWindowEnd },
+      },
+      include: { customer: true },
+      take: 50,
+    });
+
+    for (const order of candidates) {
+      const balance = Math.max(0, order.totalAmount - order.amountPaid);
+      if (balance <= 0.009) {
+        await prisma.order.update({ where: { id: order.id }, data: { balanceReminderSentAt: now } });
+        continue;
+      }
+      const email = (order.customer.email || "").trim();
+      const emailLower = email.toLowerCase();
+      const canEmailCustomer = Boolean(email && EMAIL_RE.test(email) && !restrictedEmails.has(emailLower));
+      const eventDateStr = order.eventDate.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      const subject = `Balance due - Order #${order.orderNumber}`;
+      const bodyText =
+        `Hi ${order.customer.firstName},\n\n` +
+        `A remaining balance of ${balance.toFixed(2)} is due for your rental with ${org.name} on ${eventDateStr}.\n\n` +
+        `Order #: ${order.orderNumber}\n` +
+        `Order total: ${order.totalAmount.toFixed(2)}\n` +
+        `Paid so far: ${order.amountPaid.toFixed(2)}\n` +
+        `Balance due: ${balance.toFixed(2)}\n\n` +
+        `Please contact us if you have any questions about your balance.`;
+
+      if (canEmailCustomer) {
+        await sendAutomationEmail({
+          toName: `${order.customer.firstName} ${order.customer.lastName}`.trim(),
+          toAddress: email,
+          subject,
+          bodyText,
+          customerId: order.customerId,
+          automationType: "balance_due",
+        });
+      }
+      await sendAutomationSms({
+        toName: `${order.customer.firstName} ${order.customer.lastName}`.trim(),
+        phone: order.customer.phone,
+        subject,
+        bodyText,
+        customerId: order.customerId,
+        automationType: "balance_due",
+      });
+      await prisma.order.update({ where: { id: order.id }, data: { balanceReminderSentAt: now } });
+      balanceRemindersSent += 1;
+    }
+  }
+
+  return { ran: true, confirmationsSent, remindersSent, balanceRemindersSent };
 }
