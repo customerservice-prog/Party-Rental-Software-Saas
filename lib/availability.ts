@@ -123,6 +123,22 @@ export async function getOperationalQuantity(
   return getOperationalQuantityWithClient(prisma, organizationId, itemId, totalQuantity);
 }
 
+export async function getPhysicalAvailableQuantityWithClient(
+  db: Db,
+  organizationId: string,
+  itemId: string,
+  totalQuantity: number,
+  start: Date,
+  end: Date | null | undefined,
+  excludeOrderId?: string
+): Promise<number> {
+  const [booked, operational] = await Promise.all([
+    getBookedQuantityWithClient(db, organizationId, itemId, start, end, excludeOrderId),
+    getOperationalQuantityWithClient(db, organizationId, itemId, totalQuantity),
+  ]);
+  return Math.max(0, operational - booked);
+}
+
 // Availability is component-aware. Normal items subtract both direct rentals
 // and package usage. Package items are additionally limited by the remaining
 // capacity of every physical component in the bundle.
@@ -136,13 +152,12 @@ export async function getAvailableQuantityWithClient(
   excludeOrderId?: string
 ): Promise<number> {
   const { rangeStart } = normalizeRange(start, end);
-  const [booked, operational, components] = await Promise.all([
-    getBookedQuantityWithClient(db, organizationId, itemId, start, end, excludeOrderId),
-    getOperationalQuantityWithClient(db, organizationId, itemId, totalQuantity),
+  const [physicalAvailable, components] = await Promise.all([
+    getPhysicalAvailableQuantityWithClient(db, organizationId, itemId, totalQuantity, start, end, excludeOrderId),
     getPackageComponents(db, organizationId, itemId),
   ]);
 
-  let available = Math.max(0, operational - booked);
+  let available = physicalAvailable;
   if (!components.length || available <= 0) return available;
 
   for (const component of components) {
