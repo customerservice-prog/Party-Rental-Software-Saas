@@ -75,6 +75,84 @@ async function syncResources(db:Db,organizationId:string,orderId:string,fulfillm
   return demand;
 }
 
+async function syncQuantityException(
+  db: Db,
+  args:{
+    organizationId:string;
+    itemId:string;
+    orderId:string;
+    fulfillmentId:string;
+    resourceId:string;
+    type:"damaged"|"missing";
+    quantity:number;
+    notes:string|null;
+    actorId:string;
+  }
+){
+  const rows=await db.$queryRawUnsafe<{id:string}[]>(
+    `SELECT "id" FROM "InventoryQuantityException"
+     WHERE "organizationId"=$1 AND "resourceId"=$2 AND "type"=$3 AND "status"='open'
+     LIMIT 1`,
+    args.organizationId,args.resourceId,args.type
+  );
+  const existing=rows[0];
+  if(args.quantity>0){
+    if(existing){
+      await db.$executeRawUnsafe(
+        `UPDATE "InventoryQuantityException"
+         SET "quantity"=$1,"notes"=$2,"updatedAt"=CURRENT_TIMESTAMP
+         WHERE "id"=$3 AND "organizationId"=$4`,
+        args.quantity,args.notes,existing.id,args.organizationId
+      );
+    }else{
+      await db.$executeRawUnsafe(
+        `INSERT INTO "InventoryQuantityException"
+         ("id","organizationId","itemId","orderId","fulfillmentId","resourceId","type","quantity","status","notes","createdBy","createdAt","updatedAt")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'open',$9,$10,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+        randomUUID(),args.organizationId,args.itemId,args.orderId,args.fulfillmentId,args.resourceId,args.type,args.quantity,args.notes,args.actorId
+      );
+    }
+  }else if(existing){
+    await db.$executeRawUnsafe(
+      `UPDATE "InventoryQuantityException"
+       SET "status"='resolved',"resolvedBy"=$1,"resolvedAt"=CURRENT_TIMESTAMP,"updatedAt"=CURRENT_TIMESTAMP
+       WHERE "id"=$2 AND "organizationId"=$3`,
+      args.actorId,existing.id,args.organizationId
+    );
+  }
+}
+
+async function updateFulfillmentProgress(db:Db,organizationId:string,orderId:string,fulfillmentId:string){
+  const totals=await db.$queryRawUnsafe<{expected:number;loaded:number;reconciled:number}[]>(
+    `SELECT COALESCE(SUM("expectedQty"),0)::int AS "expected",
+            COALESCE(SUM("loadedQty"),0)::int AS "loaded",
+            COALESCE(SUM("returnedQty"+"damagedQty"+"missingQty"),0)::int AS "reconciled"
+     FROM "RentalFulfillmentResource"
+     WHERE "organizationId"=$1 AND "orderId"=$2`,
+    organizationId,orderId
+  );
+  const total=totals[0];
+  if(total?.expected>0 && total.loaded>=total.expected){
+    await db.$executeRawUnsafe(
+      `UPDATE "RentalFulfillment"
+       SET "loadedAt"=COALESCE("loadedAt",CURRENT_TIMESTAMP),
+           "status"=CASE WHEN "status"='preparing' THEN 'loaded' ELSE "status" END,
+           "updatedAt"=CURRENT_TIMESTAMP
+       WHERE "id"=$1 AND "organizationId"=$2`,
+      fulfillmentId,organizationId
+    );
+  }
+  if(total?.expected>0 && total.reconciled>=total.expected){
+    await db.$executeRawUnsafe(
+      `UPDATE "RentalFulfillment"
+       SET "returnedAt"=COALESCE("returnedAt",CURRENT_TIMESTAMP),
+           "status"='returned',
+           "updatedAt"=CURRENT_TIMESTAMP
+       WHERE "id"=$1 AND "organizationId"=$2`,
+      fulfillmentId,organizationId
+    );
+  }
+}
 async function loadState(organizationId:string,orderId:string){
   const order=await getOrder(prisma,organizationId,orderId);
   if(!order)return null;
@@ -172,6 +250,66 @@ export async function POST(req:NextRequest){
       const fulfillment=await ensureFulfillment(tx,organization.id,orderId,actor.id);
       await syncResources(tx,organization.id,orderId,fulfillment.id,order.items.map(x=>({id:x.id,itemId:x.itemId,quantity:x.quantity})));
       if(action==="initialize")return;
+
+      if(action==="reconcileResource"){
+        const itemId=typeof body.itemId==="string"?body.itemId:"";
+        const resourceRows=await tx.$queryRawUnsafe<ResourceRow[]>(
+          `SELECT * FROM "RentalFulfillmentResource"
+           WHERE "organizationId"=$1 AND "orderId"=$2 AND "itemId"=$3
+           LIMIT 1`,
+          organization.id,orderId,itemId
+        );
+        const resource=resourceRows[0];
+        if(!resource)throw new Error("RESOURCE_NOT_FOUND");
+        const vals=[body.loadedQty,body.returnedQty,body.damagedQty,body.missingQty].map(v=>Number(v??0));
+        if(vals.some(v=>!Number.isInteger(v)||v<0))throw new Error("INVALID_COUNTS");
+        const[loadedQty,returnedQty,damagedQty,missingQty]=vals;
+        if(loadedQty>resource.expectedQty)throw new Error(`COUNTS|Loaded quantity cannot exceed ${resource.expectedQty}.`);
+        if(returnedQty+damagedQty+missingQty>resource.expectedQty)throw new Error(`COUNTS|Returned + damaged + missing cannot exceed ${resource.expectedQty}.`);
+
+        const scanned=await tx.$queryRawUnsafe<{loaded:number;returned:number;damaged:number;missing:number}[]>(
+          `SELECT
+             COUNT(*) FILTER (WHERE "loadedAt" IS NOT NULL)::int AS "loaded",
+             COUNT(*) FILTER (WHERE "status"='returned')::int AS "returned",
+             COUNT(*) FILTER (WHERE "status"='damaged')::int AS "damaged",
+             COUNT(*) FILTER (WHERE "status"='missing')::int AS "missing"
+           FROM "RentalFulfillmentAsset"
+           WHERE "organizationId"=$1 AND "orderId"=$2 AND "itemId"=$3`,
+          organization.id,orderId,itemId
+        );
+        const minimum=scanned[0]||{loaded:0,returned:0,damaged:0,missing:0};
+        if(loadedQty<minimum.loaded||returnedQty<minimum.returned||damagedQty<minimum.damaged||missingQty<minimum.missing){
+          throw new Error(`SCANNED_MINIMUM|${minimum.loaded}|${minimum.returned}|${minimum.damaged}|${minimum.missing}`);
+        }
+        const notes=typeof body.notes==="string"?body.notes.trim().slice(0,1000):null;
+        await tx.$executeRawUnsafe(
+          `UPDATE "RentalFulfillmentResource"
+           SET "loadedQty"=$1,"returnedQty"=$2,"damagedQty"=$3,"missingQty"=$4,
+               "notes"=$5,"updatedAt"=CURRENT_TIMESTAMP
+           WHERE "id"=$6 AND "organizationId"=$7`,
+          loadedQty,returnedQty,damagedQty,missingQty,notes,resource.id,organization.id
+        );
+
+        await syncQuantityException(tx,{
+          organizationId:organization.id,itemId,orderId,fulfillmentId:fulfillment.id,resourceId:resource.id,
+          type:"damaged",quantity:Math.max(0,damagedQty-minimum.damaged),notes,actorId:actor.id,
+        });
+        await syncQuantityException(tx,{
+          organizationId:organization.id,itemId,orderId,fulfillmentId:fulfillment.id,resourceId:resource.id,
+          type:"missing",quantity:Math.max(0,missingQty-minimum.missing),notes,actorId:actor.id,
+        });
+        await tx.$executeRawUnsafe(
+          `INSERT INTO "RentalFulfillmentEvent"
+           ("id","organizationId","orderId","fulfillmentId","type","quantity","notes","performedBy")
+           VALUES ($1,$2,$3,$4,'quantity_reconciled',$5,$6,$7)`,
+          randomUUID(),organization.id,orderId,fulfillment.id,resource.expectedQty,
+          `itemId=${itemId}; loaded=${loadedQty}; returned=${returnedQty}; damaged=${damagedQty}; missing=${missingQty}${notes?`; notes=${notes}`:""}`,
+          actor.id
+        );
+        await updateFulfillmentProgress(tx,organization.id,orderId,fulfillment.id);
+        return;
+      }
+
       if(action!=="scan")throw new Error("INVALID_ACTION");
 
       const scanAction=String(body.scanAction||"").trim().toLowerCase() as ScanAction;
@@ -292,35 +430,7 @@ export async function POST(req:NextRequest){
         randomUUID(),organization.id,orderId,fulfillment.id,unit.id,`asset_${scanAction}`,note,actor.id
       );
 
-      const totals=await tx.$queryRawUnsafe<{expected:number;loaded:number;reconciled:number}[]>(
-        `SELECT COALESCE(SUM("expectedQty"),0)::int AS "expected",
-                COALESCE(SUM("loadedQty"),0)::int AS "loaded",
-                COALESCE(SUM("returnedQty"+"damagedQty"+"missingQty"),0)::int AS "reconciled"
-         FROM "RentalFulfillmentResource"
-         WHERE "organizationId"=$1 AND "orderId"=$2`,
-        organization.id,orderId
-      );
-      const total=totals[0];
-      if(total?.expected>0 && total.loaded>=total.expected){
-        await tx.$executeRawUnsafe(
-          `UPDATE "RentalFulfillment"
-           SET "loadedAt"=COALESCE("loadedAt",CURRENT_TIMESTAMP),
-               "status"=CASE WHEN "status"='preparing' THEN 'loaded' ELSE "status" END,
-               "updatedAt"=CURRENT_TIMESTAMP
-           WHERE "id"=$1 AND "organizationId"=$2`,
-          fulfillment.id,organization.id
-        );
-      }
-      if(total?.expected>0 && total.reconciled>=total.expected){
-        await tx.$executeRawUnsafe(
-          `UPDATE "RentalFulfillment"
-           SET "returnedAt"=COALESCE("returnedAt",CURRENT_TIMESTAMP),
-               "status"='returned',
-               "updatedAt"=CURRENT_TIMESTAMP
-           WHERE "id"=$1 AND "organizationId"=$2`,
-          fulfillment.id,organization.id
-        );
-      }
+      await updateFulfillmentProgress(tx,organization.id,orderId,fulfillment.id);
     },{isolationLevel:"Serializable"});
   }catch(err){
     if(err instanceof Error){
@@ -333,12 +443,16 @@ export async function POST(req:NextRequest){
         UNIT_REQUIRED:{status:400,message:"Scan or enter an asset tag."},
         UNIT_NOT_FOUND:{status:404,message:"Asset tag not found in this tenant's inventory."},
         ALREADY_RECONCILED:{status:409,message:"This asset was already reconciled for this order and cannot be loaded again."},
+        RESOURCE_NOT_FOUND:{status:404,message:"This physical inventory item is not required by the order."},
+        INVALID_COUNTS:{status:400,message:"Return quantities must be non-negative whole numbers."},
       };
       if(errors[code])return NextResponse.json({error:errors[code].message},{status:errors[code].status});
       if(code==="NOT_EXPECTED")return NextResponse.json({error:`${detail} is not required by this order or any package on it.`},{status:409});
       if(code==="UNIT_OUT")return NextResponse.json({error:`${detail} is still loaded on another order.`},{status:409});
       if(code==="RESOURCE_FULL")return NextResponse.json({error:`${rest[0]} already has all ${rest[1]} expected serialized units loaded.`},{status:409});
       if(code==="RESOURCE_RECONCILED")return NextResponse.json({error:`All expected ${detail} units are already reconciled.`},{status:409});
+      if(code==="COUNTS")return NextResponse.json({error:detail},{status:400});
+      if(code==="SCANNED_MINIMUM")return NextResponse.json({error:`Counts cannot be lower than serialized scans already recorded (out ${rest[0]}, returned ${rest[1]}, damaged ${rest[2]}, missing ${rest[3]}).`},{status:409});
     }
     throw err;
   }
