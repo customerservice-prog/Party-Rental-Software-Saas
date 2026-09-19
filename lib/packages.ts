@@ -61,3 +61,41 @@ export async function getRequestedResourceDemand(
   }
   return demand;
 }
+
+
+export async function getPhysicalFulfillmentDemand(
+  db: Db,
+  organizationId: string,
+  lines: { orderItemId?: string; itemId: string; quantity: number }[]
+) {
+  const demand = new Map<string, { itemId: string; quantity: number; sourceOrderItemIds: string[] }>();
+  for (const line of lines) {
+    const components = await getPackageComponents(db, organizationId, line.itemId);
+    if (components.length) {
+      for (const component of components) {
+        const current = demand.get(component.componentItemId) || {
+          itemId: component.componentItemId,
+          quantity: 0,
+          sourceOrderItemIds: [],
+        };
+        current.quantity += line.quantity * component.quantity;
+        if (line.orderItemId && !current.sourceOrderItemIds.includes(line.orderItemId)) {
+          current.sourceOrderItemIds.push(line.orderItemId);
+        }
+        demand.set(component.componentItemId, current);
+      }
+    } else {
+      const current = demand.get(line.itemId) || {
+        itemId: line.itemId,
+        quantity: 0,
+        sourceOrderItemIds: [],
+      };
+      current.quantity += line.quantity;
+      if (line.orderItemId && !current.sourceOrderItemIds.includes(line.orderItemId)) {
+        current.sourceOrderItemIds.push(line.orderItemId);
+      }
+      demand.set(line.itemId, current);
+    }
+  }
+  return [...demand.values()];
+}
