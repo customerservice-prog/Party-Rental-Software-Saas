@@ -50,6 +50,55 @@ export default async function PackingListPage({
     },
   });
 
+  const packageRows = await prisma.$queryRawUnsafe<{packageItemId:string;componentItemId:string;quantity:number}[]>(
+    `SELECT "packageItemId","componentItemId","quantity" FROM "PackageComponent" WHERE "organizationId"=$1`,
+    organization.id
+  ).catch(() => []);
+  const componentIds = Array.from(new Set(packageRows.map(row => row.componentItemId)));
+  const componentItems = componentIds.length
+    ? await prisma.item.findMany({ where: { organizationId: organization.id, id: { in: componentIds } }, select: { id: true, name: true } })
+    : [];
+  const componentName = new Map(componentItems.map(item => [item.id, item.name]));
+  const packageMap = new Map<string, typeof packageRows>();
+  for (const row of packageRows) {
+    const list = packageMap.get(row.packageItemId) || [];
+    list.push(row);
+    packageMap.set(row.packageItemId, list);
+  }
+
+  function renderRentalRows(order: (typeof orders)[number]) {
+    return order.items.flatMap((li) => {
+      const components = packageMap.get(li.itemId) || [];
+      if (!components.length) {
+        return [h(
+          "tr",
+          { key: li.id, className: "border-b border-gray-100" },
+          h("td", { className: "px-4 py-2" }, h("span", { className: "inline-block w-4 h-4 border border-gray-400 rounded-sm" })),
+          h("td", { className: "px-4 py-2 font-medium" }, li.quantity),
+          h("td", { className: "px-4 py-2" }, li.item ? li.item.name : "Item")
+        )];
+      }
+      return [
+        h(
+          "tr",
+          { key: li.id + "-package", className: "border-b border-blue-100 bg-blue-50/60" },
+          h("td", { className: "px-4 py-2" }, ""),
+          h("td", { className: "px-4 py-2 font-black text-blue-800" }, li.quantity),
+          h("td", { className: "px-4 py-2 font-black text-blue-900" }, (li.item ? li.item.name : "Package") + " (package)")
+        ),
+        ...components.map((component) =>
+          h(
+            "tr",
+            { key: li.id + "-" + component.componentItemId, className: "border-b border-gray-100" },
+            h("td", { className: "px-4 py-2" }, h("span", { className: "inline-block w-4 h-4 border border-gray-400 rounded-sm" })),
+            h("td", { className: "px-4 py-2 font-medium" }, component.quantity * li.quantity),
+            h("td", { className: "px-4 py-2" }, "↳ " + (componentName.get(component.componentItemId) || "Package component"))
+          )
+        ),
+      ];
+    });
+  }
+
   const heading = dateParam
     ? "Packing List " + String.fromCharCode(8226) + " " + fmtDate(new Date(dateParam + "T00:00:00"))
     : "Packing List " + String.fromCharCode(8226) + " All Upcoming Deliveries";
@@ -206,22 +255,7 @@ export default async function PackingListPage({
                 h(
                   "tbody",
                   null,
-                  order.items.map((li) =>
-                    h(
-                      "tr",
-                      { key: li.id, className: "border-b border-gray-100" },
-                      h(
-                        "td",
-                        { className: "px-4 py-2" },
-                        h("span", {
-                          className:
-                            "inline-block w-4 h-4 border border-gray-400 rounded-sm",
-                        })
-                      ),
-                      h("td", { className: "px-4 py-2 font-medium" }, li.quantity),
-                      h("td", { className: "px-4 py-2" }, li.item ? li.item.name : "Item")
-                    )
-                  ),
+                  renderRentalRows(order),
                   order.orderAddons.map((ad) =>
                     h(
                       "tr",
