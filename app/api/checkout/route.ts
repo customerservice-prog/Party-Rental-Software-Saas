@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
@@ -64,7 +65,7 @@ export async function POST(request:NextRequest){
 
   let order:any;
   try{
-    order=await prisma.$transaction(async tx=>{
+    order=await prisma.$transaction(async (tx: Prisma.TransactionClient)=>{
       const resourceIds=await getInventoryResourceIds(tx,organization.id,itemIds);for(const resourceId of resourceIds)await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext($1))`,`${organization.id}:${resourceId}`);
       const currentItems:ItemRow[]=await tx.item.findMany({where:{id:{in:itemIds},organizationId:organization.id,displayToCustomer:true,status:"available"}});if(currentItems.length!==itemIds.length)throw new Error("ITEM_GONE");const currentMap=new Map(currentItems.map(i=>[i.id,i]));
       const resourceItems:ItemRow[]=await tx.item.findMany({where:{id:{in:resourceIds},organizationId:organization.id}});if(resourceItems.length!==resourceIds.length)throw new Error("ITEM_GONE");const resourceMap=new Map(resourceItems.map(i=>[i.id,i]));
