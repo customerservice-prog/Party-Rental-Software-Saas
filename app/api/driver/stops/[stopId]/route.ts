@@ -4,6 +4,7 @@ import { getCurrentDriver } from "@/lib/driverSession";
 import { prisma } from "@/lib/prisma";
 import { validateStopStatusTransition, isPickupOrder, ATTENTION_STATUSES } from "@/lib/driverRuns";
 import { sendOrderNotification } from "@/lib/customerNotifications";
+import { sanitizeProofImage } from "@/lib/proofMedia";
 
 async function ensureFulfillment(organizationId:string,orderId:string,driverId:string){
   let rows=await prisma.$queryRawUnsafe<any[]>(`SELECT * FROM "RentalFulfillment" WHERE "organizationId"=$1 AND "orderId"=$2 LIMIT 1`,organizationId,orderId);
@@ -93,11 +94,30 @@ export async function PATCH(req: NextRequest,{ params }: { params: { stopId: str
     }
     await notifyCustomerForStatus({organizationId:driver.organizationId,orderId:stop.orderId,orderNumber:stop.order.orderNumber,status:normalizedStatus,pickup,driverId:driver.id});
   }
-  if(typeof body.proofName==="string"||typeof body.proofNotes==="string"){
-    const proofName=typeof body.proofName==="string"?body.proofName.trim().slice(0,200):null;
-    const proofNotes=typeof body.proofNotes==="string"?body.proofNotes.trim().slice(0,1000):null;
-    await prisma.$executeRawUnsafe(`UPDATE "RentalFulfillment" SET "proofName"=COALESCE($1,"proofName"),"notes"=COALESCE($2,"notes"),"updatedAt"=CURRENT_TIMESTAMP WHERE "id"=$3 AND "organizationId"=$4`,proofName||null,proofNotes||null,fulfillment.id,driver.organizationId);
-    await prisma.$executeRawUnsafe(`INSERT INTO "RentalFulfillmentEvent" ("id","organizationId","orderId","fulfillmentId","type","notes","performedBy") VALUES ($1,$2,$3,$4,'driver_proof_updated',$5,$6)`,randomUUID(),driver.organizationId,stop.orderId,fulfillment.id,proofNotes,`driver:${driver.id}`);
+  if(
+    typeof body.proofName==="string" ||
+    typeof body.proofNotes==="string" ||
+    body.proofSignature!==undefined ||
+    body.proofPhotoUrl!==undefined
+  ){
+    const proofName=typeof body.proofName==="string"?body.proofName.trim().slice(0,200):fulfillment.proofName;
+    const proofNotes=typeof body.proofNotes==="string"?body.proofNotes.trim().slice(0,1000):fulfillment.notes;
+    const signature=sanitizeProofImage(body.proofSignature,450000,"Signature");
+    if(!signature.ok)return NextResponse.json({error:signature.error},{status:400});
+    const photo=sanitizeProofImage(body.proofPhotoUrl,1400000,"Proof photo");
+    if(!photo.ok)return NextResponse.json({error:photo.error},{status:400});
+    const proofSignature=signature.value===undefined?fulfillment.proofSignature:signature.value;
+    const proofPhotoUrl=photo.value===undefined?fulfillment.proofPhotoUrl:photo.value;
+    await prisma.$executeRawUnsafe(
+      `UPDATE "RentalFulfillment" SET "proofName"=$1,"proofSignature"=$2,"proofPhotoUrl"=$3,"notes"=$4,"updatedAt"=CURRENT_TIMESTAMP WHERE "id"=$5 AND "organizationId"=$6`,
+      proofName||null,proofSignature,proofPhotoUrl,proofNotes||null,fulfillment.id,driver.organizationId
+    );
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "RentalFulfillmentEvent" ("id","organizationId","orderId","fulfillmentId","type","notes","performedBy") VALUES ($1,$2,$3,$4,'driver_proof_updated',$5,$6)`,
+      randomUUID(),driver.organizationId,stop.orderId,fulfillment.id,
+      `name=${proofName?"yes":"no"}; signature=${proofSignature?"yes":"no"}; photo=${proofPhotoUrl?"yes":"no"}; notes=${proofNotes?"yes":"no"}`,
+      `driver:${driver.id}`
+    );
   }
   return NextResponse.json({ stop: updated });
 }
