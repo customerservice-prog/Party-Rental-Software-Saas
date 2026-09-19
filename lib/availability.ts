@@ -109,10 +109,20 @@ export async function getOperationalQuantityWithClient(
   itemId: string,
   totalQuantity: number
 ): Promise<number> {
-  const unavailableUnits = await db.itemUnit.count({
-    where: { organizationId, itemId, status: { in: ["maintenance", "missing", "retired"] } },
-  });
-  return Math.max(0, totalQuantity - unavailableUnits);
+  const [unavailableUnits, quantityExceptions] = await Promise.all([
+    db.itemUnit.count({
+      where: { organizationId, itemId, status: { in: ["maintenance", "missing", "retired"] } },
+    }),
+    db.$queryRawUnsafe<{ quantity: number }[]>(
+      `SELECT COALESCE(SUM("quantity"),0)::int AS "quantity"
+       FROM "InventoryQuantityException"
+       WHERE "organizationId"=$1 AND "itemId"=$2 AND "status"='open'`,
+      organizationId,
+      itemId
+    ),
+  ]);
+  const heldQuantity = quantityExceptions[0]?.quantity || 0;
+  return Math.max(0, totalQuantity - unavailableUnits - heldQuantity);
 }
 
 export async function getOperationalQuantity(
