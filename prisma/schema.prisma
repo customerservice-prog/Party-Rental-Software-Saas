@@ -687,7 +687,7 @@ model SentMessage {
   createdAt      DateTime @default(now())
 
   @@index([organizationId, createdAt])
-  @@unique([organizationId, providerMessageId])
+  @@index([organizationId, providerMessageId])
 }
 
 // ---------------------------------------------------------------------------
