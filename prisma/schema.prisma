@@ -49,6 +49,10 @@ model Organization {
   resendApiKey        String?
   senderEmail         String?
   senderName          String?
+  // Optional tenant-owned Twilio connection for real SMS messaging.
+  twilioAccountSid   String?
+  twilioAuthToken    String?
+  twilioFromNumber   String?
   // Booking-lifecycle email automation (Phase 5 of ROADMAP.md). Real sends
   // only happen once resendApiKey/senderEmail above are connected; before
   // that, automation runs still execute and are recorded as "queued"
