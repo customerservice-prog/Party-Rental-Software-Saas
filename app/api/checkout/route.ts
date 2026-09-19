@@ -8,6 +8,8 @@ import { getInventoryResourceIds, getRequestedResourceDemand } from "@/lib/packa
 const DEFAULT_TERMS="By signing below, you agree to the rental company's rental terms and accept financial responsibility for the rented equipment during the rental period.";
 const text=(v:unknown,max:number)=>typeof v==="string"?v.trim().slice(0,max):"";
 type RequestedLine={itemId:string;quantity:number;addonIds:string[]};
+type ItemRow={id:string;name:string;cost:number;quantity:number;status:string;blockBookingsUntil:Date|null;restrictionMessage:string|null;displayToCustomer:boolean};
+type AddonRow={id:string;itemId:string;name:string;price:number;isRequired:boolean};
 
 function normalizeLines(body:any):RequestedLine[]{
   const raw:Array<any>=Array.isArray(body?.items)&&body.items.length?body.items:[{itemId:body?.itemId,quantity:body?.quantity,addonIds:body?.addonIds}];
@@ -40,11 +42,13 @@ export async function POST(request:NextRequest){
   const today=new Date();today.setHours(0,0,0,0);if(rangeStart<today)return NextResponse.json({error:"The event date cannot be in the past"},{status:400});
 
   const itemIds=lines.map(l=>l.itemId);
-  const [items,allAddons,depositRule]=await Promise.all([
+  const [itemsRaw,allAddonsRaw,depositRule]=await Promise.all([
     prisma.item.findMany({where:{id:{in:itemIds},organizationId:organization.id,displayToCustomer:true,status:"available"}}),
     prisma.addon.findMany({where:{organizationId:organization.id,itemId:{in:itemIds}}}),
     prisma.depositRule.findFirst({where:{organizationId:organization.id,isActive:true},orderBy:{createdAt:"desc"}}),
   ]);
+  const items=itemsRaw as ItemRow[];
+  const allAddons=allAddonsRaw as AddonRow[];
   if(items.length!==itemIds.length)return NextResponse.json({error:"One or more rentals are no longer available for online booking"},{status:404});
   const itemMap=new Map(items.map(i=>[i.id,i]));
   for(const line of lines){const item=itemMap.get(line.itemId)!;const restriction=getItemBookingRestriction(item,rangeStart);if(restriction)return NextResponse.json({error:restriction},{status:409});const available=await getAvailableQuantity(organization.id,item.id,item.quantity,rangeStart,rangeEnd);if(line.quantity>available)return NextResponse.json({error:available>0?`Only ${available} unit(s) of ${item.name} are available for those dates`:`${item.name} is fully booked for those dates`},{status:409});}
@@ -52,7 +56,7 @@ export async function POST(request:NextRequest){
   const restrictionClauses:Array<Record<string,unknown>>=[{email:{equals:email,mode:"insensitive"}}];if(phone)restrictionClauses.push({phone});if(deliveryAddress)restrictionClauses.push({address:{equals:deliveryAddress,mode:"insensitive"}});
   const blocked=await prisma.doNotRentRestriction.findFirst({where:{organizationId:organization.id,isActive:true,OR:restrictionClauses as never}});if(blocked)return NextResponse.json({error:"We're unable to complete this booking online. Please contact us directly."},{status:403});
 
-  const selectedAddons=[] as typeof allAddons;
+  const selectedAddons:AddonRow[]=[];
   for(const line of lines){for(const addon of allAddons.filter(a=>a.itemId===line.itemId)){if(addon.isRequired||line.addonIds.includes(addon.id))selectedAddons.push(addon);}}
   const subtotal=lines.reduce((sum,line)=>sum+(itemMap.get(line.itemId)?.cost||0)*line.quantity,0),addonsTotal=selectedAddons.reduce((s,a)=>s+a.price,0),deliveryFee=deliveryType==="delivery"?(organization.flatDeliveryFee||0):0;
   let couponDiscount=0;const couponCode=text((body as any).couponCode,100).toUpperCase();if(couponCode){const coupon=await prisma.coupon.findFirst({where:{organizationId:organization.id,code:couponCode}});if(!coupon||!coupon.isActive||(coupon.expiresAt&&coupon.expiresAt<new Date()))return NextResponse.json({error:"That coupon code is invalid or has expired"},{status:400});const pre=subtotal+deliveryFee+addonsTotal;couponDiscount=coupon.discountType==="fixed"?Math.min(coupon.discountAmount,pre):Math.round(pre*coupon.discountAmount)/100;}
@@ -62,8 +66,8 @@ export async function POST(request:NextRequest){
   try{
     order=await prisma.$transaction(async tx=>{
       const resourceIds=await getInventoryResourceIds(tx,organization.id,itemIds);for(const resourceId of resourceIds)await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext($1))`,`${organization.id}:${resourceId}`);
-      const currentItems=await tx.item.findMany({where:{id:{in:itemIds},organizationId:organization.id,displayToCustomer:true,status:"available"}});if(currentItems.length!==itemIds.length)throw new Error("ITEM_GONE");const currentMap=new Map(currentItems.map(i=>[i.id,i]));
-      const resourceItems=await tx.item.findMany({where:{id:{in:resourceIds},organizationId:organization.id}});if(resourceItems.length!==resourceIds.length)throw new Error("ITEM_GONE");const resourceMap=new Map(resourceItems.map(i=>[i.id,i]));
+      const currentItems:ItemRow[]=await tx.item.findMany({where:{id:{in:itemIds},organizationId:organization.id,displayToCustomer:true,status:"available"}});if(currentItems.length!==itemIds.length)throw new Error("ITEM_GONE");const currentMap=new Map(currentItems.map(i=>[i.id,i]));
+      const resourceItems:ItemRow[]=await tx.item.findMany({where:{id:{in:resourceIds},organizationId:organization.id}});if(resourceItems.length!==resourceIds.length)throw new Error("ITEM_GONE");const resourceMap=new Map(resourceItems.map(i=>[i.id,i]));
       const requestedDemand=await getRequestedResourceDemand(tx,organization.id,lines);
       for(const [resourceId,requested] of requestedDemand){const resourceItem=resourceMap.get(resourceId);if(!resourceItem)throw new Error("ITEM_GONE");const restriction=getItemBookingRestriction(resourceItem,rangeStart);if(restriction)throw new Error(`RESTRICTION|${restriction}`);const remaining=await getPhysicalAvailableQuantityWithClient(tx,organization.id,resourceId,resourceItem.quantity,rangeStart,rangeEnd);if(requested>remaining)throw new Error(`RESOURCE|${resourceId}|${remaining}`);}
       let customer=await tx.customer.findFirst({where:{organizationId:organization.id,email:{equals:email,mode:"insensitive"}}});
