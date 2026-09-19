@@ -549,6 +549,7 @@ model Payment {
   tip            Float    @default(0)
   note           String?
   recordedBy     String?
+  externalReference String?
   createdAt      DateTime @default(now())
 
   @@index([organizationId, createdAt])
