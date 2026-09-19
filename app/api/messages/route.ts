@@ -4,6 +4,7 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { requireStaffSession, requireOwnerSession, authzErrorResponse } from "@/lib/authz";
 import { logActivity } from "@/lib/audit";
 import { sendEmailViaResend, textToHtml } from "@/lib/email";
+import { normalizeSmsNumber, sendSmsViaTwilio } from "@/lib/sms";
 
 export async function GET() {
   try {
@@ -47,13 +48,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Real delivery: only attempted for email, and only when the tenant has
-    // connected their own Resend API key in Settings > Email Sending (see
-    // app/dashboard/settings/page.tsx, app/api/organizations/route.ts).
-    // SMS has no provider wired up yet, and email with no key configured
-    // stays "queued" exactly as before - this never fabricates a send.
+    // Real delivery only happens when the tenant has connected the matching
+    // provider. Otherwise the message remains queued and is never falsely
+    // reported as sent.
     let status = "queued";
     let providerError: string | null = null;
+    let normalizedRecipient = toAddress;
 
     if (channel === "email" && organization.resendApiKey && organization.senderEmail) {
       const fromName = organization.senderName || organization.name;
@@ -64,11 +64,31 @@ export async function POST(request: Request) {
         subject: subject || "Message from " + organization.name,
         html: textToHtml(bodyText),
       });
-      if (result.success) {
-        status = "sent";
-      } else {
+      if (result.success) status = "sent";
+      else {
         status = "failed";
         providerError = result.error;
+      }
+    }
+
+    if (channel === "sms") {
+      normalizedRecipient = normalizeSmsNumber(toAddress);
+      if (!normalizedRecipient || normalizedRecipient.length < 11) {
+        return NextResponse.json({ error: "Enter a valid mobile phone number." }, { status: 400 });
+      }
+      if (organization.twilioAccountSid && organization.twilioAuthToken && organization.twilioFromNumber) {
+        const result = await sendSmsViaTwilio({
+          accountSid: organization.twilioAccountSid,
+          authToken: organization.twilioAuthToken,
+          from: organization.twilioFromNumber,
+          to: normalizedRecipient,
+          body: bodyText,
+        });
+        if (result.success) status = "sent";
+        else {
+          status = "failed";
+          providerError = result.error;
+        }
       }
     }
 
@@ -77,7 +97,7 @@ export async function POST(request: Request) {
         organizationId: organization.id,
         channel,
         toName: toName || toAddress,
-        toAddress,
+        toAddress: normalizedRecipient,
         subject,
         body: bodyText,
         status,
