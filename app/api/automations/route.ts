@@ -10,12 +10,15 @@ export async function GET() {
     const organization = await requireCurrentOrganization();
     await requirePermission(organization.id, "customers.message");
 
-    const [confirmationsSentCount, remindersSentCount, recent] = await Promise.all([
+    const [confirmationsSentCount, remindersSentCount, balanceRemindersSentCount, recent] = await Promise.all([
       prisma.sentMessage.count({
         where: { organizationId: organization.id, automationType: "booking_confirmation" },
       }),
       prisma.sentMessage.count({
         where: { organizationId: organization.id, automationType: "event_reminder" },
+      }),
+      prisma.sentMessage.count({
+        where: { organizationId: organization.id, automationType: "balance_due" },
       }),
       prisma.sentMessage.findMany({
         where: { organizationId: organization.id, automationType: { not: null } },
@@ -28,10 +31,14 @@ export async function GET() {
       autoConfirmationEnabled: organization.autoConfirmationEnabled,
       autoReminderEnabled: organization.autoReminderEnabled,
       reminderDaysBefore: organization.reminderDaysBefore,
+      autoBalanceReminderEnabled: organization.autoBalanceReminderEnabled,
+      balanceReminderDaysBefore: organization.balanceReminderDaysBefore,
       automationsLastRunAt: organization.automationsLastRunAt,
       emailProviderConfigured: Boolean(organization.resendApiKey && organization.senderEmail),
+      smsProviderConfigured: Boolean(organization.twilioAccountSid && organization.twilioAuthToken && organization.twilioFromNumber),
       confirmationsSentCount,
       remindersSentCount,
+      balanceRemindersSentCount,
       recent,
     });
   } catch (err) {
@@ -59,6 +66,17 @@ export async function PATCH(req: NextRequest) {
       body.reminderDaysBefore <= 30
     ) {
       data.reminderDaysBefore = Math.round(body.reminderDaysBefore);
+    }
+    if (typeof body.autoBalanceReminderEnabled === "boolean") {
+      data.autoBalanceReminderEnabled = body.autoBalanceReminderEnabled;
+    }
+    if (
+      typeof body.balanceReminderDaysBefore === "number" &&
+      Number.isFinite(body.balanceReminderDaysBefore) &&
+      body.balanceReminderDaysBefore >= 1 &&
+      body.balanceReminderDaysBefore <= 30
+    ) {
+      data.balanceReminderDaysBefore = Math.round(body.balanceReminderDaysBefore);
     }
 
     await prisma.organization.update({ where: { id: organization.id }, data });
