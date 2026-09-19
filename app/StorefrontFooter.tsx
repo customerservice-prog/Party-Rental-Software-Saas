@@ -75,7 +75,7 @@ export default async function StorefrontFooter({
                 Track Order
               </Link>
             </li>
-            {pages.map((page) => (
+            {pages.map((page: { id: string; slug: string; navLabel: string | null; title: string }) => (
               <li key={page.id}>
                 <Link href={"/" + page.slug} className="hover:text-[var(--brand)]">
                   {page.navLabel || page.title}
