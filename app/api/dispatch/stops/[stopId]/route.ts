@@ -76,7 +76,7 @@ export async function PATCH(
       where: { driverRunId: stop.driverRunId },
       orderBy: [{ stopOrder: "asc" }, { id: "asc" }],
     });
-    const idx = siblings.findIndex((s) => s.id === stop.id);
+    const idx = siblings.findIndex((s: { id: string }) => s.id === stop.id);
     if (idx >= 0) {
       const swapWith = body.move === "up" ? idx - 1 : idx + 1;
       if (swapWith >= 0 && swapWith < siblings.length) {
