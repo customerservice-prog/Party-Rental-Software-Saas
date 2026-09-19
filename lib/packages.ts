@@ -41,3 +41,23 @@ export async function getInventoryResourceIds(db: Db, organizationId: string, it
   }
   return [...ids].sort();
 }
+
+
+export async function getRequestedResourceDemand(
+  db: Db,
+  organizationId: string,
+  lines: { itemId: string; quantity: number }[]
+) {
+  const demand = new Map<string, number>();
+  for (const line of lines) {
+    demand.set(line.itemId, (demand.get(line.itemId) || 0) + line.quantity);
+    const components = await getPackageComponents(db, organizationId, line.itemId);
+    for (const component of components) {
+      demand.set(
+        component.componentItemId,
+        (demand.get(component.componentItemId) || 0) + line.quantity * component.quantity
+      );
+    }
+  }
+  return demand;
+}
