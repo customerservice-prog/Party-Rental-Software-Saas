@@ -313,6 +313,12 @@ export default function InventoryPage() {
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold">Inventory</h1>
         <div className="flex items-center gap-2">
+          <a
+            href="/dashboard/inventory/packages"
+            className="bg-white text-gray-700 border border-gray-300 rounded px-4 py-2 text-sm font-medium hover:bg-gray-50"
+          >
+            Packages
+          </a>
           <button
             onClick={() => setShowCatalog(true)}
             className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
