@@ -229,6 +229,33 @@ async function main() {
   await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "RentalFulfillmentAsset_unit_status_idx" ON "RentalFulfillmentAsset" ("organizationId","itemUnitId","status")`);
   await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "RentalFulfillmentAsset_order_idx" ON "RentalFulfillmentAsset" ("organizationId","orderId","createdAt")`);
 
+  // Quantity-only inventory exceptions created by return reconciliation.
+  // This handles non-serialized stock (chairs, tables, linens, etc.) without
+  // blocking an entire catalog item when only a few units are damaged/missing.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "InventoryQuantityException" (
+      "id" TEXT PRIMARY KEY,
+      "organizationId" TEXT NOT NULL,
+      "itemId" TEXT NOT NULL,
+      "orderId" TEXT,
+      "fulfillmentId" TEXT,
+      "resourceId" TEXT,
+      "type" TEXT NOT NULL,
+      "quantity" INTEGER NOT NULL DEFAULT 0,
+      "status" TEXT NOT NULL DEFAULT 'open',
+      "notes" TEXT,
+      "createdBy" TEXT,
+      "resolvedBy" TEXT,
+      "resolvedAt" TIMESTAMP(3),
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "InventoryQuantityException_positive_qty" CHECK ("quantity" >= 0)
+    )
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "InventoryQuantityException_org_item_status_idx" ON "InventoryQuantityException" ("organizationId","itemId","status")`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "InventoryQuantityException_org_order_idx" ON "InventoryQuantityException" ("organizationId","orderId","createdAt")`);
+  await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "InventoryQuantityException_resource_type_open_unique" ON "InventoryQuantityException" ("resourceId","type") WHERE "status"='open' AND "resourceId" IS NOT NULL`);
+
   // External payment reference makes Stripe/webhook processing idempotent.
   // This is additive and nullable so existing payment rows remain valid.
   await prisma.$executeRawUnsafe(`ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "externalReference" TEXT`);
