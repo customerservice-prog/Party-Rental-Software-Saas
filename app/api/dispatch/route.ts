@@ -53,8 +53,8 @@ export async function GET(req: NextRequest) {
     }),
   ]);
 
-  const assignedOrderIds = new Set(runs.flatMap((r) => r.stops.map((s) => s.orderId)));
-  const unassigned = orders.filter((o) => !assignedOrderIds.has(o.id));
+  const assignedOrderIds = new Set(runs.flatMap((r: { stops: { orderId: string }[] }) => r.stops.map((s: { orderId: string }) => s.orderId)));
+  const unassigned = orders.filter((o: { id: string }) => !assignedOrderIds.has(o.id));
 
   return NextResponse.json({
     date: dayStart.toISOString().slice(0, 10),
