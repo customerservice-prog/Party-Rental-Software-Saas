@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
-import { getAvailableQuantity, getItemBookingRestriction } from "@/lib/availability";
+import { getAvailableQuantity, getAvailableQuantityWithClient, getItemBookingRestriction } from "@/lib/availability";
+import { getInventoryResourceIds } from "@/lib/packages";
 
 export async function POST(request:NextRequest){
   const organization=await requireCurrentOrganization(); let actor;
@@ -28,8 +29,8 @@ export async function POST(request:NextRequest){
   if(orderStatus!=="quote"){const clauses:any[]=[];if(customer.email)clauses.push({email:{equals:customer.email,mode:"insensitive"}});if(customer.phone)clauses.push({phone:customer.phone});if(customer.address)clauses.push({address:{contains:customer.address,mode:"insensitive"}});if(clauses.length){const blocked=await prisma.doNotRentRestriction.findFirst({where:{organizationId:organization.id,isActive:true,OR:clauses}});if(blocked)return NextResponse.json({error:"This customer has an active do-not-rent restriction. Review it before booking."},{status:403})}}
   const orderNumber="ORD-"+Date.now();
   try{const order=await prisma.$transaction(async tx=>{
-    for(const item of [...resolved.map(r=>r.item)].sort((a,b)=>a.id.localeCompare(b.id)))await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext($1))`,`${organization.id}:${item.id}`);
-    for(const{item,quantity}of resolved){const unavailableUnits=await tx.itemUnit.count({where:{organizationId:organization.id,itemId:item.id,status:{in:["maintenance","retired"]}}}),overlapping=await tx.orderItem.findMany({where:{itemId:item.id,order:{organizationId:organization.id,status:{not:"cancelled"},eventDate:{lte:rangeEnd},OR:[{eventEndDate:{gte:rangeStart}},{eventEndDate:null,eventDate:{gte:rangeStart}}]}},select:{quantity:true}}),booked=overlapping.reduce((s,x)=>s+x.quantity,0),available=Math.max(0,item.quantity-unavailableUnits-booked);if(quantity>available)throw new Error(`AVAILABILITY|${item.name}|${available}`)}
+    const resourceIds=await getInventoryResourceIds(tx,organization.id,resolved.map(r=>r.item.id));for(const resourceId of resourceIds)await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext($1))`,`${organization.id}:${resourceId}`);
+    for(const{item,quantity}of resolved){const available=await getAvailableQuantityWithClient(tx,organization.id,item.id,item.quantity,rangeStart,rangeEnd);if(quantity>available)throw new Error(`AVAILABILITY|${item.name}|${available}`)}
     const created=await tx.order.create({data:{organizationId:organization.id,customerId:customer!.id,orderNumber,eventDate:rangeStart,eventEndDate:rangeEnd,deliveryType:isDelivery?"delivery":"pickup",deliveryAddress:deliveryAddress||null,status:orderStatus,source:"manual",deliveryFee,subtotal,taxAmount,totalAmount,amountPaid:paid,stripeSessionId:null,items:{create:resolved.map(r=>({itemId:r.item.id,quantity:r.quantity,price:r.item.cost}))}}});
     if(paid>0){const dbUser=await tx.user.findUnique({where:{id:actor.id},select:{name:true}});await tx.payment.create({data:{organizationId:organization.id,orderId:created.id,amount:paid,type:"payment",method:"other",tip:0,note:"Initial payment recorded during manual order creation",recordedBy:dbUser?.name||null}})}
     await tx.auditLog.create({data:{organizationId:organization.id,action:"order.created.manual",performedBy:actor.id,details:JSON.stringify({orderId:created.id,orderNumber:created.orderNumber,status:orderStatus,totalAmount,amountPaid:paid})}});
