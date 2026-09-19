@@ -16,6 +16,7 @@ const PLATFORM_ONLY_HOSTS = new Set([
 const PLATFORM_ONLY_PATH_PREFIXES = [
   "/signup",
   "/login",
+  "/platform-login",
   "/admin",
   "/platform-setup",
   "/api/admin",
