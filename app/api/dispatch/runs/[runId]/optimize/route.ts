@@ -11,8 +11,8 @@ export async function POST(_req:Request,{params}:{params:{runId:string}}){
   if(!run)return NextResponse.json({error:"Run not found."},{status:404});
   if(run.stops.length<2)return NextResponse.json({ok:true,strategy:"schedule_fallback",message:"This run has fewer than two stops; no optimization is needed."});
   const origin=[organization.address,organization.city,organization.state,organization.zip].filter(Boolean).join(", ");
-  const result=await optimizeRentalRoute({originAddress:origin||null,stops:run.stops.map(s=>({id:s.id,address:s.order.deliveryAddress||"",eventDate:s.order.eventDate}))});
-  const orderIndex=new Map(result.orderedIds.map((id,i)=>[id,i+1]));
-  await prisma.$transaction(run.stops.map(stop=>prisma.driverRunStop.update({where:{id:stop.id},data:{stopOrder:orderIndex.get(stop.id)??stop.stopOrder}})));
+  const result=await optimizeRentalRoute({originAddress:origin||null,stops:run.stops.map((s:{id:string;order:{deliveryAddress:string|null;eventDate:Date}})=>({id:s.id,address:s.order.deliveryAddress||"",eventDate:s.order.eventDate}))});
+  const orderIndex=new Map(result.orderedIds.map((id:string,i:number)=>[id,i+1]));
+  await prisma.$transaction(run.stops.map((stop:{id:string;stopOrder:number})=>prisma.driverRunStop.update({where:{id:stop.id},data:{stopOrder:orderIndex.get(stop.id)??stop.stopOrder}})));
   return NextResponse.json({ok:true,...result});
 }
