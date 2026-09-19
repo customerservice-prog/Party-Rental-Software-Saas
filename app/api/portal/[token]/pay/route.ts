@@ -9,10 +9,11 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
 
   const order = await prisma.order.findFirst({
     where: { id: access.orderId, organizationId: access.organizationId },
-    include: { organization: { select: { name: true, stripeAccountId: true } }, customer: { select: { email: true } } },
+    include: { organization: { select: { name: true, stripeAccountId: true } }, customer: { select: { email: true } }, contract: true },
   });
   if (!order) return NextResponse.json({ error: "Order not found." }, { status: 404 });
   if (["cancelled", "canceled"].includes(order.status.toLowerCase())) return NextResponse.json({ error: "This order has been canceled." }, { status: 409 });
+  if (!order.contract?.signedAt) return NextResponse.json({ error: "Please sign the rental agreement before making a payment." }, { status: 409 });
 
   const balance = Math.max(0, Math.round((order.totalAmount - order.amountPaid) * 100) / 100);
   if (balance <= 0) return NextResponse.json({ error: "This order is already paid in full." }, { status: 409 });
