@@ -7,8 +7,11 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+type AuditRow = { id: string; organizationId: string | null; action: string; details: string | null; performedBy: string; createdAt: Date };
+type OrgRow = { id: string; name: string };
+
 export default async function AdminAuditLogPage() {
-  const logs = await prisma.auditLog.findMany({
+  const logs: AuditRow[] = await prisma.auditLog.findMany({
     orderBy: { createdAt: "desc" },
     take: 100,
   });
@@ -17,7 +20,7 @@ export default async function AdminAuditLogPage() {
     new Set(logs.map((l) => l.organizationId).filter((id): id is string => !!id))
   );
 
-  const orgs = orgIds.length
+  const orgs: OrgRow[] = orgIds.length
     ? await prisma.organization.findMany({
         where: { id: { in: orgIds } },
         select: { id: true, name: true },
