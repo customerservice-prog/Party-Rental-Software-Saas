@@ -61,6 +61,8 @@ model Organization {
   autoConfirmationEnabled Boolean  @default(true)
   autoReminderEnabled     Boolean  @default(true)
   reminderDaysBefore      Int      @default(3)
+  autoBalanceReminderEnabled Boolean @default(false)
+  balanceReminderDaysBefore Int      @default(3)
   automationsLastRunAt    DateTime?
   address              String?
   city                String?
@@ -273,12 +275,11 @@ model CatalogTemplate {
 // SERIALIZED ASSET / INDIVIDUAL UNIT TRACKING (optional, per-item)
 // Lets a tenant optionally track individual physical units of an Item (e.g.
 // "Tent #3", an asset tag, a serial number) with its own status/condition.
-// This is purely an informational registry for staff record-keeping - it is
-// NOT wired into the booking/availability engine (see lib/availability.ts),
-// which continues to reserve strictly by aggregate Item.quantity. Tenants
-// who don't use this feature simply have zero ItemUnit rows; nothing here
-// changes existing behavior for anyone who doesn't opt in. See
-// app/api/item-units/route.ts and app/dashboard/inventory/ItemUnitsPanel.tsx.
+// Serialized unit condition participates in operational availability:
+// maintenance, missing and retired units reduce sellable capacity, while
+// reserving orders still consume the aggregate Item.quantity. Units can also
+// be scanned against a specific order through the fulfillment workflow.
+// Tenants who don't use this feature simply have zero ItemUnit rows.
 // ---------------------------------------------------------------------------
 model ItemUnit {
   id              String   @id @default(cuid())
@@ -287,8 +288,8 @@ model ItemUnit {
   itemId          String
   item            Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
   identifier      String
-  // "available" | "rented" | "maintenance" | "retired" - staff-set only,
-  // never changed automatically by the booking flow.
+  // "available" | "rented" | "maintenance" | "missing" | "retired".
+  // Warehouse fulfillment scans update this automatically.
   status          String   @default("available")
   conditionNotes  String?
   lastInspectedAt DateTime?
@@ -371,6 +372,9 @@ model Order {
   // Set the first time the event-reminder automation processes this order.
   // Same "processed once, honestly" semantics as confirmationSentAt above.
   reminderSentAt    DateTime?
+  // Set when the balance-due automation processes an unpaid order inside
+  // the configured pre-event payment window.
+  balanceReminderSentAt DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -671,7 +675,7 @@ model SentMessage {
   templateId     String?
   customerId     String?
   // Set only for messages created automatically by lib/automations.ts -
-  // "booking_confirmation" or "event_reminder". Null for every manually
+  // "booking_confirmation", "event_reminder", or "balance_due". Null for every manually
   // composed message sent from /dashboard/messages, so automation
   // activity can be reported on separately from manual staff outreach.
   automationType String?
