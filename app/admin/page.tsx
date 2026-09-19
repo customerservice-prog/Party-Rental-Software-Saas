@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
+type AdminOrgRow = { id: string; name: string; slug: string; planTier: string; status: string; createdAt: Date; _count: { users: number; customers: number; orders: number } };
+
 export default async function AdminOrganizationsPage({
   searchParams,
 }: {
@@ -9,7 +11,7 @@ export default async function AdminOrganizationsPage({
   const q = searchParams.q?.trim() || "";
   const status = searchParams.status || "";
 
-  const organizations = await prisma.organization.findMany({
+  const organizations: AdminOrgRow[] = await prisma.organization.findMany({
     where: {
       slug: { not: "_platform_internal" },
       ...(q
