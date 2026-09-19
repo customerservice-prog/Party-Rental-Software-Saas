@@ -113,13 +113,13 @@ export async function getOperationalQuantityWithClient(
     db.itemUnit.count({
       where: { organizationId, itemId, status: { in: ["maintenance", "missing", "retired"] } },
     }),
-    db.$queryRawUnsafe<{ quantity: number }[]>(
+    (await db.$queryRawUnsafe(
       `SELECT COALESCE(SUM("quantity"),0)::int AS "quantity"
        FROM "InventoryQuantityException"
        WHERE "organizationId"=$1 AND "itemId"=$2 AND "status"='open'`,
       organizationId,
       itemId
-    ),
+    )) as { quantity: number }[],
   ]);
   const heldQuantity = quantityExceptions[0]?.quantity || 0;
   return Math.max(0, totalQuantity - unavailableUnits - heldQuantity);
