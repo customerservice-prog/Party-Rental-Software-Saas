@@ -14,23 +14,23 @@ export type PackageComponentRow = {
 type Db = typeof prisma | Prisma.TransactionClient;
 
 export async function getPackageComponents(db: Db, organizationId: string, packageItemId: string) {
-  return db.$queryRawUnsafe<PackageComponentRow[]>(
+  return (await db.$queryRawUnsafe(
     `SELECT * FROM "PackageComponent"
      WHERE "organizationId"=$1 AND "packageItemId"=$2
      ORDER BY "createdAt" ASC`,
     organizationId,
     packageItemId
-  );
+  )) as PackageComponentRow[];
 }
 
 export async function getPackagesUsingComponent(db: Db, organizationId: string, componentItemId: string) {
-  return db.$queryRawUnsafe<PackageComponentRow[]>(
+  return (await db.$queryRawUnsafe(
     `SELECT * FROM "PackageComponent"
      WHERE "organizationId"=$1 AND "componentItemId"=$2
      ORDER BY "createdAt" ASC`,
     organizationId,
     componentItemId
-  );
+  )) as PackageComponentRow[];
 }
 
 export async function getInventoryResourceIds(db: Db, organizationId: string, itemIds: string[]) {
