@@ -63,6 +63,15 @@ export default function SettingsPage() {
   const [resendApiKeyLast4, setResendApiKeyLast4] = useState("");
   const [savingEmail, setSavingEmail] = useState(false);
   const [emailMessage, setEmailMessage] = useState("");
+  const [smsSettings, setSmsSettings] = useState({
+    twilioAccountSid: "",
+    twilioAuthToken: "",
+    twilioFromNumber: "",
+  });
+  const [smsProviderConfigured, setSmsProviderConfigured] = useState(false);
+  const [twilioAccountSidLast4, setTwilioAccountSidLast4] = useState("");
+  const [savingSms, setSavingSms] = useState(false);
+  const [smsMessage, setSmsMessage] = useState("");
   const [hours, setHours] = useState<BusinessHour[]>(
     Array.from({ length: 7 }, (_, i) => ({
       dayOfWeek: i,
@@ -292,6 +301,55 @@ export default function SettingsPage() {
       setEmailMessage(e.message || "Something went wrong");
     } finally {
       setSavingEmail(false);
+    }
+  }
+
+  async function handleSaveSms() {
+    setSavingSms(true);
+    setSmsMessage("");
+    try {
+      const payload: Record<string, string> = {
+        twilioFromNumber: smsSettings.twilioFromNumber,
+      };
+      if (smsSettings.twilioAccountSid.trim()) payload.twilioAccountSid = smsSettings.twilioAccountSid.trim();
+      if (smsSettings.twilioAuthToken.trim()) payload.twilioAuthToken = smsSettings.twilioAuthToken.trim();
+      const res = await fetch("/api/organizations", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to save SMS settings");
+      const { organization } = await res.json();
+      setSmsProviderConfigured(Boolean(organization.smsProviderConfigured));
+      setTwilioAccountSidLast4(organization.twilioAccountSidLast4 || "");
+      setSmsSettings((prev) => ({ ...prev, twilioAccountSid: "", twilioAuthToken: "", twilioFromNumber: organization.twilioFromNumber || prev.twilioFromNumber }));
+      setSmsMessage("SMS settings saved.");
+    } catch (e: any) {
+      setSmsMessage(e.message || "Something went wrong");
+    } finally {
+      setSavingSms(false);
+    }
+  }
+
+  async function handleDisconnectSms() {
+    if (!confirm("Disconnect your SMS provider? Text messages will stop sending until you reconnect.")) return;
+    setSavingSms(true);
+    setSmsMessage("");
+    try {
+      const res = await fetch("/api/organizations", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ disconnectSmsProvider: true }),
+      });
+      if (!res.ok) throw new Error("Failed to disconnect SMS provider");
+      setSmsProviderConfigured(false);
+      setTwilioAccountSidLast4("");
+      setSmsSettings({ twilioAccountSid: "", twilioAuthToken: "", twilioFromNumber: "" });
+      setSmsMessage("SMS provider disconnected.");
+    } catch (e: any) {
+      setSmsMessage(e.message || "Something went wrong");
+    } finally {
+      setSavingSms(false);
     }
   }
 
@@ -840,6 +898,61 @@ export default function SettingsPage() {
               onClick={handleDisconnectEmail}
               className="text-sm text-red-600 hover:underline"
             >
+              Disconnect
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className={sectionClass}>
+        <h2 className={sectionTitleClass}>SMS / Text Messaging</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Connect your own Twilio account to send real text messages from Messages and automatic delivery / pickup updates. Credentials stay server-side and are never shown back after saving.
+        </p>
+        {smsMessage && <p className="mb-4 text-sm text-green-700">{smsMessage}</p>}
+        {smsProviderConfigured ? (
+          <p className="text-sm text-green-700 mb-4">Connected (Account SID ending in ...{twilioAccountSidLast4})</p>
+        ) : (
+          <p className="text-sm text-gray-500 mb-4">Not connected yet.</p>
+        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label className={labelClass}>
+            <span className={labelTextClass}>Twilio Account SID</span>
+            <input
+              type="password"
+              value={smsSettings.twilioAccountSid}
+              onChange={(e) => setSmsSettings({ ...smsSettings, twilioAccountSid: e.target.value })}
+              placeholder={smsProviderConfigured ? "Enter a new SID to replace the connected one" : "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
+              className={inputClass}
+            />
+          </label>
+          <label className={labelClass}>
+            <span className={labelTextClass}>Twilio Auth Token</span>
+            <input
+              type="password"
+              value={smsSettings.twilioAuthToken}
+              onChange={(e) => setSmsSettings({ ...smsSettings, twilioAuthToken: e.target.value })}
+              placeholder={smsProviderConfigured ? "Enter a new token to replace the connected one" : "Your Twilio auth token"}
+              className={inputClass}
+            />
+          </label>
+        </div>
+        <label className={labelClass}>
+          <span className={labelTextClass}>SMS From Number</span>
+          <input
+            value={smsSettings.twilioFromNumber}
+            onChange={(e) => setSmsSettings({ ...smsSettings, twilioFromNumber: e.target.value })}
+            placeholder="+13155551234"
+            className={inputClass}
+          />
+          <span className="text-xs text-gray-400 mt-1 block">Use a Twilio phone number enabled for SMS, including country code.</span>
+        </label>
+        <div className="flex items-center gap-3">
+          <button disabled={savingSms} onClick={handleSaveSms} className={buttonClass}>
+            {savingSms ? "Saving..." : "Save SMS Settings"}
+          </button>
+          {smsProviderConfigured && (
+            <button disabled={savingSms} onClick={handleDisconnectSms} className="text-sm text-red-600 hover:underline">
               Disconnect
             </button>
           )}
