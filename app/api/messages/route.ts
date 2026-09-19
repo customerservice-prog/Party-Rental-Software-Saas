@@ -53,6 +53,7 @@ export async function POST(request: Request) {
     // reported as sent.
     let status = "queued";
     let providerError: string | null = null;
+    let providerMessageId: string | null = null;
     let normalizedRecipient = toAddress;
 
     if (channel === "email" && organization.resendApiKey && organization.senderEmail) {
@@ -64,8 +65,10 @@ export async function POST(request: Request) {
         subject: subject || "Message from " + organization.name,
         html: textToHtml(bodyText),
       });
-      if (result.success) status = "sent";
-      else {
+      if (result.success) {
+        status = "sent";
+        providerMessageId = result.id || null;
+      } else {
         status = "failed";
         providerError = result.error;
       }
@@ -84,8 +87,10 @@ export async function POST(request: Request) {
           to: normalizedRecipient,
           body: bodyText,
         });
-        if (result.success) status = "sent";
-        else {
+        if (result.success) {
+          status = "sent";
+          providerMessageId = result.id || null;
+        } else {
           status = "failed";
           providerError = result.error;
         }
@@ -101,6 +106,9 @@ export async function POST(request: Request) {
         subject,
         body: bodyText,
         status,
+        direction: "outbound",
+        fromAddress: channel === "sms" ? organization.twilioFromNumber : organization.senderEmail,
+        providerMessageId,
         providerError,
         templateId: data.templateId ? String(data.templateId) : null,
         customerId: data.customerId ? String(data.customerId) : null,
