@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendEmailViaResend, textToHtml } from "@/lib/email";
+import { normalizeSmsNumber, sendSmsViaTwilio } from "@/lib/sms";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MIN_INTERVAL_MS = 60 * 1000;
@@ -37,16 +38,20 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
   let remindersSent = 0;
 
   const canDeliver = Boolean(org.resendApiKey && org.senderEmail);
+  const canText = Boolean(org.twilioAccountSid && org.twilioAuthToken && org.twilioFromNumber);
   const fromName = org.senderName || org.name;
   const resendApiKey = org.resendApiKey || "";
   const senderEmail = org.senderEmail || "";
 
   const restrictions = await prisma.doNotRentRestriction.findMany({
     where: { organizationId, isActive: true },
-    select: { email: true },
+    select: { email: true, phone: true },
   });
   const restrictedEmails = new Set(
     restrictions.map((r) => (r.email || "").trim().toLowerCase()).filter(Boolean)
+  );
+  const restrictedPhones = new Set(
+    restrictions.map((r) => normalizeSmsNumber(r.phone || "")).filter(Boolean)
   );
 
   async function sendAutomationEmail(args: {
@@ -90,6 +95,51 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
     });
   }
 
+  async function sendAutomationSms(args: {
+    toName: string;
+    phone: string | null | undefined;
+    subject: string;
+    bodyText: string;
+    customerId: string;
+    automationType: string;
+  }) {
+    const toAddress = normalizeSmsNumber(args.phone || "");
+    if (!canText || !toAddress || restrictedPhones.has(toAddress)) return;
+    const existing = await prisma.sentMessage.findFirst({
+      where: {
+        organizationId,
+        channel: "sms",
+        customerId: args.customerId,
+        automationType: args.automationType,
+        subject: args.subject,
+      },
+      select: { id: true },
+    });
+    if (existing) return;
+    const result = await sendSmsViaTwilio({
+      accountSid: org.twilioAccountSid!,
+      authToken: org.twilioAuthToken!,
+      from: org.twilioFromNumber!,
+      to: toAddress,
+      body: args.bodyText,
+    });
+    await prisma.sentMessage.create({
+      data: {
+        organizationId,
+        channel: "sms",
+        toName: args.toName,
+        toAddress,
+        subject: args.subject,
+        body: args.bodyText,
+        status: result.success ? "sent" : "failed",
+        providerError: result.success ? null : result.error,
+        customerId: args.customerId,
+        automationType: args.automationType,
+        createdBy: "automation",
+      },
+    });
+  }
+
   if (org.autoConfirmationEnabled) {
     const candidates = await prisma.order.findMany({
       where: {
@@ -125,6 +175,14 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
       await sendAutomationEmail({
         toName: `${order.customer.firstName} ${order.customer.lastName}`.trim(),
         toAddress: email,
+        subject,
+        bodyText,
+        customerId: order.customerId,
+        automationType: "booking_confirmation",
+      });
+      await sendAutomationSms({
+        toName: `${order.customer.firstName} ${order.customer.lastName}`.trim(),
+        phone: order.customer.phone,
         subject,
         bodyText,
         customerId: order.customerId,
@@ -173,6 +231,14 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
       await sendAutomationEmail({
         toName: `${order.customer.firstName} ${order.customer.lastName}`.trim(),
         toAddress: email,
+        subject,
+        bodyText,
+        customerId: order.customerId,
+        automationType: "event_reminder",
+      });
+      await sendAutomationSms({
+        toName: `${order.customer.firstName} ${order.customer.lastName}`.trim(),
+        phone: order.customer.phone,
         subject,
         bodyText,
         customerId: order.customerId,
