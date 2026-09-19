@@ -69,6 +69,24 @@ export async function PATCH(req: NextRequest,{ params }: { params: { stopId: str
     const result = validateStopStatusTransition(stop.status, body.status, pickup);
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
     normalizedStatus = body.status.trim().toLowerCase();
+    if (normalizedStatus === "delivered" || normalizedStatus === "picked_up") {
+      const proofRows = await prisma.$queryRawUnsafe<{proofName:string|null;proofSignature:string|null;proofPhotoUrl:string|null;notes:string|null}[]>(
+        `SELECT "proofName","proofSignature","proofPhotoUrl","notes"
+         FROM "RentalFulfillment"
+         WHERE "organizationId"=$1 AND "orderId"=$2
+         LIMIT 1`,
+        driver.organizationId,
+        stop.orderId
+      );
+      const proof = proofRows[0];
+      const hasProof = Boolean(proof && (proof.proofName || proof.proofSignature || proof.proofPhotoUrl || proof.notes));
+      if (!hasProof) {
+        return NextResponse.json(
+          { error: "Capture proof of service before completing this stop." },
+          { status: 409 }
+        );
+      }
+    }
     data.status = normalizedStatus;
   }
   if (typeof body.attentionStatus === "string") {
