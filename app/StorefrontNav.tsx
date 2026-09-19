@@ -22,7 +22,7 @@ export default async function StorefrontNav({ organizationId, activeSlug }: { or
           <Link href="/" className={linkClass("")}>Home</Link>
           <Link href="/book" className={linkClass("book")}>Rentals</Link>
           <Link href="/order-status" className={linkClass("order-status")}>Track Order</Link>
-          {pages.map((page) => <Link key={page.id} href={`/${page.slug}`} className={linkClass(page.slug)}>{page.navLabel || page.title}</Link>)}
+          {pages.map((page: { id: string; slug: string; navLabel: string | null; title: string }) => <Link key={page.id} href={`/${page.slug}`} className={linkClass(page.slug)}>{page.navLabel || page.title}</Link>)}
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
