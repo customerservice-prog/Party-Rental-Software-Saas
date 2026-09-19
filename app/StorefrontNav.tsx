@@ -31,7 +31,7 @@ export default async function StorefrontNav({ organizationId, activeSlug }: { or
         </div>
       </div>
       <nav className="flex gap-1 overflow-x-auto border-t border-slate-100 px-3 py-2 md:hidden">
-        <Link href="/" className={linkClass("")}>Home</Link><Link href="/book" className={linkClass("book")}>Rentals</Link><Link href="/order-status" className={linkClass("order-status")}>Track Order</Link>{pages.map((page) => <Link key={page.id} href={`/${page.slug}`} className={`${linkClass(page.slug)} whitespace-nowrap`}>{page.navLabel || page.title}</Link>)}
+        <Link href="/" className={linkClass("")}>Home</Link><Link href="/book" className={linkClass("book")}>Rentals</Link><Link href="/order-status" className={linkClass("order-status")}>Track Order</Link>{pages.map((page: { id: string; slug: string; navLabel: string | null; title: string }) => <Link key={page.id} href={`/${page.slug}`} className={`${linkClass(page.slug)} whitespace-nowrap`}>{page.navLabel || page.title}</Link>)}
       </nav>
     </header>
   );
