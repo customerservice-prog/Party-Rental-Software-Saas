@@ -3,6 +3,9 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { requireOwnerSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
+type AuditRow = { id: string; action: string; details: string | null; createdAt: Date; performedBy: string };
+type UserRow = { id: string; username: string; name: string };
+
 // Returns the most recent activity-log entries for the current organization.
 // Owner-only: the activity log can reveal who changed what, so it is treated
 // as account-level configuration data.
@@ -11,14 +14,14 @@ export async function GET(request: NextRequest) {
     const organization = await requireCurrentOrganization();
     await requireOwnerSession(organization.id);
 
-    const logs = await prisma.auditLog.findMany({
+    const logs: AuditRow[] = await prisma.auditLog.findMany({
       where: { organizationId: organization.id },
       orderBy: { createdAt: "desc" },
       take: 200,
     });
 
     const performerIds = Array.from(new Set(logs.map((l) => l.performedBy)));
-    const users = await prisma.user.findMany({
+    const users: UserRow[] = await prisma.user.findMany({
       where: { id: { in: performerIds } },
       select: { id: true, username: true, name: true },
     });
