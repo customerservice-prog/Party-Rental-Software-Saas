@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
-import { getAvailableQuantity, getItemBookingRestriction } from "@/lib/availability";
+import { getAvailableQuantity, getAvailableQuantityWithClient, getItemBookingRestriction } from "@/lib/availability";
+import { getInventoryResourceIds } from "@/lib/packages";
 
 const DEFAULT_TERMS="By signing below, you agree to the rental company's rental terms and accept financial responsibility for the rented equipment during the rental period.";
 const text=(v:unknown,max:number)=>typeof v==="string"?v.trim().slice(0,max):"";
@@ -62,9 +63,9 @@ export async function POST(request:NextRequest){
   let order:any;
   try{
     order=await prisma.$transaction(async tx=>{
-      for(const itemId of [...itemIds].sort())await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext($1))`,`${organization.id}:${itemId}`);
-      const currentItems=await tx.item.findMany({where:{id:{in:itemIds},organizationId:organization.id,displayToCustomer:true,status:"available"}});if(currentItems.length!==itemIds.length)throw new Error("ITEM_GONE");const currentMap=new Map(currentItems.map(i=>[i.id,i]));const pendingCutoff=new Date(Date.now()-PENDING_HOLD_MS);
-      for(const line of lines){const currentItem=currentMap.get(line.itemId)!;const restriction=getItemBookingRestriction(currentItem,rangeStart);if(restriction)throw new Error(`RESTRICTION|${restriction}`);const unavailableUnits=await tx.itemUnit.count({where:{organizationId:organization.id,itemId:line.itemId,status:{in:["maintenance","retired"]}}});const overlapping=await tx.orderItem.findMany({where:{itemId:line.itemId,order:{organizationId:organization.id,status:{notIn:NON_RESERVING_STATUSES},eventDate:{lte:rangeEnd||rangeStart},AND:[{OR:[{status:{not:"pending"}},{status:"pending",createdAt:{gte:pendingCutoff}}]},{OR:[{eventEndDate:{gte:rangeStart}},{eventEndDate:null,eventDate:{gte:rangeStart}}]}]}},select:{quantity:true}});const booked=overlapping.reduce((s,x)=>s+x.quantity,0),currentAvailable=Math.max(0,currentItem.quantity-unavailableUnits-booked);if(line.quantity>currentAvailable)throw new Error(`AVAILABILITY|${line.itemId}|${currentAvailable}`);}
+      const resourceIds=await getInventoryResourceIds(tx,organization.id,itemIds);for(const resourceId of resourceIds)await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext($1))`,`${organization.id}:${resourceId}`);
+      const currentItems=await tx.item.findMany({where:{id:{in:itemIds},organizationId:organization.id,displayToCustomer:true,status:"available"}});if(currentItems.length!==itemIds.length)throw new Error("ITEM_GONE");const currentMap=new Map(currentItems.map(i=>[i.id,i]));
+      for(const line of lines){const currentItem=currentMap.get(line.itemId)!;const restriction=getItemBookingRestriction(currentItem,rangeStart);if(restriction)throw new Error(`RESTRICTION|${restriction}`);const currentAvailable=await getAvailableQuantityWithClient(tx,organization.id,line.itemId,currentItem.quantity,rangeStart,rangeEnd);if(line.quantity>currentAvailable)throw new Error(`AVAILABILITY|${line.itemId}|${currentAvailable}`);}
       let customer=await tx.customer.findFirst({where:{organizationId:organization.id,email:{equals:email,mode:"insensitive"}}});
       if(!customer)customer=await tx.customer.create({data:{organizationId:organization.id,firstName,lastName,email,phone:phone||null,address:deliveryAddress||null}});
       else customer=await tx.customer.update({where:{id:customer.id},data:{firstName,lastName,phone:phone||customer.phone,address:deliveryAddress||customer.address}});
