@@ -2,13 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
-import { getAvailableQuantity, getAvailableQuantityWithClient, getItemBookingRestriction } from "@/lib/availability";
-import { getInventoryResourceIds } from "@/lib/packages";
+import { getAvailableQuantity, getPhysicalAvailableQuantityWithClient, getItemBookingRestriction } from "@/lib/availability";
+import { getInventoryResourceIds, getRequestedResourceDemand } from "@/lib/packages";
 
 const DEFAULT_TERMS="By signing below, you agree to the rental company's rental terms and accept financial responsibility for the rented equipment during the rental period.";
 const text=(v:unknown,max:number)=>typeof v==="string"?v.trim().slice(0,max):"";
-const NON_RESERVING_STATUSES=["cancelled","canceled","quote","incomplete"];
-const PENDING_HOLD_MS=30*60*1000;
 type RequestedLine={itemId:string;quantity:number;addonIds:string[]};
 
 function normalizeLines(body:any):RequestedLine[]{
@@ -65,14 +63,16 @@ export async function POST(request:NextRequest){
     order=await prisma.$transaction(async tx=>{
       const resourceIds=await getInventoryResourceIds(tx,organization.id,itemIds);for(const resourceId of resourceIds)await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext($1))`,`${organization.id}:${resourceId}`);
       const currentItems=await tx.item.findMany({where:{id:{in:itemIds},organizationId:organization.id,displayToCustomer:true,status:"available"}});if(currentItems.length!==itemIds.length)throw new Error("ITEM_GONE");const currentMap=new Map(currentItems.map(i=>[i.id,i]));
-      for(const line of lines){const currentItem=currentMap.get(line.itemId)!;const restriction=getItemBookingRestriction(currentItem,rangeStart);if(restriction)throw new Error(`RESTRICTION|${restriction}`);const currentAvailable=await getAvailableQuantityWithClient(tx,organization.id,line.itemId,currentItem.quantity,rangeStart,rangeEnd);if(line.quantity>currentAvailable)throw new Error(`AVAILABILITY|${line.itemId}|${currentAvailable}`);}
+      const resourceItems=await tx.item.findMany({where:{id:{in:resourceIds},organizationId:organization.id}});if(resourceItems.length!==resourceIds.length)throw new Error("ITEM_GONE");const resourceMap=new Map(resourceItems.map(i=>[i.id,i]));
+      const requestedDemand=await getRequestedResourceDemand(tx,organization.id,lines);
+      for(const [resourceId,requested] of requestedDemand){const resourceItem=resourceMap.get(resourceId);if(!resourceItem)throw new Error("ITEM_GONE");const restriction=getItemBookingRestriction(resourceItem,rangeStart);if(restriction)throw new Error(`RESTRICTION|${restriction}`);const remaining=await getPhysicalAvailableQuantityWithClient(tx,organization.id,resourceId,resourceItem.quantity,rangeStart,rangeEnd);if(requested>remaining)throw new Error(`RESOURCE|${resourceId}|${remaining}`);}
       let customer=await tx.customer.findFirst({where:{organizationId:organization.id,email:{equals:email,mode:"insensitive"}}});
       if(!customer)customer=await tx.customer.create({data:{organizationId:organization.id,firstName,lastName,email,phone:phone||null,address:deliveryAddress||null}});
       else customer=await tx.customer.update({where:{id:customer.id},data:{firstName,lastName,phone:phone||customer.phone,address:deliveryAddress||customer.address}});
       const created=await tx.order.create({data:{organizationId:organization.id,customerId:customer.id,orderNumber:`ORD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2,6).toUpperCase()}`,eventDate:rangeStart,eventEndDate:rangeEnd,deliveryAddress:deliveryAddress||null,deliveryType,status:"pending",source:"online",deliveryFee,subtotal,taxAmount,totalAmount,items:{create:lines.map(line=>({itemId:line.itemId,quantity:line.quantity,price:currentMap.get(line.itemId)!.cost}))},orderAddons:{create:selectedAddons.map(a=>({addonId:a.id,name:a.name,price:a.price}))}}});
       const forwardedFor=request.headers.get("x-forwarded-for");await tx.contract.create({data:{organizationId:organization.id,orderId:created.id,signedAt:new Date(),signatureName,signatureIp:forwardedFor?.split(",")[0].trim()||null,contractText:organization.contractTerms||DEFAULT_TERMS}});return created;
     },{isolationLevel:"Serializable"});
-  }catch(err){if(err instanceof Error&&err.message.startsWith("AVAILABILITY|")){const[,itemId,availableRaw]=err.message.split("|"),availableNow=Number(availableRaw),item=itemMap.get(itemId);return NextResponse.json({error:item?(availableNow>0?`Only ${availableNow} unit(s) of ${item.name} are still available. Another customer may have just booked.`:`${item.name} was just booked for those dates. Please choose another date or item.`):"Availability changed. Please review your cart."},{status:409});}if(err instanceof Error&&err.message==="ITEM_GONE")return NextResponse.json({error:"One or more rentals are no longer available for online booking"},{status:404});if(err instanceof Error&&err.message.startsWith("RESTRICTION|"))return NextResponse.json({error:err.message.slice("RESTRICTION|".length)},{status:409});throw err;}
+  }catch(err){if(err instanceof Error&&err.message.startsWith("RESOURCE|")){const[,resourceId,availableRaw]=err.message.split("|"),availableNow=Number(availableRaw);const resource=await prisma.item.findFirst({where:{id:resourceId,organizationId:organization.id},select:{name:true}});const name=resource?.name||"required inventory";return NextResponse.json({error:availableNow>0?`Only ${availableNow} unit(s) of ${name} remain for those dates once all items in this reservation are counted.`:`${name} is fully committed for those dates. Please adjust your cart or choose another date.`},{status:409});}if(err instanceof Error&&err.message==="ITEM_GONE")return NextResponse.json({error:"One or more rentals are no longer available for online booking"},{status:404});if(err instanceof Error&&err.message.startsWith("RESTRICTION|"))return NextResponse.json({error:err.message.slice("RESTRICTION|".length)},{status:409});throw err;}
 
   if(totalAmount<=0||depositAmount<=0){await prisma.order.update({where:{id:order.id},data:{status:"confirmed"}});return NextResponse.json({orderId:order.id,paid:false});}
   const proto=request.headers.get("x-forwarded-proto")||"https",host=request.headers.get("host"),origin=process.env.PUBLIC_BASE_URL||`${proto}://${host}`;
