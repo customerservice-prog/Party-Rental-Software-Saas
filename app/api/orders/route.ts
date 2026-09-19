@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
-import { getAvailableQuantity, getAvailableQuantityWithClient, getItemBookingRestriction } from "@/lib/availability";
-import { getInventoryResourceIds } from "@/lib/packages";
+import { getAvailableQuantity, getPhysicalAvailableQuantityWithClient, getItemBookingRestriction } from "@/lib/availability";
+import { getInventoryResourceIds, getRequestedResourceDemand } from "@/lib/packages";
 
 export async function POST(request:NextRequest){
   const organization=await requireCurrentOrganization(); let actor;
@@ -30,10 +30,12 @@ export async function POST(request:NextRequest){
   const orderNumber="ORD-"+Date.now();
   try{const order=await prisma.$transaction(async tx=>{
     const resourceIds=await getInventoryResourceIds(tx,organization.id,resolved.map(r=>r.item.id));for(const resourceId of resourceIds)await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext($1))`,`${organization.id}:${resourceId}`);
-    for(const{item,quantity}of resolved){const available=await getAvailableQuantityWithClient(tx,organization.id,item.id,item.quantity,rangeStart,rangeEnd);if(quantity>available)throw new Error(`AVAILABILITY|${item.name}|${available}`)}
+    const resourceItems=await tx.item.findMany({where:{id:{in:resourceIds},organizationId:organization.id}});if(resourceItems.length!==resourceIds.length)throw new Error("ITEM_GONE");const resourceMap=new Map(resourceItems.map(i=>[i.id,i]));
+    const requestedDemand=await getRequestedResourceDemand(tx,organization.id,resolved.map(r=>({itemId:r.item.id,quantity:r.quantity})));
+    for(const[resourceId,requested]of requestedDemand){const resourceItem=resourceMap.get(resourceId);if(!resourceItem)throw new Error("ITEM_GONE");const restriction=getItemBookingRestriction(resourceItem,rangeStart);if(restriction)throw new Error(`RESTRICTION|${restriction}`);const remaining=await getPhysicalAvailableQuantityWithClient(tx,organization.id,resourceId,resourceItem.quantity,rangeStart,rangeEnd);if(requested>remaining)throw new Error(`RESOURCE|${resourceId}|${remaining}`)}
     const created=await tx.order.create({data:{organizationId:organization.id,customerId:customer!.id,orderNumber,eventDate:rangeStart,eventEndDate:rangeEnd,deliveryType:isDelivery?"delivery":"pickup",deliveryAddress:deliveryAddress||null,status:orderStatus,source:"manual",deliveryFee,subtotal,taxAmount,totalAmount,amountPaid:paid,stripeSessionId:null,items:{create:resolved.map(r=>({itemId:r.item.id,quantity:r.quantity,price:r.item.cost}))}}});
     if(paid>0){const dbUser=await tx.user.findUnique({where:{id:actor.id},select:{name:true}});await tx.payment.create({data:{organizationId:organization.id,orderId:created.id,amount:paid,type:"payment",method:"other",tip:0,note:"Initial payment recorded during manual order creation",recordedBy:dbUser?.name||null}})}
     await tx.auditLog.create({data:{organizationId:organization.id,action:"order.created.manual",performedBy:actor.id,details:JSON.stringify({orderId:created.id,orderNumber:created.orderNumber,status:orderStatus,totalAmount,amountPaid:paid})}});
     return created;
-  },{isolationLevel:"Serializable"});return NextResponse.json({id:order.id,orderNumber:order.orderNumber})}catch(err){if(err instanceof Error&&err.message.startsWith("AVAILABILITY|")){const[,name,a]=err.message.split("|"),available=Number(a);return NextResponse.json({error:available>0?`Only ${available} unit(s) of "${name}" are available for the selected dates`:`"${name}" became fully booked while this order was being saved`},{status:409})}throw err}
+  },{isolationLevel:"Serializable"});return NextResponse.json({id:order.id,orderNumber:order.orderNumber})}catch(err){if(err instanceof Error&&err.message.startsWith("RESOURCE|")){const[,resourceId,a]=err.message.split("|"),available=Number(a);const resource=await prisma.item.findFirst({where:{id:resourceId,organizationId:organization.id},select:{name:true}});const name=resource?.name||"required inventory";return NextResponse.json({error:available>0?`Only ${available} unit(s) of "${name}" remain for the selected dates once the entire order is counted`:`"${name}" became fully booked while this order was being saved`},{status:409})}if(err instanceof Error&&err.message==="ITEM_GONE")return NextResponse.json({error:"One or more selected inventory items are no longer available"},{status:404});if(err instanceof Error&&err.message.startsWith("RESTRICTION|"))return NextResponse.json({error:err.message.slice("RESTRICTION|".length)},{status:409});throw err}
 }
