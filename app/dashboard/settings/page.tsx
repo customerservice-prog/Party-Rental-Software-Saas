@@ -947,6 +947,14 @@ export default function SettingsPage() {
           />
           <span className="text-xs text-gray-400 mt-1 block">Use a Twilio phone number enabled for SMS, including country code.</span>
         </label>
+        {smsProviderConfigured && (
+          <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
+            <b className="block">Enable incoming customer texts</b>
+            <p className="mt-1 leading-5">In Twilio, set this phone number&apos;s <b>Messaging → A message comes in</b> webhook to:</p>
+            <code className="mt-2 block overflow-x-auto rounded bg-white px-2 py-1.5 text-[11px]">https://partyrentalcrm.com/api/webhooks/twilio</code>
+            <p className="mt-2 text-blue-700">Use HTTP POST. Party Rental CRM verifies Twilio&apos;s signature before accepting any inbound message.</p>
+          </div>
+        )}
         <div className="flex items-center gap-3">
           <button disabled={savingSms} onClick={handleSaveSms} className={buttonClass}>
             {savingSms ? "Saving..." : "Save SMS Settings"}
