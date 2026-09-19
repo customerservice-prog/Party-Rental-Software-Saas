@@ -4,6 +4,8 @@ import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { CATALOG_CATEGORIES, catalogCategoryLabel } from "@/lib/catalogTemplates";
 
+type CatalogTemplateRow = { id: string; name: string; categoryKey: string; type: string; keywords: unknown; sortOrder: number; isActive: boolean };
+
 // Collapses a string down to just lowercase letters/digits so differences in
 // punctuation, spacing, and formatting never cause an otherwise-matching
 // template to be missed - e.g. a search for "20x20 pole" should still find
@@ -35,7 +37,7 @@ export async function GET(req: NextRequest) {
   const type = searchParams.get("type") || "";
   const limit = Math.min(parseInt(searchParams.get("limit") || "200", 10) || 200, 500);
 
-  const templates = await prisma.catalogTemplate.findMany({
+  const templates: CatalogTemplateRow[] = await prisma.catalogTemplate.findMany({
     where: {
       isActive: true,
       ...(categoryKey ? { categoryKey } : {}),
@@ -51,7 +53,7 @@ export async function GET(req: NextRequest) {
     // literal substring of the raw query - so multi-word and
     // differently-punctuated queries still find the right template. This
     // never changes what a template *is*, only what surfaces it in search.
-    const tokens = q.split(/s+/).map(normalize).filter(Boolean);
+    const tokens = q.split(/\s+/).map(normalize).filter(Boolean);
     results = templates.filter((t) => {
       const keywordList = Array.isArray(t.keywords) ? (t.keywords as unknown[]) : [];
       const haystack = normalize(
