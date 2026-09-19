@@ -14,14 +14,17 @@ function toSafeOrganization(organization: any) {
     seoDescription, aboutText, contractTerms, facebookUrl, instagramUrl,
     showHoursOnSite, flatDeliveryFee, taxRate, contactEmail, contactPhone,
     address, city, state, zip, timezone, resendApiKey, senderEmail, senderName,
+    twilioAccountSid, twilioAuthToken, twilioFromNumber,
   } = organization;
   return {
     name, slug, logoUrl, primaryColor, tagline, heroImageUrl, seoTitle,
     seoDescription, aboutText, contractTerms, facebookUrl, instagramUrl,
     showHoursOnSite, flatDeliveryFee, taxRate, contactEmail, contactPhone,
-    address, city, state, zip, timezone, senderEmail, senderName,
+    address, city, state, zip, timezone, senderEmail, senderName, twilioFromNumber,
     emailProviderConfigured: Boolean(resendApiKey),
     resendApiKeyLast4: resendApiKey ? String(resendApiKey).slice(-4) : "",
+    smsProviderConfigured: Boolean(twilioAccountSid && twilioAuthToken && twilioFromNumber),
+    twilioAccountSidLast4: twilioAccountSid ? String(twilioAccountSid).slice(-4) : "",
   };
 }
 
@@ -61,6 +64,7 @@ export async function PATCH(req: NextRequest) {
     "instagramUrl",
     "senderEmail",
     "senderName",
+    "twilioFromNumber",
   ];
 
   const data: Record<string, string | boolean | number | null> = {};
@@ -91,6 +95,18 @@ export async function PATCH(req: NextRequest) {
   }
   if (body.disconnectEmailProvider === true) {
     data.resendApiKey = null;
+  }
+
+  if (typeof body.twilioAccountSid === "string" && body.twilioAccountSid.trim()) {
+    data.twilioAccountSid = body.twilioAccountSid.trim();
+  }
+  if (typeof body.twilioAuthToken === "string" && body.twilioAuthToken.trim()) {
+    data.twilioAuthToken = body.twilioAuthToken.trim();
+  }
+  if (body.disconnectSmsProvider === true) {
+    data.twilioAccountSid = null;
+    data.twilioAuthToken = null;
+    data.twilioFromNumber = null;
   }
 
   const updated = await prisma.organization.update({
