@@ -183,6 +183,52 @@ async function main() {
   await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "PackageComponent_package_component_unique" ON "PackageComponent" ("organizationId","packageItemId","componentItemId")`);
   await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "PackageComponent_component_idx" ON "PackageComponent" ("organizationId","componentItemId")`);
 
+  // Physical resource reconciliation for fulfillment. This expands virtual
+  // packages into the actual items the warehouse must load and receive back.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "RentalFulfillmentResource" (
+      "id" TEXT PRIMARY KEY,
+      "organizationId" TEXT NOT NULL,
+      "fulfillmentId" TEXT NOT NULL,
+      "orderId" TEXT NOT NULL,
+      "itemId" TEXT NOT NULL,
+      "expectedQty" INTEGER NOT NULL DEFAULT 0,
+      "loadedQty" INTEGER NOT NULL DEFAULT 0,
+      "returnedQty" INTEGER NOT NULL DEFAULT 0,
+      "damagedQty" INTEGER NOT NULL DEFAULT 0,
+      "missingQty" INTEGER NOT NULL DEFAULT 0,
+      "notes" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "RentalFulfillmentResource_fulfillment_item_unique" ON "RentalFulfillmentResource" ("fulfillmentId","itemId")`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "RentalFulfillmentResource_org_order_idx" ON "RentalFulfillmentResource" ("organizationId","orderId")`);
+
+  // Serialized assets scanned against a specific order. Historical rows stay
+  // attached to that order after return; active cross-order conflicts are
+  // prevented by the scan API, not by a global unique unit constraint.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "RentalFulfillmentAsset" (
+      "id" TEXT PRIMARY KEY,
+      "organizationId" TEXT NOT NULL,
+      "fulfillmentId" TEXT NOT NULL,
+      "orderId" TEXT NOT NULL,
+      "itemId" TEXT NOT NULL,
+      "itemUnitId" TEXT NOT NULL,
+      "status" TEXT NOT NULL DEFAULT 'loaded',
+      "loadedAt" TIMESTAMP(3),
+      "returnedAt" TIMESTAMP(3),
+      "notes" TEXT,
+      "performedBy" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "RentalFulfillmentAsset_order_unit_unique" ON "RentalFulfillmentAsset" ("orderId","itemUnitId")`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "RentalFulfillmentAsset_unit_status_idx" ON "RentalFulfillmentAsset" ("organizationId","itemUnitId","status")`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "RentalFulfillmentAsset_order_idx" ON "RentalFulfillmentAsset" ("organizationId","orderId","createdAt")`);
+
   // External payment reference makes Stripe/webhook processing idempotent.
   // This is additive and nullable so existing payment rows remain valid.
   await prisma.$executeRawUnsafe(`ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "externalReference" TEXT`);
