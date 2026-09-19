@@ -4,6 +4,8 @@ import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/audit";
 
+type CustomerExportRow = { firstName: string; lastName: string; email: string; phone: string | null; address: string | null; city: string | null; state: string | null; zip: string | null; leadSource: string; createdAt: Date; _count: { orders: number } };
+
 function escapeCsv(value: string | null | undefined): string {
   const str = value == null ? "" : String(value);
   if (/[",\n]/.test(str)) {
@@ -34,7 +36,7 @@ export async function GET(request: Request) {
     }
     const dateWhere = (dateFilter.gte || dateFilter.lte) ? { createdAt: dateFilter } : {};
 
-    const customers = await prisma.customer.findMany({
+    const customers: CustomerExportRow[] = await prisma.customer.findMany({
       where: { organizationId: organization.id, ...dateWhere },
       orderBy: { createdAt: "desc" },
       include: { _count: { select: { orders: true } } },
