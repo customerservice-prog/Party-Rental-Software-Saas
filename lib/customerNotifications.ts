@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendEmailViaResend, textToHtml } from "@/lib/email";
+import { normalizeSmsNumber, sendSmsViaTwilio } from "@/lib/sms";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -12,11 +13,6 @@ type OrderNotificationArgs = {
   createdBy: string;
 };
 
-/**
- * Sends (or honestly queues) a transactional customer email and records it in
- * SentMessage. The caller never needs access to tenant credentials. This is
- * intentionally email-only until a tenant-owned SMS provider is connected.
- */
 export async function sendOrderNotification(args: OrderNotificationArgs) {
   const order = await prisma.order.findFirst({
     where: { id: args.orderId, organizationId: args.organizationId },
@@ -24,65 +20,115 @@ export async function sendOrderNotification(args: OrderNotificationArgs) {
   });
   if (!order) return { status: "skipped", reason: "order_not_found" } as const;
 
-  const toAddress = (order.customer.email || "").trim();
-  if (!EMAIL_RE.test(toAddress)) return { status: "skipped", reason: "invalid_email" } as const;
+  const email = (order.customer.email || "").trim();
+  const phone = normalizeSmsNumber(order.customer.phone || "");
 
-  const blocked = await prisma.doNotRentRestriction.findFirst({
-    where: {
-      organizationId: args.organizationId,
-      isActive: true,
-      email: { equals: toAddress, mode: "insensitive" },
-    },
-    select: { id: true },
+  const restrictions = await prisma.doNotRentRestriction.findMany({
+    where: { organizationId: args.organizationId, isActive: true },
+    select: { email: true, phone: true },
   });
-  if (blocked) return { status: "skipped", reason: "restricted_customer" } as const;
-
-  // A driver status transition is one-way, but this extra guard protects
-  // against client retries or duplicated requests producing duplicate emails.
-  const existing = await prisma.sentMessage.findFirst({
-    where: {
-      organizationId: args.organizationId,
-      customerId: order.customerId,
-      automationType: args.automationType,
-      subject: args.subject,
-    },
-    select: { id: true, status: true },
+  const restricted = restrictions.some((row) => {
+    const blockedEmail = (row.email || "").trim().toLowerCase();
+    const blockedPhone = normalizeSmsNumber(row.phone || "");
+    return (blockedEmail && blockedEmail === email.toLowerCase()) || (blockedPhone && blockedPhone === phone);
   });
-  if (existing) return { status: existing.status, duplicate: true } as const;
+  if (restricted) return { status: "skipped", reason: "restricted_customer" } as const;
 
   const org = order.organization;
-  let status = "queued";
-  let providerError: string | null = null;
-  if (org.resendApiKey && org.senderEmail) {
-    const result = await sendEmailViaResend({
-      apiKey: org.resendApiKey,
-      from: `${org.senderName || org.name} <${org.senderEmail}>`,
-      to: toAddress,
-      subject: args.subject,
-      html: textToHtml(args.bodyText),
+  const toName = `${order.customer.firstName} ${order.customer.lastName}`.trim();
+  const results: Array<{ channel: "email" | "sms"; status: string; duplicate?: boolean }> = [];
+
+  if (EMAIL_RE.test(email)) {
+    const duplicate = await prisma.sentMessage.findFirst({
+      where: {
+        organizationId: args.organizationId,
+        customerId: order.customerId,
+        channel: "email",
+        automationType: args.automationType,
+        subject: args.subject,
+      },
+      select: { id: true, status: true },
     });
-    if (result.success) status = "sent";
-    else {
-      status = "failed";
-      providerError = result.error;
+    if (duplicate) {
+      results.push({ channel: "email", status: duplicate.status, duplicate: true });
+    } else {
+      let status = "queued";
+      let providerError: string | null = null;
+      if (org.resendApiKey && org.senderEmail) {
+        const sent = await sendEmailViaResend({
+          apiKey: org.resendApiKey,
+          from: `${org.senderName || org.name} <${org.senderEmail}>`,
+          to: email,
+          subject: args.subject,
+          html: textToHtml(args.bodyText),
+        });
+        if (sent.success) status = "sent";
+        else {
+          status = "failed";
+          providerError = sent.error;
+        }
+      }
+      await prisma.sentMessage.create({
+        data: {
+          organizationId: args.organizationId,
+          channel: "email",
+          toName,
+          toAddress: email,
+          subject: args.subject,
+          body: args.bodyText,
+          status,
+          providerError,
+          customerId: order.customerId,
+          automationType: args.automationType,
+          createdBy: args.createdBy,
+        },
+      });
+      results.push({ channel: "email", status });
     }
   }
 
-  await prisma.sentMessage.create({
-    data: {
-      organizationId: args.organizationId,
-      channel: "email",
-      toName: `${order.customer.firstName} ${order.customer.lastName}`.trim(),
-      toAddress,
-      subject: args.subject,
-      body: args.bodyText,
-      status,
-      providerError,
-      customerId: order.customerId,
-      automationType: args.automationType,
-      createdBy: args.createdBy,
-    },
-  });
+  if (phone && org.twilioAccountSid && org.twilioAuthToken && org.twilioFromNumber) {
+    const duplicate = await prisma.sentMessage.findFirst({
+      where: {
+        organizationId: args.organizationId,
+        customerId: order.customerId,
+        channel: "sms",
+        automationType: args.automationType,
+        subject: args.subject,
+      },
+      select: { id: true, status: true },
+    });
+    if (duplicate) {
+      results.push({ channel: "sms", status: duplicate.status, duplicate: true });
+    } else {
+      const sent = await sendSmsViaTwilio({
+        accountSid: org.twilioAccountSid,
+        authToken: org.twilioAuthToken,
+        from: org.twilioFromNumber,
+        to: phone,
+        body: args.bodyText,
+      });
+      const status = sent.success ? "sent" : "failed";
+      const providerError = sent.success ? null : sent.error;
+      await prisma.sentMessage.create({
+        data: {
+          organizationId: args.organizationId,
+          channel: "sms",
+          toName,
+          toAddress: phone,
+          subject: args.subject,
+          body: args.bodyText,
+          status,
+          providerError,
+          customerId: order.customerId,
+          automationType: args.automationType,
+          createdBy: args.createdBy,
+        },
+      });
+      results.push({ channel: "sms", status });
+    }
+  }
 
-  return { status } as const;
+  if (!results.length) return { status: "skipped", reason: "no_reachable_channel" } as const;
+  return { status: results.some((r) => r.status === "sent") ? "sent" : results[0].status, results } as const;
 }
