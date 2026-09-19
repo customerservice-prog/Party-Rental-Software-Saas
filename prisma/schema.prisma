@@ -459,7 +459,6 @@ model BlockedBookingAttempt {
   createdAt      DateTime @default(now())
 
   @@index([organizationId, createdAt])
-  @@unique([organizationId, providerMessageId])
 }
 
 // Records platform-admin actions taken against tenant organizations
@@ -688,6 +687,7 @@ model SentMessage {
   createdAt      DateTime @default(now())
 
   @@index([organizationId, createdAt])
+  @@unique([organizationId, providerMessageId])
 }
 
 // ---------------------------------------------------------------------------
