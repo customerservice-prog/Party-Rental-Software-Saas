@@ -240,12 +240,26 @@ return (
 <div>
 <div className="flex items-center justify-between mb-6">
 <h1 className="text-2xl font-bold text-gray-900">Reports &amp; Analytics</h1>
+<div className="flex flex-wrap gap-2">
+<a
+href={`/api/accounting/export?kind=sales&from=${encodeURIComponent(fromParam)}&to=${encodeURIComponent(toParam)}`}
+className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+>
+Sales CSV
+</a>
+<a
+href={`/api/accounting/export?kind=payments&from=${encodeURIComponent(fromParam)}&to=${encodeURIComponent(toParam)}`}
+className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+>
+Payments CSV
+</a>
 <a
 href={`/api/reports/export${(fromParam || toParam) ? `?from=${encodeURIComponent(fromParam)}&to=${encodeURIComponent(toParam)}` : ""}`}
-className="border border-gray-300 rounded-md px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
 >
-Export CSV
+Summary CSV
 </a>
+</div>
 </div>
 
 <div className="flex gap-1 mb-6 bg-white shadow rounded-lg p-1 w-fit flex-wrap">
