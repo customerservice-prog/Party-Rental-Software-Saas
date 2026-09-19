@@ -7,11 +7,11 @@ import { sendOrderNotification } from "@/lib/customerNotifications";
 import { sanitizeProofImage } from "@/lib/proofMedia";
 
 async function ensureFulfillment(organizationId:string,orderId:string,driverId:string){
-  let rows=await prisma.$queryRawUnsafe<any[]>(`SELECT * FROM "RentalFulfillment" WHERE "organizationId"=$1 AND "orderId"=$2 LIMIT 1`,organizationId,orderId);
+  let rows=(await prisma.$queryRawUnsafe(`SELECT * FROM "RentalFulfillment" WHERE "organizationId"=$1 AND "orderId"=$2 LIMIT 1`,organizationId,orderId)) as any[];
   if(!rows[0]){
     const id=randomUUID();
     await prisma.$executeRawUnsafe(`INSERT INTO "RentalFulfillment" ("id","organizationId","orderId","status","createdAt","updatedAt") VALUES ($1,$2,$3,'preparing',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) ON CONFLICT ("orderId") DO NOTHING`,id,organizationId,orderId);
-    rows=await prisma.$queryRawUnsafe<any[]>(`SELECT * FROM "RentalFulfillment" WHERE "organizationId"=$1 AND "orderId"=$2 LIMIT 1`,organizationId,orderId);
+    rows=(await prisma.$queryRawUnsafe(`SELECT * FROM "RentalFulfillment" WHERE "organizationId"=$1 AND "orderId"=$2 LIMIT 1`,organizationId,orderId)) as any[];
     if(rows[0]) await prisma.$executeRawUnsafe(`INSERT INTO "RentalFulfillmentEvent" ("id","organizationId","orderId","fulfillmentId","type","performedBy") VALUES ($1,$2,$3,$4,'driver_fulfillment_started',$5)`,randomUUID(),organizationId,orderId,rows[0].id,`driver:${driverId}`);
   }
   return rows[0];
@@ -70,14 +70,14 @@ export async function PATCH(req: NextRequest,{ params }: { params: { stopId: str
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
     normalizedStatus = body.status.trim().toLowerCase();
     if (normalizedStatus === "delivered" || normalizedStatus === "picked_up") {
-      const proofRows = await prisma.$queryRawUnsafe<{proofName:string|null;proofSignature:string|null;proofPhotoUrl:string|null;notes:string|null}[]>(
+      const proofRows = (await prisma.$queryRawUnsafe(
         `SELECT "proofName","proofSignature","proofPhotoUrl","notes"
          FROM "RentalFulfillment"
          WHERE "organizationId"=$1 AND "orderId"=$2
          LIMIT 1`,
         driver.organizationId,
         stop.orderId
-      );
+      )) as {proofName:string|null;proofSignature:string|null;proofPhotoUrl:string|null;notes:string|null}[];
       const proof = proofRows[0];
       const hasProof = Boolean(proof && (proof.proofName || proof.proofSignature || proof.proofPhotoUrl || proof.notes));
       if (!hasProof) {
