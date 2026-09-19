@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
   const stops = run?.stops || [];
   const proofByOrder = new Map<string, ProofRow>();
   await Promise.all(
-    stops.map(async (stop) => {
+    stops.map(async (stop: { orderId: string }) => {
       const rows = await prisma.$queryRawUnsafe<ProofRow[]>(
         `SELECT "orderId","proofName","proofSignature","proofPhotoUrl","notes"
          FROM "RentalFulfillment"
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     date: runDate.toISOString().slice(0, 10),
     driverName: driver.name,
-    stops: stops.map((stop) => ({
+    stops: stops.map((stop: { orderId: string; [key: string]: unknown }) => ({
       ...stop,
       proof: proofByOrder.get(stop.orderId) || null,
     })),
