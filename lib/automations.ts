@@ -154,10 +154,7 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
     for (const order of candidates) {
       const email = (order.customer.email || "").trim();
       const emailLower = email.toLowerCase();
-      if (!email || !EMAIL_RE.test(email) || restrictedEmails.has(emailLower)) {
-        await prisma.order.update({ where: { id: order.id }, data: { confirmationSentAt: now } });
-        continue;
-      }
+      const canEmailCustomer = Boolean(email && EMAIL_RE.test(email) && !restrictedEmails.has(emailLower));
       const eventDateStr = order.eventDate.toLocaleDateString("en-US", {
         weekday: "long",
         year: "numeric",
@@ -172,14 +169,16 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
         `Total: $${order.totalAmount.toFixed(2)}\n` +
         `Paid so far: $${order.amountPaid.toFixed(2)}\n\n` +
         `Thank you for booking with us!`;
-      await sendAutomationEmail({
-        toName: `${order.customer.firstName} ${order.customer.lastName}`.trim(),
-        toAddress: email,
-        subject,
-        bodyText,
-        customerId: order.customerId,
-        automationType: "booking_confirmation",
-      });
+      if (canEmailCustomer) {
+        await sendAutomationEmail({
+          toName: `${order.customer.firstName} ${order.customer.lastName}`.trim(),
+          toAddress: email,
+          subject,
+          bodyText,
+          customerId: order.customerId,
+          automationType: "booking_confirmation",
+        });
+      }
       await sendAutomationSms({
         toName: `${order.customer.firstName} ${order.customer.lastName}`.trim(),
         phone: order.customer.phone,
@@ -210,10 +209,7 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
     for (const order of candidates) {
       const email = (order.customer.email || "").trim();
       const emailLower = email.toLowerCase();
-      if (!email || !EMAIL_RE.test(email) || restrictedEmails.has(emailLower)) {
-        await prisma.order.update({ where: { id: order.id }, data: { reminderSentAt: now } });
-        continue;
-      }
+      const canEmailCustomer = Boolean(email && EMAIL_RE.test(email) && !restrictedEmails.has(emailLower));
       const eventDateStr = order.eventDate.toLocaleDateString("en-US", {
         weekday: "long",
         year: "numeric",
@@ -228,14 +224,16 @@ export async function runBookingAutomations(organizationId: string): Promise<Run
         `Order #: ${order.orderNumber}\n` +
         `Balance due: $${balanceDue.toFixed(2)}\n\n` +
         `We look forward to seeing you!`;
-      await sendAutomationEmail({
-        toName: `${order.customer.firstName} ${order.customer.lastName}`.trim(),
-        toAddress: email,
-        subject,
-        bodyText,
-        customerId: order.customerId,
-        automationType: "event_reminder",
-      });
+      if (canEmailCustomer) {
+        await sendAutomationEmail({
+          toName: `${order.customer.firstName} ${order.customer.lastName}`.trim(),
+          toAddress: email,
+          subject,
+          bodyText,
+          customerId: order.customerId,
+          automationType: "event_reminder",
+        });
+      }
       await sendAutomationSms({
         toName: `${order.customer.firstName} ${order.customer.lastName}`.trim(),
         phone: order.customer.phone,
