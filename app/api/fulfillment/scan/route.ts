@@ -30,11 +30,11 @@ async function getOrder(db: Db, organizationId:string, orderId:string){
 }
 
 async function ensureFulfillment(db:Db,organizationId:string,orderId:string,performedBy:string){
-  let rows=await db.$queryRawUnsafe<FulfillmentRow[]>(
+  let rows=(await db.$queryRawUnsafe(
     `SELECT "id","organizationId","orderId","status" FROM "RentalFulfillment"
      WHERE "organizationId"=$1 AND "orderId"=$2 LIMIT 1`,
     organizationId,orderId
-  );
+  )) as FulfillmentRow[];
   if(!rows[0]){
     const id=randomUUID();
     await db.$executeRawUnsafe(
@@ -43,11 +43,11 @@ async function ensureFulfillment(db:Db,organizationId:string,orderId:string,perf
        ON CONFLICT ("orderId") DO NOTHING`,
       id,organizationId,orderId
     );
-    rows=await db.$queryRawUnsafe<FulfillmentRow[]>(
+    rows=(await db.$queryRawUnsafe(
       `SELECT "id","organizationId","orderId","status" FROM "RentalFulfillment"
        WHERE "organizationId"=$1 AND "orderId"=$2 LIMIT 1`,
       organizationId,orderId
-    );
+    )) as FulfillmentRow[];
     if(rows[0]) await db.$executeRawUnsafe(
       `INSERT INTO "RentalFulfillmentEvent"
        ("id","organizationId","orderId","fulfillmentId","type","performedBy")
@@ -89,12 +89,12 @@ async function syncQuantityException(
     actorId:string;
   }
 ){
-  const rows=await db.$queryRawUnsafe<{id:string}[]>(
+  const rows=(await db.$queryRawUnsafe(
     `SELECT "id" FROM "InventoryQuantityException"
      WHERE "organizationId"=$1 AND "resourceId"=$2 AND "type"=$3 AND "status"='open'
      LIMIT 1`,
     args.organizationId,args.resourceId,args.type
-  );
+  )) as {id:string}[];
   const existing=rows[0];
   if(args.quantity>0){
     if(existing){
@@ -123,14 +123,14 @@ async function syncQuantityException(
 }
 
 async function updateFulfillmentProgress(db:Db,organizationId:string,orderId:string,fulfillmentId:string){
-  const totals=await db.$queryRawUnsafe<{expected:number;loaded:number;reconciled:number}[]>(
+  const totals=(await db.$queryRawUnsafe(
     `SELECT COALESCE(SUM("expectedQty"),0)::int AS "expected",
             COALESCE(SUM("loadedQty"),0)::int AS "loaded",
             COALESCE(SUM("returnedQty"+"damagedQty"+"missingQty"),0)::int AS "reconciled"
      FROM "RentalFulfillmentResource"
      WHERE "organizationId"=$1 AND "orderId"=$2`,
     organizationId,orderId
-  );
+  )) as {expected:number;loaded:number;reconciled:number}[];
   const total=totals[0];
   if(total?.expected>0 && total.loaded>=total.expected){
     await db.$executeRawUnsafe(
@@ -159,22 +159,22 @@ async function loadState(organizationId:string,orderId:string){
   const demand=await getPhysicalFulfillmentDemand(
     prisma,organizationId,order.items.map(x=>({orderItemId:x.id,itemId:x.itemId,quantity:x.quantity}))
   );
-  const fulfillmentRows=await prisma.$queryRawUnsafe<FulfillmentRow[]>(
+  const fulfillmentRows=(await prisma.$queryRawUnsafe(
     `SELECT "id","organizationId","orderId","status" FROM "RentalFulfillment"
      WHERE "organizationId"=$1 AND "orderId"=$2 LIMIT 1`,
     organizationId,orderId
-  );
+  )) as FulfillmentRow[];
   const fulfillment=fulfillmentRows[0]||null;
   let resources:ResourceRow[]=[];
   let assets:AssetRow[]=[];
   if(fulfillment){
-    resources=await prisma.$queryRawUnsafe<ResourceRow[]>(
+    resources=(await prisma.$queryRawUnsafe(
       `SELECT * FROM "RentalFulfillmentResource"
        WHERE "organizationId"=$1 AND "orderId"=$2
        ORDER BY "createdAt" ASC`,
       organizationId,orderId
-    );
-    assets=await prisma.$queryRawUnsafe<AssetRow[]>(
+    )) as ResourceRow[];
+    assets=(await prisma.$queryRawUnsafe(
       `SELECT a.*,u."identifier",i."name" AS "itemName"
        FROM "RentalFulfillmentAsset" a
        JOIN "ItemUnit" u ON u."id"=a."itemUnitId"
@@ -182,7 +182,7 @@ async function loadState(organizationId:string,orderId:string){
        WHERE a."organizationId"=$1 AND a."orderId"=$2
        ORDER BY a."updatedAt" DESC`,
       organizationId,orderId
-    );
+    )) as AssetRow[];
   }
   const resourceByItem=new Map(resources.map(r=>[r.itemId,r]));
   const itemIds=demand.map(d=>d.itemId);
@@ -253,12 +253,12 @@ export async function POST(req:NextRequest){
 
       if(action==="reconcileResource"){
         const itemId=typeof body.itemId==="string"?body.itemId:"";
-        const resourceRows=await tx.$queryRawUnsafe<ResourceRow[]>(
+        const resourceRows=(await tx.$queryRawUnsafe(
           `SELECT * FROM "RentalFulfillmentResource"
            WHERE "organizationId"=$1 AND "orderId"=$2 AND "itemId"=$3
            LIMIT 1`,
           organization.id,orderId,itemId
-        );
+        )) as ResourceRow[];
         const resource=resourceRows[0];
         if(!resource)throw new Error("RESOURCE_NOT_FOUND");
         const vals=[body.loadedQty,body.returnedQty,body.damagedQty,body.missingQty].map(v=>Number(v??0));
@@ -267,7 +267,7 @@ export async function POST(req:NextRequest){
         if(loadedQty>resource.expectedQty)throw new Error(`COUNTS|Loaded quantity cannot exceed ${resource.expectedQty}.`);
         if(returnedQty+damagedQty+missingQty>resource.expectedQty)throw new Error(`COUNTS|Returned + damaged + missing cannot exceed ${resource.expectedQty}.`);
 
-        const scanned=await tx.$queryRawUnsafe<{loaded:number;returned:number;damaged:number;missing:number}[]>(
+        const scanned=(await tx.$queryRawUnsafe(
           `SELECT
              COUNT(*) FILTER (WHERE "loadedAt" IS NOT NULL)::int AS "loaded",
              COUNT(*) FILTER (WHERE "status"='returned')::int AS "returned",
@@ -276,7 +276,7 @@ export async function POST(req:NextRequest){
            FROM "RentalFulfillmentAsset"
            WHERE "organizationId"=$1 AND "orderId"=$2 AND "itemId"=$3`,
           organization.id,orderId,itemId
-        );
+        )) as {loaded:number;returned:number;damaged:number;missing:number}[];
         const minimum=scanned[0]||{loaded:0,returned:0,damaged:0,missing:0};
         if(loadedQty<minimum.loaded||returnedQty<minimum.returned||damagedQty<minimum.damaged||missingQty<minimum.missing){
           throw new Error(`SCANNED_MINIMUM|${minimum.loaded}|${minimum.returned}|${minimum.damaged}|${minimum.missing}`);
@@ -328,27 +328,27 @@ export async function POST(req:NextRequest){
       if(!unit)throw new Error("UNIT_NOT_FOUND");
 
       await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext($1))`,`${organization.id}:unit:${unit.id}`);
-      const resources=await tx.$queryRawUnsafe<ResourceRow[]>(
+      const resources=(await tx.$queryRawUnsafe(
         `SELECT * FROM "RentalFulfillmentResource"
          WHERE "organizationId"=$1 AND "orderId"=$2 AND "itemId"=$3 LIMIT 1`,
         organization.id,orderId,unit.itemId
-      );
+      )) as ResourceRow[];
       const resource=resources[0];
       if(!resource)throw new Error(`NOT_EXPECTED|${unit.item.name}`);
 
-      const otherActive=await tx.$queryRawUnsafe<{orderId:string}[]>(
+      const otherActive=(await tx.$queryRawUnsafe(
         `SELECT "orderId" FROM "RentalFulfillmentAsset"
          WHERE "organizationId"=$1 AND "itemUnitId"=$2 AND "orderId"<>$3 AND "status"='loaded'
          LIMIT 1`,
         organization.id,unit.id,orderId
-      );
+      )) as {orderId:string}[];
       if(otherActive[0])throw new Error(`UNIT_OUT|${unit.identifier}`);
 
-      const existingRows=await tx.$queryRawUnsafe<any[]>(
+      const existingRows=(await tx.$queryRawUnsafe(
         `SELECT * FROM "RentalFulfillmentAsset"
          WHERE "organizationId"=$1 AND "orderId"=$2 AND "itemUnitId"=$3 LIMIT 1`,
         organization.id,orderId,unit.id
-      );
+      )) as any[];
       const existing=existingRows[0]||null;
       const priorStatus=existing?.status||null;
 
