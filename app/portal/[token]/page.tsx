@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { resolveCustomerPortalToken } from "@/lib/customerPortal";
 import PayBalanceButton from "./PayBalanceButton";
+import SignContractForm from "./SignContractForm";
 
 export const metadata: Metadata = { title: "Order Portal", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -18,7 +19,7 @@ export default async function CustomerPortalPage({ params }: { params: { token: 
   const order = await prisma.order.findFirst({
     where: { id: access.orderId, organizationId: access.organizationId },
     include: {
-      organization: { select: { name: true, logoUrl: true, primaryColor: true, contactEmail: true, contactPhone: true, address: true, city: true, state: true, zip: true } },
+      organization: { select: { name: true, logoUrl: true, primaryColor: true, contactEmail: true, contactPhone: true, address: true, city: true, state: true, zip: true, contractTerms: true } },
       customer: { select: { firstName: true, lastName: true, email: true, phone: true } },
       items: { include: { item: { select: { name: true, picture: true } } } },
       orderAddons: true,
@@ -82,7 +83,7 @@ export default async function CustomerPortalPage({ params }: { params: { token: 
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="font-black">Contract</h2>{order.contract?.signedAt ? <div className="mt-3"><div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">✓ Signed by {order.contract.signatureName || order.customer.firstName} on {order.contract.signedAt.toLocaleDateString()}</div>{order.contract.contractText && <details className="mt-3"><summary className="cursor-pointer text-sm font-black text-blue-600">View signed rental agreement</summary><div className="mt-3 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-xl bg-slate-50 p-4 text-xs leading-5 text-slate-600">{order.contract.contractText}</div></details>}</div> : <p className="mt-2 text-sm text-slate-500">This order does not have a signed contract recorded yet. Contact the rental company if you expected one.</p>}</section>
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="font-black">Contract</h2>{order.contract?.signedAt ? <div className="mt-3"><div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">✓ Signed by {order.contract.signatureName || order.customer.firstName} on {order.contract.signedAt.toLocaleDateString()}</div>{order.contract.contractText && <details className="mt-3"><summary className="cursor-pointer text-sm font-black text-blue-600">View signed rental agreement</summary><div className="mt-3 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-xl bg-slate-50 p-4 text-xs leading-5 text-slate-600">{order.contract.contractText}</div></details>}</div> : <div className="mt-3"><div className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs leading-5 text-slate-600">{order.contract?.contractText || order.organization.contractTerms || "By signing below, you agree to the rental company terms and accept financial responsibility for the rented equipment during the rental period."}</div><SignContractForm token={params.token} businessName={order.organization.name}/></div>}</section>
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="font-black">Payment history</h2>{order.payments.length ? <div className="mt-3 divide-y divide-slate-100">{order.payments.map((p) => <div key={p.id} className="flex items-center justify-between py-3 text-sm"><div><div className="font-bold capitalize">{p.type} · {p.method}</div><div className="text-xs text-slate-400">{p.createdAt.toLocaleDateString()}{p.note ? ` · ${p.note}` : ""}</div></div><div className={`font-black ${p.type === "refund" ? "text-rose-600" : "text-emerald-700"}`}>{p.type === "refund" ? "−" : "+"}{money(p.amount)}</div></div>)}</div> : <p className="mt-2 text-sm text-slate-500">No payment transactions are recorded yet.</p>}</section>
       </div>
 
