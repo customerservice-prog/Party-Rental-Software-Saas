@@ -14,11 +14,11 @@ async function getOrder(organizationId:string, orderId:string){
 }
 
 async function ensureFulfillment(organizationId:string,orderId:string,performedBy:string){
-  let rows=await prisma.$queryRawUnsafe<FulfillmentRow[]>(`SELECT * FROM "RentalFulfillment" WHERE "organizationId"=$1 AND "orderId"=$2 LIMIT 1`,organizationId,orderId);
+  let rows=(await prisma.$queryRawUnsafe(`SELECT * FROM "RentalFulfillment" WHERE "organizationId"=$1 AND "orderId"=$2 LIMIT 1`,organizationId,orderId)) as FulfillmentRow[];
   if(!rows[0]){
     const id=randomUUID();
     await prisma.$executeRawUnsafe(`INSERT INTO "RentalFulfillment" ("id","organizationId","orderId","status","createdAt","updatedAt") VALUES ($1,$2,$3,'preparing',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) ON CONFLICT ("orderId") DO NOTHING`,id,organizationId,orderId);
-    rows=await prisma.$queryRawUnsafe<FulfillmentRow[]>(`SELECT * FROM "RentalFulfillment" WHERE "organizationId"=$1 AND "orderId"=$2 LIMIT 1`,organizationId,orderId);
+    rows=(await prisma.$queryRawUnsafe(`SELECT * FROM "RentalFulfillment" WHERE "organizationId"=$1 AND "orderId"=$2 LIMIT 1`,organizationId,orderId)) as FulfillmentRow[];
     if(rows[0]) await prisma.$executeRawUnsafe(`INSERT INTO "RentalFulfillmentEvent" ("id","organizationId","orderId","fulfillmentId","type","performedBy") VALUES ($1,$2,$3,$4,'fulfillment_started',$5)`,randomUUID(),organizationId,orderId,rows[0].id,performedBy);
   }
   return rows[0];
@@ -36,10 +36,10 @@ export async function GET(req:NextRequest){
   const orderId=new URL(req.url).searchParams.get("orderId");
   if(!orderId)return NextResponse.json({error:"orderId is required"},{status:400});
   const order=await getOrder(organization.id,orderId); if(!order)return NextResponse.json({error:"Order not found"},{status:404});
-  const rows=await prisma.$queryRawUnsafe<FulfillmentRow[]>(`SELECT * FROM "RentalFulfillment" WHERE "organizationId"=$1 AND "orderId"=$2 LIMIT 1`,organization.id,orderId);
+  const rows=(await prisma.$queryRawUnsafe(`SELECT * FROM "RentalFulfillment" WHERE "organizationId"=$1 AND "orderId"=$2 LIMIT 1`,organization.id,orderId)) as FulfillmentRow[];
   const fulfillment=rows[0]||null;
-  const items=fulfillment?await prisma.$queryRawUnsafe<FulfillmentItemRow[]>(`SELECT * FROM "RentalFulfillmentItem" WHERE "fulfillmentId"=$1 ORDER BY "createdAt" ASC`,fulfillment.id):[];
-  const events=fulfillment?await prisma.$queryRawUnsafe<FulfillmentEventRow[]>(`SELECT "id","type","orderItemId","itemUnitId","quantity","notes","performedBy","createdAt" FROM "RentalFulfillmentEvent" WHERE "organizationId"=$1 AND "orderId"=$2 ORDER BY "createdAt" DESC LIMIT 100`,organization.id,orderId):[];
+  const items=fulfillment?(await prisma.$queryRawUnsafe(`SELECT * FROM "RentalFulfillmentItem" WHERE "fulfillmentId"=$1 ORDER BY "createdAt" ASC`,fulfillment.id)) as FulfillmentItemRow[]:[];
+  const events=fulfillment?(await prisma.$queryRawUnsafe(`SELECT "id","type","orderItemId","itemUnitId","quantity","notes","performedBy","createdAt" FROM "RentalFulfillmentEvent" WHERE "organizationId"=$1 AND "orderId"=$2 ORDER BY "createdAt" DESC LIMIT 100`,organization.id,orderId)) as FulfillmentEventRow[]:[];
   return NextResponse.json({order,fulfillment,items,events});
 }
 
@@ -85,7 +85,7 @@ export async function POST(req:NextRequest){
       user.id
     );
   }
-  const updated=await prisma.$queryRawUnsafe<FulfillmentRow[]>(`SELECT * FROM "RentalFulfillment" WHERE "id"=$1 AND "organizationId"=$2 LIMIT 1`,fulfillment.id,organization.id);
-  const items=await prisma.$queryRawUnsafe<FulfillmentItemRow[]>(`SELECT * FROM "RentalFulfillmentItem" WHERE "fulfillmentId"=$1 ORDER BY "createdAt" ASC`,fulfillment.id);
+  const updated=(await prisma.$queryRawUnsafe(`SELECT * FROM "RentalFulfillment" WHERE "id"=$1 AND "organizationId"=$2 LIMIT 1`,fulfillment.id,organization.id)) as FulfillmentRow[];
+  const items=(await prisma.$queryRawUnsafe(`SELECT * FROM "RentalFulfillmentItem" WHERE "fulfillmentId"=$1 ORDER BY "createdAt" ASC`,fulfillment.id)) as FulfillmentItemRow[];
   return NextResponse.json({fulfillment:updated[0],items});
 }
