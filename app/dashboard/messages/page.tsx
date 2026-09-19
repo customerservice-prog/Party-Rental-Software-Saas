@@ -26,6 +26,10 @@ type SentMessage = {
   subject: string | null;
   body: string;
   status: string;
+  direction?: string;
+  fromAddress?: string | null;
+  customerId?: string | null;
+  providerError?: string | null;
   createdAt: string;
 };
 
@@ -118,6 +122,19 @@ export default function MessagesPage() {
     }
   }
 
+  function replyToMessage(message: SentMessage) {
+    setChannel("sms");
+    setCustomerId(message.customerId || "");
+    setToName(message.toName || "");
+    setToAddress(message.toAddress || "");
+    setSubject("");
+    setBody("");
+    setTemplateId("");
+    setError("");
+    setNotice(`Replying to ${message.toName || message.toAddress}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   async function onSend(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -141,7 +158,8 @@ export default function MessagesPage() {
       if (!res.ok) {
         setError(data.error || "Failed to queue message.");
       } else {
-        setNotice("Message queued. Delivery will be sent once a provider is connected.");
+        const status = data.message?.status;
+        setNotice(status === "sent" ? "Message sent." : status === "failed" ? "Provider rejected the message. Review the error in message history." : "Message queued. Connect the matching provider in Settings to deliver it.");
         setSubject("");
         setBody("");
         setTemplateId("");
@@ -158,8 +176,7 @@ export default function MessagesPage() {
     <div className="max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold mb-1">Messages</h1>
       <p className="text-sm text-gray-500 mb-6">
-        Compose an email or SMS to a customer. Messages are queued and will be
-        delivered once a messaging provider is connected.
+        Send email or SMS and review inbound customer texts in one place. Connected providers deliver immediately; otherwise outbound messages remain queued honestly.
       </p>
 
       {error && (
@@ -292,9 +309,9 @@ export default function MessagesPage() {
             <thead className="bg-gray-50 text-left">
               <tr>
                 <th className="px-3 py-2">Date</th>
-                <th className="px-3 py-2">Channel</th>
-                <th className="px-3 py-2">To</th>
-                <th className="px-3 py-2">Subject</th>
+                <th className="px-3 py-2">Direction</th>
+                <th className="px-3 py-2">Contact</th>
+                <th className="px-3 py-2">Message</th>
                 <th className="px-3 py-2">Status</th>
                 <th className="px-3 py-2"></th>
               </tr>
@@ -305,24 +322,28 @@ export default function MessagesPage() {
                   <td className="px-3 py-2 whitespace-nowrap">
                     {new Date(m.createdAt).toLocaleString()}
                   </td>
-                  <td className="px-3 py-2 uppercase text-xs">{m.channel}</td>
                   <td className="px-3 py-2">
-                    {m.toName}
-                    <span className="text-gray-400"> ({m.toAddress})</span>
+                    <span className={"inline-flex rounded px-2 py-0.5 text-[10px] font-bold uppercase " + ((m.direction || "outbound") === "inbound" ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-700")}>
+                      {(m.direction || "outbound") === "inbound" ? "Incoming SMS" : `Outgoing ${m.channel}`}
+                    </span>
                   </td>
-                  <td className="px-3 py-2">{m.subject || "-"}</td>
                   <td className="px-3 py-2">
-                    <span className="inline-block rounded bg-yellow-100 text-yellow-800 px-2 py-0.5 text-xs">
+                    <div className="font-medium">{m.toName}</div>
+                    <div className="text-xs text-gray-400">{m.toAddress}</div>
+                  </td>
+                  <td className="px-3 py-2 max-w-sm">
+                    {m.subject && <div className="font-medium">{m.subject}</div>}
+                    <div className="text-xs text-gray-600 line-clamp-2">{m.body}</div>
+                    {m.providerError && <div className="mt-1 text-[10px] text-red-600">{m.providerError}</div>}
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className={"inline-block rounded px-2 py-0.5 text-xs " + (m.status === "sent" || m.status === "received" ? "bg-green-100 text-green-800" : m.status === "failed" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800")}>
                       {m.status}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-right">
-                    <button
-                      onClick={() => onDelete(m.id)}
-                      className="text-red-600 hover:underline text-xs"
-                    >
-                      Delete
-                    </button>
+                  <td className="px-3 py-2 text-right whitespace-nowrap">
+                    {(m.direction || "outbound") === "inbound" && <button onClick={() => replyToMessage(m)} className="mr-3 text-indigo-600 hover:underline text-xs">Reply</button>}
+                    <button onClick={() => onDelete(m.id)} className="text-red-600 hover:underline text-xs">Delete</button>
                   </td>
                 </tr>
               ))}
