@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
     const categoryLabel = catalogCategoryLabel(template.categoryKey);
     let category = categoryByName.get(categoryLabel.toLowerCase());
     if (!category) {
-      category = await prisma.category.create({
+      const createdCategory: CategoryRow = await prisma.category.create({
         data: {
           organizationId: organization.id,
           name: categoryLabel,
@@ -107,7 +107,12 @@ export async function POST(req: NextRequest) {
           sortOrder: categorySortOrder++,
         },
       });
-      categoryByName.set(categoryLabel.toLowerCase(), category);
+      category = createdCategory;
+      categoryByName.set(categoryLabel.toLowerCase(), createdCategory);
+    }
+    if (!category) {
+      skipped.push({ name: template.name, reason: "Could not resolve category" });
+      continue;
     }
 
     const isUnlimitedType = template.type === "service" || template.type === "consumable";
