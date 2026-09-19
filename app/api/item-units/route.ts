@@ -3,12 +3,12 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
-// Optional per-item serialized asset registry (see prisma/schema.prisma
-// ItemUnit for the full rationale). Purely informational for staff - never
-// consulted by the booking/availability engine, which still reserves by
-// aggregate Item.quantity only (see lib/availability.ts).
+// Optional per-item serialized asset registry. Unit condition now feeds
+// availability for maintenance/retired/missing assets, while reserving orders
+// still consume the aggregate Item.quantity. Order-specific scans are tracked
+// separately by the fulfillment system.
 
-const UNIT_STATUSES = ["available", "rented", "maintenance", "retired"];
+const UNIT_STATUSES = ["available", "rented", "maintenance", "missing", "retired"];
 
 export async function GET(req: NextRequest) {
   const organization = await requireCurrentOrganization();
