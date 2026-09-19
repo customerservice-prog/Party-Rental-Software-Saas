@@ -19,6 +19,8 @@ type Selection = {
   price?: number;
   displayToCustomer?: boolean;
 };
+type TemplateRow = { id: string; name: string; categoryKey: string; type: string };
+type CategoryRow = { id: string; name: string };
 
 // Creates real, tenant-owned Category/Item rows from selected global
 // CatalogTemplate rows. This is the ONLY place a tenant's inventory is
@@ -64,12 +66,12 @@ export async function POST(req: NextRequest) {
   }
 
   const templateIds = selections.map((s) => s.templateId);
-  const templates = await prisma.catalogTemplate.findMany({
+  const templates: TemplateRow[] = await prisma.catalogTemplate.findMany({
     where: { id: { in: templateIds }, isActive: true },
   });
   const templateById = new Map(templates.map((t) => [t.id, t]));
 
-  const existingCategories = await prisma.category.findMany({
+  const existingCategories: CategoryRow[] = await prisma.category.findMany({
     where: { organizationId: organization.id },
   });
   const categoryByName = new Map(existingCategories.map((c) => [c.name.toLowerCase(), c]));
