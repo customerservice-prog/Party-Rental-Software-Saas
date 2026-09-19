@@ -46,14 +46,14 @@ export async function GET(req: NextRequest) {
   const proofByOrder = new Map<string, ProofRow>();
   await Promise.all(
     stops.map(async (stop: { orderId: string }) => {
-      const rows = await prisma.$queryRawUnsafe<ProofRow[]>(
+      const rows = (await prisma.$queryRawUnsafe(
         `SELECT "orderId","proofName","proofSignature","proofPhotoUrl","notes"
          FROM "RentalFulfillment"
          WHERE "organizationId"=$1 AND "orderId"=$2
          LIMIT 1`,
         driver.organizationId,
         stop.orderId
-      );
+      )) as ProofRow[];
       if (rows[0]) proofByOrder.set(stop.orderId, rows[0]);
     })
   );
