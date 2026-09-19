@@ -110,7 +110,7 @@ export async function getOperationalQuantityWithClient(
   totalQuantity: number
 ): Promise<number> {
   const unavailableUnits = await db.itemUnit.count({
-    where: { organizationId, itemId, status: { in: ["maintenance", "retired"] } },
+    where: { organizationId, itemId, status: { in: ["maintenance", "missing", "retired"] } },
   });
   return Math.max(0, totalQuantity - unavailableUnits);
 }
