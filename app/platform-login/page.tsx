@@ -15,7 +15,7 @@ export default function PlatformLoginPage() {
   async function submit(e:React.FormEvent){
     e.preventDefault();
     setLoading(true);setError("");
-    const res=await signIn("credentials",{username,password,tenantSlug:"",redirect:false});
+    const res=await signIn("credentials",{username,password,tenantSlug:"",loginScope:"platform",redirect:false});
     if(res?.error){
       setLoading(false);
       setError(res.error==="CredentialsSignin"?"Invalid platform administrator credentials.":res.error);
