@@ -141,6 +141,8 @@ model User {
   isActive       Boolean  @default(true)
   lastLoginAt    DateTime?
   forcePasswordReset Boolean @default(false)
+  mfaEnabled     Boolean  @default(false)
+  mfaSecret      String?
   tenantRoleId   String?
   tenantRole     TenantRole? @relation(fields: [tenantRoleId], references: [id])
   createdAt      DateTime @default(now())
