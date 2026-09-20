@@ -8,7 +8,7 @@ import { authOptions } from "@/lib/auth";
 export async function requirePlatformAdmin() {
     const session = await getServerSession(authOptions);
 
-  if (!session || (session.user as any)?.role !== "platform_admin") {
+  if (!session || (session.user as any)?.revoked || (session.user as any)?.role !== "platform_admin") {
         redirect("/platform-login");
   }
 
