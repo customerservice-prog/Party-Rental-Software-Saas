@@ -31,7 +31,7 @@ export default function TenantLoginPage(){
       setError("Enter your rental company's business subdomain.");
       return;
     }
-    const res=await signIn("credentials",{username,password,tenantSlug:tenantSlug.trim().toLowerCase(),redirect:false});
+    const res=await signIn("credentials",{username,password,tenantSlug:tenantSlug.trim().toLowerCase(),loginScope:"tenant",redirect:false});
     if(res?.error){
       setLoading(false);
       setError(res.error==="CredentialsSignin"?"Invalid business, username, or password.":res.error);
