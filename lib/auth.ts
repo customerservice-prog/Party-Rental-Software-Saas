@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import { getCurrentOrganization } from "./tenant";
+import { decryptTotpSecret, verifyTotp } from "./totp";
 import {
   getClientIp,
   isLoginBurstLimited,
@@ -33,6 +34,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
         tenantSlug: { label: "Business subdomain", type: "text" },
         loginScope: { label: "Login scope", type: "text" },
+        mfaCode: { label: "Authenticator code", type: "text" },
       },
       async authorize(credentials, req) {
         if (!credentials?.username || !credentials?.password) {
@@ -104,6 +106,23 @@ export const authOptions: NextAuthOptions = {
         if (!isValid) {
           await noteLoginFailure(ip);
           return null;
+        }
+
+        if (user.role === "platform_admin" && user.mfaEnabled) {
+          if (!user.mfaSecret) {
+            await noteLoginFailure(ip);
+            return null;
+          }
+          let validMfa = false;
+          try {
+            validMfa = verifyTotp(decryptTotpSecret(user.mfaSecret), credentials.mfaCode || "");
+          } catch {
+            validMfa = false;
+          }
+          if (!validMfa) {
+            await noteLoginFailure(ip);
+            return null;
+          }
         }
 
         await clearLoginFailures(ip);
