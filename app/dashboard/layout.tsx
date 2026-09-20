@@ -8,6 +8,7 @@ import { runBookingAutomations } from "@/lib/automations";
 import DashboardNav from "./DashboardNav";
 import PlatformSupportBanner from "./PlatformSupportBanner";
 import { getActivePlatformAnnouncements, getPlatformSetting } from "@/lib/platformControl";
+import { resolveTenantViewer } from "@/lib/tenantViewer";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -19,6 +20,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const sessionRole = (session.user as any).role;
   if ((session.user as any).revoked || sessionRole === "revoked") redirect("/login");
   const isPlatformSupport = sessionRole === "platform_admin";
+  const viewer = isPlatformSupport ? await resolveTenantViewer(session.user as any) : null;
+  if (isPlatformSupport && !viewer) redirect("/admin/organizations");
   if (!isPlatformSupport) {
     const currentUser = await prisma.user.findUnique({
       where: { id: (session.user as any).id },
@@ -29,6 +32,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
   if (!organization || (!isPlatformSupport && (session.user as any).organizationId !== organization.id)) {
     redirect(isPlatformSupport ? "/admin" : "/login");
+  }
+
+  const supportBanner = viewer?.support ? <PlatformSupportBanner tenantName={organization.name} userName={viewer.name} role={viewer.role} organizationId={organization.id} expiresAt={viewer.support.expiresAt} /> : null;
+  if (viewer && (viewer.forcePasswordReset || organization.status === "suspended")) {
+    return <div className="min-h-screen bg-slate-50">{supportBanner}<main className="mx-auto max-w-lg p-8">
+      <h1 className="text-2xl font-black">{viewer.forcePasswordReset ? "Choose a new password" : "Account suspended"}</h1>
+      <p className="mt-3 text-sm text-slate-600">{viewer.forcePasswordReset ? "This user must replace their temporary password before they can enter the dashboard." : "This tenant cannot currently sign in because the organization is suspended."}</p>
+      <a href={"/admin/organizations/"+organization.id+"/support"} className="mt-5 inline-block font-bold text-blue-600">Return to support workspace →</a>
+    </main></div>;
   }
 
   // Best-effort booking-lifecycle automation trigger (real booking
@@ -49,18 +61,20 @@ export default async function DashboardLayout({ children }: { children: React.Re
     getPlatformSetting<boolean>("maintenance_enabled", false).catch(() => false),
     getPlatformSetting<string>("maintenance_message", "").catch(() => ""),
   ]);
-  const role = sessionRole;
-  const userName = (session.user as any).name || (session.user as any).email || "User";
+  const role = viewer?.role ?? sessionRole;
+  const userName = viewer?.name || (session.user as any).name || (session.user as any).email || "User";
 
   return (
     <div className="min-h-screen">
-      {isPlatformSupport && <PlatformSupportBanner tenantName={organization.name} />}
+      <div className="sticky top-0 z-50">
+      {supportBanner}
       <DashboardNav
-        showSettings={role === "owner" || role === "platform_admin"}
+        showSettings={role === "owner"}
         orgName={organization.name}
         userName={userName}
         role={role}
       />
+      </div>
       <div className="pt-20 flex flex-1 flex-col min-h-screen">
         {maintenanceEnabled && (
           <div className="border-b border-amber-300 bg-amber-100 px-6 py-3 text-sm font-semibold text-amber-950">

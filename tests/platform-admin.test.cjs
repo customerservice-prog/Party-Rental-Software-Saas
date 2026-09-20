@@ -139,7 +139,7 @@ test('disabled then re-enabled accounts cannot resurrect old sessions', async ()
 process.env.NEXTAUTH_SECRET='isolated-regression-test-secret-not-used-in-production';
 const support=load('lib/supportSession.ts');
 test('support session is bound to its admin and rejects tampering and legacy cookies', () => {
-  const cookie=support.createSupportSession('tenant-1','admin-1');
+  const cookie=support.createSupportSession('tenant-1','admin-1','owner-1',0);
   assert.equal(support.readSupportSession(cookie,'admin-1'),'tenant-1');
   assert.equal(support.readSupportSession(cookie,'admin-2'),null);
   assert.equal(support.readSupportSession(cookie+'x','admin-1'),null);
@@ -151,7 +151,7 @@ test('support access expires server-side at exactly 20 minutes', () => {
   const start=now();
   try {
     Date.now=()=>start;
-    const cookie=support.createSupportSession('tenant-1','admin-1');
+    const cookie=support.createSupportSession('tenant-1','admin-1','owner-1',0);
     Date.now=()=>start+support.SUPPORT_SECONDS*1000-1;
     assert.equal(support.readSupportSession(cookie,'admin-1'),'tenant-1');
     Date.now=()=>start+support.SUPPORT_SECONDS*1000;
@@ -162,7 +162,7 @@ test('support access expires server-side at exactly 20 minutes', () => {
 test('expired support session cannot fall back to a tenant host or internal organization', async () => {
   const tenant=load('lib/tenant.ts',{
     'next-auth':{getServerSession:async()=>adminSession},'next/headers':{cookies:()=>({get:()=>undefined}),headers:()=>({get:()=> 'other-tenant'})},
-    './auth':{authOptions:{}},'./prisma':{prisma:{organization:{findFirst:async()=>{throw Error('must not read tenant');}}}},'./supportSession':support,
+    './auth':{authOptions:{}},'./prisma':{prisma:{organization:{findFirst:async()=>{throw Error('must not read tenant');}}}},'./supportSession':support,'./tenantViewer':{resolveTenantViewer:async()=>null},
   });
   assert.equal(await tenant.getCurrentOrganization(),null);
 });
@@ -171,7 +171,7 @@ test('temporary passwords cannot access staff APIs before being changed', async 
   const authz=load('lib/authz.ts',{
     'next-auth':{getServerSession:async()=>({user:{id:'u1',role:'owner',organizationId:'tenant-1'}})},
     'next/headers':{cookies:()=>({get:()=>undefined})},'./auth':{authOptions:{}},
-    './prisma':{prisma:{user:{findUnique:async()=>({forcePasswordReset:true})}}},'./permissions':{},'./supportSession':support,
+    './prisma':{prisma:{user:{findUnique:async()=>({forcePasswordReset:true})}}},'./permissions':{},'./supportSession':support,'./tenantViewer':{resolveTenantViewer:async()=>null},
   });
   await assert.rejects(()=>authz.requireStaffSession('tenant-1'),e=>e.status===403&&/temporary password/.test(e.message));
 });
@@ -215,6 +215,7 @@ test('support dashboard viewing does not trigger customer automations',async()=>
     '@/lib/auth':{authOptions:{}},'@/lib/prisma':{prisma:{}},'@/lib/tenant':{getCurrentOrganization:async()=>({id:'tenant-1',name:'Example',planTier:'starter'})},
     '@/lib/billing':{getBillingStatus:async()=>({})},'@/lib/automations':{runBookingAutomations:async()=>{runs++;}},
     '@/lib/platformControl':{getActivePlatformAnnouncements:async()=>[],getPlatformSetting:async(k,fallback)=>fallback},
+    '@/lib/tenantViewer':{resolveTenantViewer:async()=>({id:'owner-1',organizationId:'tenant-1',name:'Tenant owner',role:'owner',organization:{status:'active'}})},
     './DashboardNav':{__esModule:true,default:()=>null},'./PlatformSupportBanner':{__esModule:true,default:()=>null},
   });
   await layout.default({children:null});assert.equal(runs,0);
@@ -237,4 +238,104 @@ test('admin monitoring includes burst locks and excludes expired locks',async()=
   assert.equal(policy.isThrottleLocked(row),true);
   row.burstExpiresAt=new Date(Date.now()-1000);
   assert.equal(policy.isThrottleLocked(row),false);
+});
+
+function supportFixture() {
+  const users=[
+    {id:'owner-1',organizationId:'tenant-1',name:'Tenant owner',role:'owner',isActive:true,sessionVersion:0,forcePasswordReset:false,organization:{status:'active'},tenantRole:null},
+    {id:'staff-1',organizationId:'tenant-1',name:'Tenant staff',role:'staff',isActive:true,sessionVersion:0,forcePasswordReset:false,organization:{status:'active'},tenantRole:{permissions:['orders.view']}},
+    {id:'other-owner',organizationId:'tenant-2',name:'Other owner',role:'owner',isActive:true,sessionVersion:0},
+  ];
+  const events=[];let cookie;let options;
+  const db={
+    organization:{findFirst:async()=>({id:'tenant-1',name:'Example',slug:'example',status:'active'})},
+    user:{findFirst:async({where})=>users.find(u=>u.organizationId===where.organizationId&&(!where.id||u.id===where.id)&&u.isActive===where.isActive&&(typeof where.role==='string'?u.role===where.role:where.role.in.includes(u.role)))||null,findUnique:async({where})=>users.find(u=>u.id===where.id)},
+    auditLog:{create:async({data})=>{events.push(data);}},
+  };
+  const headers={'next/headers':{cookies:()=>({get:()=>cookie?{value:cookie}:undefined,set:(name,value,opts)=>{assert.equal(name,support.SUPPORT_COOKIE);cookie=value;options=opts;}})}};
+  const api=route('app/api/admin/organizations/[id]/support-session/route.ts',db,headers);
+  const viewer=load('lib/tenantViewer.ts',{'./prisma':{prisma:db},'./supportSession':support,...headers});
+  const authz=load('lib/authz.ts',{'next-auth':{getServerSession:async()=>adminSession},'./auth':{authOptions:{}},'./prisma':{prisma:db},'./permissions':load('lib/permissions.ts'),'./tenantViewer':viewer});
+  return {users,events,db,headers,api,viewer,authz,get cookie(){return cookie},get options(){return options},start:body=>api.POST(request(body),{params:{id:'tenant-1'}})};
+}
+
+test('tenant view starts as the real owner, preserves admin actor, and clears on exit',async()=>{
+  const f=supportFixture();
+  assert.equal((await f.start({})).status,200);
+  assert.equal(support.readSupportSessionDetails(f.cookie,'admin-1').userId,'owner-1');
+  assert.equal(f.options.httpOnly,true);assert.equal(f.options.sameSite,'lax');assert.equal(f.options.maxAge,1200);
+  assert.deepEqual(await f.authz.requireOwnerSession('tenant-1'),{id:'admin-1',effectiveUserId:'owner-1',role:'owner',organizationId:'tenant-1'});
+  assert.equal(f.events[0].performedBy,'admin-1');assert.equal(JSON.parse(f.events[0].details).viewAsUserId,'owner-1');
+  assert.equal((await f.api.DELETE()).status,200);
+  assert.equal(f.cookie,'');assert.equal(f.options.maxAge,0);
+  assert.equal(f.events[1].action,'platform_support_session.ended');
+  await assert.rejects(()=>f.authz.requireStaffSession('tenant-1'),e=>e.status===401);
+});
+
+test('staff impersonation has the same permission outcomes as that staff account',async()=>{
+  const f=supportFixture();await f.start({userId:'staff-1'});
+  const normal=load('lib/authz.ts',{'next-auth':{getServerSession:async()=>({user:f.users[1]})},'./auth':{authOptions:{}},'./prisma':{prisma:f.db},'./permissions':load('lib/permissions.ts'),'./tenantViewer':f.viewer});
+  for(const auth of [normal,f.authz]){
+    assert.equal((await auth.requirePermission('tenant-1','orders.view')).role,'staff');
+    await assert.rejects(()=>auth.requirePermission('tenant-1','orders.manage'),e=>e.status===403);
+    await assert.rejects(()=>auth.requireOwnerSession('tenant-1'),e=>e.status===403);
+    await assert.rejects(()=>auth.requireStaffSession('tenant-2'),e=>e.status===401);
+  }
+  f.users[1].tenantRole.permissions.push('orders.manage');
+  assert.equal((await f.authz.requirePermission('tenant-1','orders.manage')).id,'admin-1');
+});
+
+for(const userId of ['other-owner','missing']) test('cannot impersonate a user outside the selected tenant: '+userId,async()=>{
+  const f=supportFixture();assert.equal((await f.start({userId})).status,400);assert.equal(f.cookie,undefined);assert.equal(f.events.length,0);
+});
+
+for(const change of ['disabled','deleted','password-reset','role-changed','moved-tenant']) test('existing tenant view is revoked when target is '+change,async()=>{
+  const f=supportFixture();await f.start({userId:'staff-1'});
+  if(change==='disabled')f.users[1].isActive=false;
+  if(change==='deleted')f.users.splice(1,1);
+  if(change==='password-reset')f.users[1].sessionVersion++;
+  if(change==='role-changed')f.users[1].role='platform_admin';
+  if(change==='moved-tenant')f.users[1].organizationId='tenant-2';
+  await assert.rejects(()=>f.authz.requireStaffSession('tenant-1'),e=>e.status===401);
+});
+
+test('forced reset and suspended tenants stay blocked during impersonation',async()=>{
+  const f=supportFixture();await f.start({});
+  f.users[0].forcePasswordReset=true;
+  await assert.rejects(()=>f.authz.requireStaffSession('tenant-1'),e=>e.status===403&&/password/.test(e.message));
+  f.users[0].forcePasswordReset=false;f.users[0].organization.status='suspended';
+  await assert.rejects(()=>f.authz.requireStaffSession('tenant-1'),e=>e.status===403&&/suspended/.test(e.message));
+});
+
+test('support start fails closed if the administrator audit cannot be recorded',async()=>{
+  const f=supportFixture();f.db.auditLog.create=async()=>{throw Error('audit unavailable');};
+  await assert.rejects(()=>f.start({}),/audit unavailable/);assert.equal(f.cookie,undefined);
+});
+
+test('tenant view cannot accidentally change the administrator password',async()=>{
+  const f=supportFixture();await f.start({});
+  const api=route('app/api/account/change-password/route.ts',{}, {'next-auth':{getServerSession:async()=>adminSession},'@/lib/auth':{authOptions:{}},...f.headers});
+  assert.equal((await api.POST(request({currentPassword:'unused',newPassword:'unused-password'}))).status,403);
+});
+
+for(const role of ['owner','staff']) test('dashboard navigation and identity match the selected '+role,async()=>{
+  const {renderToStaticMarkup}=require('react-dom/server');
+  const React=require('react');
+  const target={id:'u1',name:'Actual tenant user',role,organizationId:'tenant-1',isActive:true};
+  let signedIn={user:target};let view=null;
+  const Nav=props=>React.createElement('nav',null,JSON.stringify(props));
+  const layout=load('app/dashboard/layout.tsx',{
+    'next-auth':{getServerSession:async()=>signedIn},'next/navigation':{redirect:()=>{throw Error('unexpected redirect');}},
+    '@/lib/auth':{authOptions:{}},'@/lib/prisma':{prisma:{user:{findUnique:async()=>target}}},
+    '@/lib/tenant':{getCurrentOrganization:async()=>({id:'tenant-1',name:'Example',planTier:'starter',status:'active'})},
+    '@/lib/tenantViewer':{resolveTenantViewer:async()=>view},
+    '@/lib/billing':{getBillingStatus:async()=>({message:'Trial status',trialDaysLeft:2})},'@/lib/automations':{runBookingAutomations:async()=>{}},
+    '@/lib/platformControl':{getActivePlatformAnnouncements:async()=>[{id:'a1',title:'Tenant announcement'}],getPlatformSetting:async(k,f)=>f},
+    './DashboardNav':{__esModule:true,default:Nav},'./PlatformSupportBanner':{__esModule:true,default:()=>null},
+  });
+  const regular=renderToStaticMarkup(await layout.default({children:React.createElement('main',null,'Tenant content')}));
+  signedIn=adminSession;view={...target,support:{expiresAt:Date.now()+1200000}};
+  const impersonated=renderToStaticMarkup(await layout.default({children:React.createElement('main',null,'Tenant content')}));
+  assert.equal(impersonated,regular);
+  assert.ok(impersonated.includes('Actual tenant user'));assert.ok(!impersonated.includes('Test admin'));
 });

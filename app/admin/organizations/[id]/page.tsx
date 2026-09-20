@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import ViewAsTenantButton from "@/app/admin/ViewAsTenantButton";
 import { PLANS, getPlan } from "@/lib/plans";
 
 function toDateInputValue(value:string|null|undefined){return value?value.slice(0,10):""}
@@ -77,6 +78,7 @@ export default function AdminOrganizationDetailPage(){
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
+        <ViewAsTenantButton organizationId={organization.id}/>
         <Link href={"/admin/organizations/"+organization.id+"/support"} className="rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-black text-white shadow-sm">Support workspace</Link>
         <a href={"/t/"+organization.slug} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-700 shadow-sm">Open storefront ↗</a>
         <button type="submit" disabled={saving} className="rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-black text-white shadow-sm disabled:opacity-50">{saving?"Saving…":"Save changes"}</button>

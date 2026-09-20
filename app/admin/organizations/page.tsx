@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ViewAsTenantButton from "@/app/admin/ViewAsTenantButton";
 import { prisma } from "@/lib/prisma";
 import { getPlan } from "@/lib/plans";
 
@@ -91,7 +92,7 @@ export default async function OrganizationsPage({searchParams}:{searchParams:{q?
                 <td className="px-5 py-4 text-sm font-black text-slate-700">{org._count.customers}</td>
                 <td className="px-5 py-4 text-sm font-black text-slate-700">{org._count.orders}</td>
                 <td className="px-5 py-4 text-xs text-slate-500">{new Date(org.createdAt).toLocaleDateString()}</td>
-                <td className="px-5 py-4 text-right"><Link href={"/admin/organizations/"+org.id} className="inline-flex rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-black text-slate-700 shadow-sm group-hover:border-blue-200 group-hover:text-blue-700">Manage →</Link></td>
+                <td className="px-5 py-4 text-right"><div className="flex flex-wrap justify-end gap-2"><ViewAsTenantButton organizationId={org.id}/><Link href={"/admin/organizations/"+org.id} className="inline-flex rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-black text-slate-700 shadow-sm group-hover:border-blue-200 group-hover:text-blue-700">Manage →</Link></div></td>
               </tr>
             })}
           </tbody>

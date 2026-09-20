@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import ViewAsTenantButton from "@/app/admin/ViewAsTenantButton";
 
 type TenantUser={id:string;name:string;username:string;role:string;isActive:boolean;lastLoginAt:string|null;createdAt:string;forcePasswordReset:boolean;tenantRole:{name:string}|null};
 type SupportNote={id:string;body:string;createdBy:string;createdAt:string};
 type Organization={id:string;name:string;slug:string;status:string;contactEmail:string|null;contactPhone:string|null;customDomain:string|null;stripeAccountId:string|null;emailConfigured:boolean;smsConfigured:boolean;createdAt:string;website:{publishedAt:string|null}|null;users:TenantUser[];_count:{items:number;customers:number;orders:number;pages:number;drivers:number;sentMessages:number}};
 
 export default function SupportWorkspace({organizationId}:{organizationId:string}){
-  const router=useRouter();
   const[organization,setOrganization]=useState<Organization|null>(null);
   const[notes,setNotes]=useState<SupportNote[]>([]);
   const[health,setHealth]=useState<{failedMessages:number;blockedAttempts:number}>({failedMessages:0,blockedAttempts:0});
@@ -59,15 +58,6 @@ export default function SupportWorkspace({organizationId}:{organizationId:string
     await action({action:"user.reset_password",userId:user.id,password});
   }
 
-  async function startSupport(){
-    setBusy(true);setError("");
-    const r=await fetch("/api/admin/organizations/"+organizationId+"/support-session",{method:"POST"});
-    const d=await r.json().catch(()=>({}));
-    setBusy(false);
-    if(!r.ok){setError(d.error||"Could not start support session.");return}
-    router.push("/dashboard");router.refresh();
-  }
-
   if(!organization)return <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-400">{error||"Loading tenant support workspace…"}</div>;
 
   const done=setup.filter(x=>x[1]).length;
@@ -81,7 +71,7 @@ export default function SupportWorkspace({organizationId}:{organizationId:string
         <h1 className="mt-1 text-3xl font-black tracking-[-.035em]">{organization.name}</h1>
         <p className="mt-2 text-sm text-slate-500">{organization.slug}.partyrentalcrm.com · support notes, users, onboarding and safe tenant access.</p>
       </div>
-      <button disabled={busy} onClick={startSupport} className="rounded-xl bg-violet-600 px-4 py-3 text-xs font-black text-white shadow-sm disabled:opacity-50">Open 20-minute tenant support session →</button>
+      <ViewAsTenantButton organizationId={organization.id} label="View as tenant owner" disabled={busy}/>
     </section>
 
     {(error||notice)&&<div className={"rounded-xl border px-4 py-3 text-sm font-bold "+(error?"border-rose-200 bg-rose-50 text-rose-700":"border-emerald-200 bg-emerald-50 text-emerald-700")}>{error||notice}</div>}
@@ -97,10 +87,10 @@ export default function SupportWorkspace({organizationId}:{organizationId:string
 
     <section className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-100 px-5 py-4"><h2 className="text-sm font-black">Tenant users</h2><p className="mt-0.5 text-[11px] text-slate-400">Enable/disable access, reset credentials, or transfer account ownership.</p></div>
+        <div className="border-b border-slate-100 px-5 py-4"><h2 className="text-sm font-black">Tenant users</h2><p className="mt-0.5 text-[11px] text-slate-400">View the account as this user, manage access, or transfer account ownership. Tenant view lasts 20 minutes.</p></div>
         <div className="divide-y divide-slate-100">{organization.users.map(user=><div key={user.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div><div className="flex flex-wrap items-center gap-2"><b className="text-sm">{user.name}</b><span className="rounded bg-slate-100 px-2 py-0.5 text-[9px] font-black uppercase text-slate-600">{user.role}</span><span className={"rounded px-2 py-0.5 text-[9px] font-black uppercase "+(user.isActive?"bg-emerald-50 text-emerald-700":"bg-rose-50 text-rose-700")}>{user.isActive?"active":"disabled"}</span>{user.forcePasswordReset&&<span className="rounded bg-amber-50 px-2 py-0.5 text-[9px] font-black text-amber-700">RESET REQUIRED</span>}</div><div className="mt-1 text-[11px] text-slate-400">@{user.username} · {user.tenantRole?.name||"No custom role"} · last login {user.lastLoginAt?new Date(user.lastLoginAt).toLocaleString():"never"}</div></div>
-          <div className="flex flex-wrap gap-2"><button disabled={busy} onClick={()=>resetPassword(user)} className="rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-black text-slate-600">Reset password</button><button disabled={busy} onClick={()=>confirm("Sign "+user.name+" out of all current sessions?")&&action({action:"user.revoke_sessions",userId:user.id})} className="rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-black text-slate-600">Revoke sessions</button><button disabled={busy} onClick={()=>action({action:user.isActive?"user.disable":"user.enable",userId:user.id})} className="rounded-lg bg-slate-100 px-3 py-2 text-[10px] font-black text-slate-700">{user.isActive?"Disable":"Enable"}</button>{user.role!=="owner"&&<button disabled={busy} onClick={()=>confirm("Transfer ownership to "+user.name+"? Existing owner accounts will become staff.")&&action({action:"user.transfer_owner",userId:user.id})} className="rounded-lg bg-violet-50 px-3 py-2 text-[10px] font-black text-violet-700">Make owner</button>}</div>
+          <div className="flex flex-wrap gap-2"><ViewAsTenantButton organizationId={organization.id} userId={user.id} label="View as this user" disabled={busy||!user.isActive}/><button disabled={busy} onClick={()=>resetPassword(user)} className="rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-black text-slate-600">Reset password</button><button disabled={busy} onClick={()=>confirm("Sign "+user.name+" out of all current sessions?")&&action({action:"user.revoke_sessions",userId:user.id})} className="rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-black text-slate-600">Revoke sessions</button><button disabled={busy} onClick={()=>action({action:user.isActive?"user.disable":"user.enable",userId:user.id})} className="rounded-lg bg-slate-100 px-3 py-2 text-[10px] font-black text-slate-700">{user.isActive?"Disable":"Enable"}</button>{user.role!=="owner"&&<button disabled={busy} onClick={()=>confirm("Transfer ownership to "+user.name+"? Existing owner accounts will become staff.")&&action({action:"user.transfer_owner",userId:user.id})} className="rounded-lg bg-violet-50 px-3 py-2 text-[10px] font-black text-violet-700">Make owner</button>}</div>
         </div>)}</div>
       </div>
 

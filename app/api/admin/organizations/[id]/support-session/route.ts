@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { requirePlatformAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { SUPPORT_COOKIE, SUPPORT_SECONDS, createSupportSession, readSupportSession } from "@/lib/supportSession";
+import { SUPPORT_COOKIE, SUPPORT_SECONDS, createSupportSession, readSupportSessionDetails } from "@/lib/supportSession";
 
 export async function POST(req:NextRequest,{params}:{params:{id:string}}){
   const session=await requirePlatformAdmin();
@@ -11,8 +11,24 @@ export async function POST(req:NextRequest,{params}:{params:{id:string}}){
     select:{id:true,name:true,slug:true,status:true},
   });
   if(!organization)return NextResponse.json({error:"Tenant organization not found."},{status:404});
+  const body=await req.json().catch(()=>({}));
+  const userId=typeof body.userId==="string"?body.userId.trim():"";
+  const user=await prisma.user.findFirst({
+    where:{organizationId:organization.id,isActive:true,...(userId?{id:userId,role:{in:["owner","staff"]}}:{role:"owner"})},
+    select:{id:true,name:true,role:true,sessionVersion:true},orderBy:{createdAt:"asc"},
+  });
+  if(!user)return NextResponse.json({error:userId?"Choose an active user belonging to this tenant.":"This tenant has no active owner. Open the support workspace to choose a staff user."},{status:400});
 
-  cookies().set(SUPPORT_COOKIE,createSupportSession(organization.id,(session.user as any).id),{
+  const expiresAt=new Date(Date.now()+SUPPORT_SECONDS*1000).toISOString();
+
+  // Record the real actor and effective user before granting the view.
+  await prisma.auditLog.create({data:{
+    organizationId:organization.id,action:"platform_support_session.started",
+    performedBy:(session.user as any).id,
+    details:JSON.stringify({tenant:organization.name,slug:organization.slug,viewAsUserId:user.id,viewAsName:user.name,viewAsRole:user.role,expiresAt}),
+  }});
+
+  cookies().set(SUPPORT_COOKIE,createSupportSession(organization.id,(session.user as any).id,user.id,user.sessionVersion),{
     httpOnly:true,
     secure:process.env.NODE_ENV==="production",
     sameSite:"lax",
@@ -20,26 +36,19 @@ export async function POST(req:NextRequest,{params}:{params:{id:string}}){
     maxAge:SUPPORT_SECONDS,
   });
 
-  await prisma.auditLog.create({data:{
-    organizationId:organization.id,
-    action:"platform_support_session.started",
-    performedBy:(session.user as any)?.id||"platform_admin",
-    details:JSON.stringify({tenant:organization.name,slug:organization.slug,expiresMinutes:20}),
-  }});
-
-  return NextResponse.json({success:true,organization});
+  return NextResponse.json({success:true,organization,viewAs:{id:user.id,name:user.name,role:user.role},expiresAt});
 }
 
 export async function DELETE(){
   const session=await requirePlatformAdmin();
-  const current=readSupportSession(cookies().get(SUPPORT_COOKIE)?.value,(session.user as any).id);
+  const current=readSupportSessionDetails(cookies().get(SUPPORT_COOKIE)?.value,(session.user as any).id);
   cookies().set(SUPPORT_COOKIE,"",{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",maxAge:0});
   if(current){
     await prisma.auditLog.create({data:{
-      organizationId:current,
+      organizationId:current.organizationId,
       action:"platform_support_session.ended",
       performedBy:(session.user as any)?.id||"platform_admin",
-      details:"Support session ended by platform administrator",
+      details:JSON.stringify({viewAsUserId:current.userId,reason:"Support session ended by platform administrator"}),
     }}).catch(()=>null);
   }
   return NextResponse.json({success:true});

@@ -1,6 +1,6 @@
 # Platform admin verification — September 20, 2026
 
-Baseline reviewed: `63b1dc01a0065983ce9da57d9177532608a0c5c2` on main,
+Latest impersonation baseline: `c1269abbab510dbe8e41dc84476f3959c1e19b2e` on main,
 confirmed as the successful Railway production deployment.
 
 ## Corrections
@@ -29,6 +29,26 @@ confirmed as the successful Railway production deployment.
 - Audit filters wrap at intermediate screen widths and display the correct
   500-record limit.
 
+## Tenant impersonation
+
+- Organizations directory and organization detail now provide **View as tenant**;
+  the support workspace provides **View as tenant owner** and **View as this user**.
+- A signed, 20-minute session selects an active owner or staff member from that
+  tenant. The dashboard uses their name and role, and APIs enforce their actual
+  permissions, including owner-only restrictions and temporary-password gates.
+- Authentication remains the platform administrator. Existing tenant mutation
+  audit writes retain the administrator's ID; session start/end record the
+  impersonated user's ID. Opening a view does not send automatic customer messages.
+- The visible banner names the user and tenant, counts down, explains that edits
+  affect live data, and exits to the tenant support workspace. Entry and exit use
+  full navigation to clear previous dashboard content from the client cache.
+- Disabled/deleted/moved users and revoked session versions terminate access.
+  Suspended organizations cannot use tenant APIs. Forced-password and suspension
+  blockers are explained in support view without bypassing them. Password changes
+  cannot accidentally change the administrator's credential from a tenant view.
+- This mirrors the application's tenant account context, not the customer's
+  browser device, local storage, unsaved forms, or browser-specific failures.
+
 ## Reproducible validation
 
 Run `node --test tests/platform-admin.test.cjs`, `npx tsc --noEmit`, and
@@ -36,7 +56,7 @@ Run `node --test tests/platform-admin.test.cjs`, `npx tsc --noEmit`, and
 session callbacks against isolated data adapters; it does not modify production
 accounts, publish announcements, initiate charges, or send customer messages.
 
-At this review, all 28 regression tests, TypeScript checks, and the complete
+At this review, all 42 regression tests, TypeScript checks, and the complete
 Next.js production build passed. All 16 static admin page URLs redirected an
 unauthenticated production request to `/platform-login`. Four admin read API
 URLs also rejected or redirected unauthenticated requests.
@@ -45,12 +65,14 @@ URLs also rejected or redirected unauthenticated requests.
 
 Authenticated desktop/mobile browser interaction was not verified: the cloud
 browser connection timed out before returning any tabs or opening the site.
+The retry also failed with a browser recovery error and then a 20-second tab
+refresh timeout, before any authenticated page could be opened.
 Anonymous redirects demonstrate access protection, not functional validation
 of the signed-in page. The tests use isolated adapters, not the production
 PostgreSQL database or live payment/message providers.
 
-Existing support-view cookies use the previous unsigned format and are rejected
-by this release. Open a fresh support session from the tenant support workspace.
+Existing support-view cookies without a selected user and session version are
+rejected by this release. Open a fresh support session from the tenant support workspace.
 Regular administrator sign-ins are unaffected. Password changes now require
 signing in again, as all previous sessions are revoked.
 

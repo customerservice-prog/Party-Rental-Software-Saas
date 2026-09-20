@@ -229,7 +229,7 @@ export async function DELETE(req: NextRequest) {
   if (!target) {
     return NextResponse.json({ error: "User not found." }, { status: 404 });
   }
-  if (target.id === actingUser.id) {
+  if (target.id === (actingUser.effectiveUserId ?? actingUser.id)) {
     return NextResponse.json({ error: "You cannot delete your own account." }, { status: 400 });
   }
   if (target.role === "owner") {

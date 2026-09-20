@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { getCurrentOrganization } from "@/lib/tenant";
 import { getBillingStatus } from "@/lib/billing";
+import { resolveTenantViewer } from "@/lib/tenantViewer";
+import PlatformSupportBanner from "@/app/dashboard/PlatformSupportBanner";
 
 // Full-page lock screen shown instead of the dashboard when an
 // organization's billing status is blocked (trial ended, unpaid, canceled,
@@ -18,7 +20,10 @@ export default async function BillingLockedPage() {
   }
 
 const organization = await getCurrentOrganization();
-  if (!organization || (session.user as any).organizationId !== organization.id) {
+  const isSupport = (session.user as any).role === "platform_admin";
+  const viewer = isSupport ? await resolveTenantViewer(session.user as any) : null;
+  if (isSupport && !viewer) redirect("/admin/organizations");
+  if (!organization || (viewer?.organizationId ?? (session.user as any).organizationId) !== organization.id) {
     redirect("/login");
   }
 
@@ -28,11 +33,12 @@ if (!billing.blocked) {
   redirect("/dashboard");
 }
 
-const role = (session.user as { role?: string }).role;
+const role = viewer?.role ?? (session.user as { role?: string }).role;
 
 return h(
   "div",
-  { className: "min-h-screen flex items-center justify-center bg-gray-50 px-4" },
+  { className: "min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4" },
+  viewer?.support ? h("div", {className:"fixed inset-x-0 top-0 z-50"}, h(PlatformSupportBanner, {tenantName:organization.name,userName:viewer.name,role:viewer.role,organizationId:organization.id,expiresAt:viewer.support.expiresAt})) : null,
   h(
     "div",
     { className: "max-w-md w-full bg-white border rounded-lg shadow-sm p-8 text-center" },

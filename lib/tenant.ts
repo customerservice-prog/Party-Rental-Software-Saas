@@ -1,8 +1,8 @@
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { getServerSession } from "next-auth";
 import { prisma } from "./prisma";
 import { authOptions } from "./auth";
-import { SUPPORT_COOKIE, readSupportSession } from "./supportSession";
+import { resolveTenantViewer } from "./tenantViewer";
 
 /**
  * Resolves the current Organization (tenant) for a request based on the
@@ -18,9 +18,9 @@ export async function getCurrentOrganization() {
   const session = await getServerSession(authOptions);
   const sessionUser = session?.user as any;
   if (sessionUser?.role === "platform_admin") {
-    const supportTenantId = readSupportSession(cookies().get(SUPPORT_COOKIE)?.value, sessionUser.id);
-    if (!supportTenantId) return null;
-    return prisma.organization.findFirst({where:{id:supportTenantId,slug:{not:"_platform_internal"}}});
+    const viewer = await resolveTenantViewer(sessionUser);
+    if (!viewer) return null;
+    return prisma.organization.findFirst({where:{id:viewer.organizationId,slug:{not:"_platform_internal"}}});
   }
         const headerList = headers();
         const slug = headerList.get("x-tenant-slug");

@@ -1,10 +1,9 @@
 import { getServerSession } from "next-auth";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { authOptions } from "./auth";
 import { prisma } from "./prisma";
 import { PermissionCode, roleHasPermission } from "./permissions";
-import { SUPPORT_COOKIE, readSupportSession } from "./supportSession";
+import { resolveTenantViewer } from "./tenantViewer";
 
 // Minimal shape of the fields we stash on the session user in lib/auth.ts's
 // jwt/session callbacks.
@@ -12,6 +11,7 @@ type SessionUser = {
   id: string;
   role: string;
   organizationId: string;
+  effectiveUserId?: string;
 };
 
 // Thrown by the helpers below when a request is missing a valid session or
@@ -40,10 +40,12 @@ export async function requireStaffSession(organizationId: string): Promise<Sessi
   }
 
   if (user.role === "platform_admin") {
-    const supportTenantId = readSupportSession(cookies().get(SUPPORT_COOKIE)?.value, user.id);
-    if (supportTenantId === organizationId) {
-      return { id: user.id, role: user.role, organizationId };
-    }
+    const viewer = await resolveTenantViewer(user);
+    if (!viewer || viewer.organizationId !== organizationId) throw new AuthzError("Tenant view expired or is no longer available. Return to the platform console.", 401);
+    if (viewer.organization.status === "suspended") throw new AuthzError("This tenant account is suspended.", 403);
+    if (viewer.forcePasswordReset) throw new AuthzError("This user must change their temporary password before continuing.", 403);
+    // id remains the real actor so existing audit writes identify the admin.
+    return { id: user.id, effectiveUserId: viewer.id, role: viewer.role, organizationId };
   }
 
   if (user.organizationId !== organizationId) {
@@ -63,7 +65,7 @@ export async function requireStaffSession(organizationId: string): Promise<Sessi
 // should not be editable by regular staff logins.
 export async function requireOwnerSession(organizationId: string): Promise<SessionUser> {
   const user = await requireStaffSession(organizationId);
-  if (user.role !== "owner" && user.role !== "platform_admin") {
+  if (user.role !== "owner") {
     throw new AuthzError("Only an account owner can do this.", 403);
   }
   return user;
@@ -88,10 +90,10 @@ export async function requirePermission(
   code: PermissionCode
 ): Promise<SessionUser> {
   const user = await requireStaffSession(organizationId);
-  if (user.role === "owner" || user.role === "platform_admin") return user;
+  if (user.role === "owner") return user;
 
   const dbUser = await prisma.user.findUnique({
-    where: { id: user.id },
+    where: { id: user.effectiveUserId ?? user.id },
     include: { tenantRole: true },
   });
   const permissions = (dbUser?.tenantRole?.permissions as string[] | undefined) ?? [];
