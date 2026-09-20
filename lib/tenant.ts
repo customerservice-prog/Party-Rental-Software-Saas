@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { getServerSession } from "next-auth";
 import { prisma } from "./prisma";
 import { authOptions } from "./auth";
@@ -32,6 +32,21 @@ export async function getCurrentOrganization() {
             }
   }
 
+  // Platform administrators may open a time-limited support session for a
+  // specific tenant from /admin. The session stays platform-authenticated;
+  // this HttpOnly cookie only chooses which tenant the support view resolves.
+  const session = await getServerSession(authOptions);
+  const sessionUser = session?.user as any;
+  if (sessionUser?.role === "platform_admin") {
+    const supportTenantId = cookies().get("prcrm_support_tenant")?.value;
+    if (supportTenantId) {
+      const supportOrg = await prisma.organization.findFirst({
+        where: { id: supportTenantId, slug: { not: "_platform_internal" } },
+      });
+      if (supportOrg) return supportOrg;
+    }
+  }
+
   // No tenant could be resolved from the request host (e.g. this app is
   // deployed on a single default domain with no per-tenant subdomains
   // configured), or the header pointed at a host that isn't registered to
@@ -39,8 +54,7 @@ export async function getCurrentOrganization() {
   // organization the signed-in user authenticated into, which is stored
   // on their session/JWT, so we don't depend on subdomain routing to know
   // who the user's tenant is.
-  const session = await getServerSession(authOptions);
-        const organizationId = (session?.user as any)?.organizationId;
+  const organizationId = (session?.user as any)?.organizationId;
         if (organizationId) {
                   const org = await prisma.organization.findUnique({ where: { id: organizationId } });
                   return org && org.status !== "suspended" ? org : null;
