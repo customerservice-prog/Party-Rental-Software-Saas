@@ -17,6 +17,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const organization = await getCurrentOrganization();
   const sessionRole = (session.user as any).role;
+  if ((session.user as any).revoked || sessionRole === "revoked") redirect("/login");
   const isPlatformSupport = sessionRole === "platform_admin";
   if (!isPlatformSupport) {
     const currentUser = await prisma.user.findUnique({
