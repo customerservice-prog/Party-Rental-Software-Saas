@@ -4,6 +4,7 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
 import { getBillingStatus } from "@/lib/billing";
 import { getPlan } from "@/lib/plans";
+import { getEffectivePlanCommercial } from "@/lib/platformPlans";
 import { canAddOfficeUser, canAddCrewUser } from "@/lib/entitlements";
 
 export async function GET() {
@@ -21,6 +22,12 @@ const subscription = await prisma.platformSubscription.findUnique({
 const billing = await getBillingStatus(organization);
   const activePlanTier = subscription?.planTier ?? organization.planTier;
   const plan = getPlan(activePlanTier);
+  const [commercialPlan, starterPlan, growthPlan, proPlan] = await Promise.all([
+    getEffectivePlanCommercial(activePlanTier),
+    getEffectivePlanCommercial("starter"),
+    getEffectivePlanCommercial("growth"),
+    getEffectivePlanCommercial("pro"),
+  ]);
 
 const [officeSeats, crewSeats] = await Promise.all([
   canAddOfficeUser(organization.id, activePlanTier),
@@ -52,11 +59,12 @@ return NextResponse.json({
     name: plan.name,
     tagline: plan.tagline,
     isCustomPricing: plan.isCustomPricing,
-    monthlyPrice: plan.monthlyPrice,
-    annualMonthlyPrice: plan.annualMonthlyPrice,
-    annualBilledTotal: plan.annualBilledTotal,
+    monthlyPrice: commercialPlan.monthlyPrice,
+    annualMonthlyPrice: commercialPlan.annualMonthlyPrice,
+    annualBilledTotal: commercialPlan.annualMonthlyPrice == null ? plan.annualBilledTotal : commercialPlan.annualMonthlyPrice * 12,
     includedSummary: plan.includedSummary,
   },
+  checkoutPlans: [starterPlan, growthPlan, proPlan].filter((p) => p.isEnabled).map((p) => ({ code: p.code, name: p.name, monthlyPrice: p.monthlyPrice, annualMonthlyPrice: p.annualMonthlyPrice })),
   seats: {
     office: { current: officeSeats.current, limit: officeSeats.limit },
     crew: { current: crewSeats.current, limit: crewSeats.limit },
