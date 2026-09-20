@@ -7,7 +7,7 @@
 // or driver logins). See lib/plans.ts for what each plan includes.
 
 import { prisma } from "./prisma";
-import { getPlanLimits } from "./plans";
+import { getEffectivePlanLimits } from "./platformPlans";
 
 export interface SeatCheckResult {
     allowed: boolean;
@@ -19,7 +19,7 @@ export async function canAddOfficeUser(
     organizationId: string,
     planTier: string | null | undefined
   ): Promise<SeatCheckResult> {
-    const limits = getPlanLimits(planTier);
+    const limits = await getEffectivePlanLimits(planTier);
     if (limits.officeUsers === null) {
           return { allowed: true, limit: null, current: -1 };
     }
@@ -31,7 +31,7 @@ export async function canAddCrewUser(
     organizationId: string,
     planTier: string | null | undefined
   ): Promise<SeatCheckResult> {
-    const limits = getPlanLimits(planTier);
+    const limits = await getEffectivePlanLimits(planTier);
     if (limits.crewUsers === null) {
           return { allowed: true, limit: null, current: -1 };
     }
