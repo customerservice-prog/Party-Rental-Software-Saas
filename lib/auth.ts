@@ -136,6 +136,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           role: user.role,
           organizationId: user.organizationId,
+          sessionVersion: user.sessionVersion,
         } as any;
       },
     }),
@@ -146,6 +147,16 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as any).role;
         token.organizationId = (user as any).organizationId;
         token.id = (user as any).id;
+        const dbUser = await prisma.user.findUnique({ where: { id: (user as any).id }, select: { sessionVersion: true } });
+        token.sessionVersion = dbUser?.sessionVersion ?? 0;
+        token.revoked = false;
+      } else if (token.id) {
+        const dbUser = await prisma.user.findUnique({ where: { id: token.id as string }, select: { sessionVersion: true, isActive: true } }).catch(() => null);
+        if (!dbUser || !dbUser.isActive || dbUser.sessionVersion !== (token.sessionVersion ?? 0)) {
+          token.revoked = true;
+          token.role = "revoked";
+          token.organizationId = null;
+        }
       }
       return token;
     },
@@ -154,6 +165,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).role = token.role;
         (session.user as any).organizationId = token.organizationId;
         (session.user as any).id = token.id;
+        (session.user as any).revoked = Boolean(token.revoked);
       }
       return session;
     },
