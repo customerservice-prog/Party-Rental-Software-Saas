@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 type TenantUser={id:string;name:string;username:string;role:string;isActive:boolean;lastLoginAt:string|null;createdAt:string;forcePasswordReset:boolean;tenantRole:{name:string}|null};
 type SupportNote={id:string;body:string;createdBy:string;createdAt:string};
-type Organization={id:string;name:string;slug:string;status:string;contactEmail:string|null;contactPhone:string|null;customDomain:string|null;stripeAccountId:string|null;resendApiKey:string|null;senderEmail:string|null;twilioAccountSid:string|null;twilioAuthToken:string|null;twilioFromNumber:string|null;createdAt:string;website:{publishedAt:string|null}|null;subscription:any;users:TenantUser[];_count:{items:number;customers:number;orders:number;pages:number;drivers:number;sentMessages:number}};
+type Organization={id:string;name:string;slug:string;status:string;contactEmail:string|null;contactPhone:string|null;customDomain:string|null;stripeAccountId:string|null;emailConfigured:boolean;smsConfigured:boolean;createdAt:string;website:{publishedAt:string|null}|null;users:TenantUser[];_count:{items:number;customers:number;orders:number;pages:number;drivers:number;sentMessages:number}};
 
 export default function SupportWorkspace({organizationId}:{organizationId:string}){
   const router=useRouter();
@@ -33,8 +33,8 @@ export default function SupportWorkspace({organizationId}:{organizationId:string
       ["Storefront",!!organization.website?.publishedAt],
       ["First order",organization._count.orders>0],
       ["Stripe",!!organization.stripeAccountId],
-      ["Email",!!(organization.resendApiKey&&organization.senderEmail)],
-      ["SMS",!!(organization.twilioAccountSid&&organization.twilioAuthToken&&organization.twilioFromNumber)],
+      ["Email",organization.emailConfigured],
+      ["SMS",organization.smsConfigured],
       ["Custom domain",!!organization.customDomain],
     ] as [string,boolean][];
   },[organization]);

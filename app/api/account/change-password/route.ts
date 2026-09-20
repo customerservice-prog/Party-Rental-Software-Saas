@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req:NextRequest){
   const session=await getServerSession(authOptions);
   const userId=(session?.user as any)?.id;
-  if(!userId)return NextResponse.json({error:"You must be signed in."},{status:401});
+  if(!userId||(session?.user as any)?.revoked)return NextResponse.json({error:"You must be signed in."},{status:401});
   const body=await req.json().catch(()=>({}));
   const currentPassword=String(body.currentPassword||"");
   const newPassword=String(body.newPassword||"");
@@ -17,7 +17,7 @@ export async function POST(req:NextRequest){
   if(!await bcrypt.compare(currentPassword,user.password))return NextResponse.json({error:"Current password is incorrect."},{status:400});
   if(await bcrypt.compare(newPassword,user.password))return NextResponse.json({error:"Choose a different password."},{status:400});
   const hash=await bcrypt.hash(newPassword,12);
-  await prisma.user.update({where:{id:user.id},data:{password:hash,forcePasswordReset:false}});
+  await prisma.user.update({where:{id:user.id},data:{password:hash,forcePasswordReset:false,sessionVersion:{increment:1}}});
   await prisma.auditLog.create({data:{organizationId:user.organizationId,action:"user.password.changed",performedBy:user.id,details:JSON.stringify({username:user.username,forced:user.forcePasswordReset})}});
-  return NextResponse.json({success:true});
+  return NextResponse.json({success:true,signInUrl:user.role==="platform_admin"?"/platform-login":"/login"});
 }

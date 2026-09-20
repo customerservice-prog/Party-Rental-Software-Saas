@@ -38,7 +38,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // minute per organization). Wrapped in try/catch so a failure here can
   // never break the dashboard itself.
   try {
-    await runBookingAutomations(organization.id);
+    if (!isPlatformSupport) await runBookingAutomations(organization.id);
   } catch (err) {
     console.error("runBookingAutomations failed:", err);
   }

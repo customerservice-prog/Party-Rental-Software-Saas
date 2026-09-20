@@ -6,6 +6,12 @@ type Announcement={id:string;title:string;body:string;tone:string;audienceType:s
 
 const empty={id:"",title:"",body:"",tone:"info",audienceType:"all",audienceValue:"",status:"draft",startsAt:"",endsAt:""};
 
+function localDateTime(value:string|null){
+  if(!value)return "";
+  const date=new Date(value);
+  return new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);
+}
+
 export default function PlatformCommunicationsPage(){
   const[announcements,setAnnouncements]=useState<Announcement[]>([]);
   const[form,setForm]=useState(empty);
@@ -25,7 +31,10 @@ export default function PlatformCommunicationsPage(){
 
   async function save(status?:string){
     setSaving(true);setError("");setMessage("");
-    const payload={action:"announcement.upsert",...form,status:status||form.status};
+    const payload={action:"announcement.upsert",...form,status:status||form.status,
+      startsAt:form.startsAt?new Date(form.startsAt).toISOString():null,
+      endsAt:form.endsAt?new Date(form.endsAt).toISOString():null,
+    };
     const r=await fetch("/api/admin/platform-control",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
     const d=await r.json().catch(()=>({}));
     if(!r.ok)setError(d.error||"Could not save announcement.");
@@ -36,7 +45,7 @@ export default function PlatformCommunicationsPage(){
   function edit(a:Announcement){
     setForm({
       id:a.id,title:a.title,body:a.body,tone:a.tone,audienceType:a.audienceType,audienceValue:a.audienceValue||"",status:a.status,
-      startsAt:a.startsAt?a.startsAt.slice(0,16):"",endsAt:a.endsAt?a.endsAt.slice(0,16):"",
+      startsAt:localDateTime(a.startsAt),endsAt:localDateTime(a.endsAt),
     });
     window.scrollTo({top:0,behavior:"smooth"});
   }

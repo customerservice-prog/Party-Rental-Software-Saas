@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { generateTotpSecret, encryptTotpSecret, decryptTotpSecret, totpUri, verifyTotp } from "@/lib/totp";
 
 export async function GET(){
-  await requirePlatformAdmin();
+  const session=await requirePlatformAdmin();
   const [admins,throttles]=await Promise.all([
     prisma.user.findMany({
       where:{role:"platform_admin"},
@@ -14,7 +14,6 @@ export async function GET(){
     }),
     prisma.loginThrottle.findMany({orderBy:{updatedAt:"desc"},take:100}),
   ]);
-  const session=await requirePlatformAdmin();
   return NextResponse.json({admins,throttles,currentAdminId:(session.user as any)?.id||null});
 }
 
@@ -24,19 +23,32 @@ export async function POST(req:NextRequest){
   const body=await req.json().catch(()=>({}));
   const action=String(body.action||"");
 
+  if(action==="throttle.clear"){
+    const throttleId=String(body.throttleId||"").trim();
+    if(!throttleId)return NextResponse.json({error:"Select a login protection record."},{status:400});
+    const result=await prisma.loginThrottle.deleteMany({where:{id:throttleId}});
+    if(!result.count)return NextResponse.json({error:"Login protection record not found."},{status:404});
+    await prisma.auditLog.create({data:{action:"platform.login_throttle.cleared",performedBy:actor,details:JSON.stringify({throttleId})}});
+    return NextResponse.json({success:true});
+  }
+
   let platformOrg=await prisma.organization.findUnique({where:{slug:"_platform_internal"}});
   if(!platformOrg)return NextResponse.json({error:"Platform internal organization is missing."},{status:500});
 
   if(action==="mfa.start"){
+    const current=await prisma.user.findUnique({where:{id:actor},select:{mfaEnabled:true}});
+    if(current?.mfaEnabled)return NextResponse.json({error:"Disable your existing authenticator before setting up a replacement."},{status:409});
     const secret=generateTotpSecret();
     const username=(session.user as any)?.name||"platform-admin";
     return NextResponse.json({success:true,secret,uri:totpUri(secret,username)});
   }
 
   if(action==="mfa.enable"){
+    const current=await prisma.user.findUnique({where:{id:actor},select:{mfaEnabled:true}});
+    if(current?.mfaEnabled)return NextResponse.json({error:"MFA is already enabled. Disable your existing authenticator before replacing it."},{status:409});
     const secret=String(body.secret||"");
     const code=String(body.code||"");
-    if(!secret||!verifyTotp(secret,code))return NextResponse.json({error:"Authenticator code is invalid. Check your device time and try again."},{status:400});
+    if(!/^[A-Z2-7]{32}$/.test(secret)||!verifyTotp(secret,code))return NextResponse.json({error:"Authenticator code is invalid. Check your device time and try again."},{status:400});
     await prisma.user.update({where:{id:actor},data:{mfaEnabled:true,mfaSecret:encryptTotpSecret(secret)}});
     await prisma.auditLog.create({data:{action:"platform.admin.mfa_enabled",performedBy:actor,details:"TOTP MFA enabled for current platform administrator"}});
     return NextResponse.json({success:true});
@@ -71,7 +83,7 @@ export async function POST(req:NextRequest){
 
   if(action==="admin.mfa_reset"){
     if(target.id===actor)return NextResponse.json({error:"Use your authenticator code to disable MFA on your own account."},{status:400});
-    await prisma.user.update({where:{id},data:{mfaEnabled:false,mfaSecret:null}});
+    await prisma.user.update({where:{id},data:{mfaEnabled:false,mfaSecret:null,sessionVersion:{increment:1}}});
     await prisma.auditLog.create({data:{action:"platform.admin.mfa_reset",performedBy:actor,details:JSON.stringify({adminId:id,username:target.username})}});
     return NextResponse.json({success:true});
   }
@@ -84,7 +96,8 @@ export async function POST(req:NextRequest){
 
   if(action==="admin.toggle"){
     if(target.id===actor&&body.isActive===false)return NextResponse.json({error:"You cannot disable your own current platform-admin account."},{status:400});
-    await prisma.user.update({where:{id},data:{isActive:Boolean(body.isActive)}});
+    if(typeof body.isActive!=="boolean")return NextResponse.json({error:"Account status must be true or false."},{status:400});
+    await prisma.user.update({where:{id},data:{isActive:body.isActive,...(!body.isActive?{sessionVersion:{increment:1}}:{})}});
     await prisma.auditLog.create({data:{action:Boolean(body.isActive)?"platform.admin.enabled":"platform.admin.disabled",performedBy:actor,details:JSON.stringify({adminId:id,username:target.username})}});
     return NextResponse.json({success:true});
   }
@@ -95,13 +108,6 @@ export async function POST(req:NextRequest){
     const hash=await bcrypt.hash(password,12);
     await prisma.user.update({where:{id},data:{password:hash,forcePasswordReset:false,isActive:true,sessionVersion:{increment:1}}});
     await prisma.auditLog.create({data:{action:"platform.admin.password_reset",performedBy:actor,details:JSON.stringify({adminId:id,username:target.username})}});
-    return NextResponse.json({success:true});
-  }
-
-  if(action==="throttle.clear"){
-    const throttleId=String(body.throttleId||"");
-    await prisma.loginThrottle.delete({where:{id:throttleId}}).catch(()=>null);
-    await prisma.auditLog.create({data:{action:"platform.login_throttle.cleared",performedBy:actor,details:JSON.stringify({throttleId})}});
     return NextResponse.json({success:true});
   }
 

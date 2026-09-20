@@ -9,11 +9,12 @@ type SupportNote={id:string;organizationId:string;body:string;createdBy:string;c
 async function getTenant(id:string){
   return prisma.organization.findFirst({
     where:{id,slug:{not:"_platform_internal"}},
-    include:{
-      users:{include:{tenantRole:true},orderBy:{createdAt:"asc"}},
+    select:{
+      id:true,name:true,slug:true,status:true,contactEmail:true,contactPhone:true,customDomain:true,
+      stripeAccountId:true,resendApiKey:true,senderEmail:true,twilioAccountSid:true,twilioAuthToken:true,twilioFromNumber:true,createdAt:true,
+      users:{select:{id:true,name:true,username:true,role:true,isActive:true,lastLoginAt:true,createdAt:true,forcePasswordReset:true,tenantRole:{select:{name:true}}},orderBy:{createdAt:"asc"}},
       _count:{select:{items:true,customers:true,orders:true,pages:true,drivers:true,sentMessages:true}},
-      subscription:true,
-      website:true,
+      website:{select:{publishedAt:true}},
     },
   });
 }
@@ -28,7 +29,11 @@ export async function GET(_req:NextRequest,{params}:{params:{id:string}}){
   )) as SupportNote[];
   const failedMessages=await prisma.sentMessage.count({where:{organizationId:organization.id,status:"failed"}});
   const blockedAttempts=await prisma.blockedBookingAttempt.count({where:{organizationId:organization.id}});
-  return NextResponse.json({organization,notes,health:{failedMessages,blockedAttempts}});
+  const {resendApiKey,twilioAccountSid,twilioAuthToken,...safeOrganization}=organization;
+  return NextResponse.json({organization:{...safeOrganization,
+    emailConfigured:Boolean(resendApiKey&&organization.senderEmail),
+    smsConfigured:Boolean(twilioAccountSid&&twilioAuthToken&&organization.twilioFromNumber),
+  },notes,health:{failedMessages,blockedAttempts}},{headers:{"Cache-Control":"no-store"}});
 }
 
 export async function POST(req:NextRequest,{params}:{params:{id:string}}){
@@ -58,7 +63,7 @@ export async function POST(req:NextRequest,{params}:{params:{id:string}}){
 
     if(action==="user.enable"||action==="user.disable"){
       const isActive=action==="user.enable";
-      await prisma.user.update({where:{id:user.id},data:{isActive}});
+      await prisma.user.update({where:{id:user.id},data:{isActive,...(!isActive?{sessionVersion:{increment:1}}:{})}});
       await prisma.auditLog.create({data:{organizationId:tenant.id,action:isActive?"platform.user.enabled":"platform.user.disabled",performedBy:actor,details:JSON.stringify({userId:user.id,username:user.username,name:user.name})}});
       return NextResponse.json({success:true});
     }
@@ -80,8 +85,8 @@ export async function POST(req:NextRequest,{params}:{params:{id:string}}){
 
     if(action==="user.transfer_owner"){
       await prisma.$transaction(async tx=>{
-        await tx.user.updateMany({where:{organizationId:tenant.id,role:"owner",id:{not:user.id}},data:{role:"staff"}});
-        await tx.user.update({where:{id:user.id},data:{role:"owner",isActive:true}});
+        await tx.user.updateMany({where:{organizationId:tenant.id,role:"owner",id:{not:user.id}},data:{role:"staff",sessionVersion:{increment:1}}});
+        await tx.user.update({where:{id:user.id},data:{role:"owner",isActive:true,sessionVersion:{increment:1}}});
         await tx.auditLog.create({data:{organizationId:tenant.id,action:"platform.ownership.transferred",performedBy:actor,details:JSON.stringify({newOwnerId:user.id,newOwner:user.name})}});
       });
       return NextResponse.json({success:true});

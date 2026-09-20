@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { authOptions } from "./auth";
 import { prisma } from "./prisma";
 import { PermissionCode, roleHasPermission } from "./permissions";
+import { SUPPORT_COOKIE, readSupportSession } from "./supportSession";
 
 // Minimal shape of the fields we stash on the session user in lib/auth.ts's
 // jwt/session callbacks.
@@ -39,7 +40,7 @@ export async function requireStaffSession(organizationId: string): Promise<Sessi
   }
 
   if (user.role === "platform_admin") {
-    const supportTenantId = cookies().get("prcrm_support_tenant")?.value;
+    const supportTenantId = readSupportSession(cookies().get(SUPPORT_COOKIE)?.value, user.id);
     if (supportTenantId === organizationId) {
       return { id: user.id, role: user.role, organizationId };
     }
@@ -48,6 +49,10 @@ export async function requireStaffSession(organizationId: string): Promise<Sessi
   if (user.organizationId !== organizationId) {
     throw new AuthzError("You must be signed in to do this.", 401);
   }
+
+  const current = await prisma.user.findUnique({where:{id:user.id},select:{forcePasswordReset:true}});
+  if (!current) throw new AuthzError("Your account is no longer available.", 401);
+  if (current.forcePasswordReset) throw new AuthzError("Change your temporary password before continuing.", 403);
 
   return { id: user.id, role: user.role, organizationId: user.organizationId };
 }

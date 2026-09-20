@@ -21,8 +21,11 @@ export async function getActivePlatformAnnouncements(organizationId:string,planT
      WHERE "status"='published'
        AND ("startsAt" IS NULL OR "startsAt" <= $1)
        AND ("endsAt" IS NULL OR "endsAt" >= $1)
+       AND ("audienceType"='all'
+         OR ("audienceType"='organization' AND "audienceValue"=$2)
+         OR ("audienceType"='plan' AND "audienceValue"=$3))
      ORDER BY "createdAt" DESC LIMIT 10`,
-    now
+    now,organizationId,planTier
   )) as PlatformAnnouncementRow[];
   return rows.filter(row=>{
     if(row.audienceType==="all")return true;

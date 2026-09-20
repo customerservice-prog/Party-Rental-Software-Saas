@@ -27,6 +27,11 @@ function parseDateOrNull(value: string | null | undefined): Date | null | undefi
   return isNaN(d.getTime()) ? null : d;
 }
 
+function safeOrganization(organization: any) {
+  const { resendApiKey, twilioAuthToken, twilioAccountSid, ...safe } = organization;
+  return safe;
+}
+
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
@@ -50,7 +55,7 @@ export async function GET(
     _sum: { totalAmount: true, amountPaid: true },
   });
 
-  return NextResponse.json({ organization, revenue: revenue._sum });
+  return NextResponse.json({ organization:safeOrganization(organization), revenue: revenue._sum });
 }
 
 export async function PATCH(
@@ -168,5 +173,5 @@ export async function PATCH(
     });
   }
 
-  return NextResponse.json({ organization });
+  return NextResponse.json({ organization:safeOrganization(organization) });
 }

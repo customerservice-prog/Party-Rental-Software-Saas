@@ -147,15 +147,17 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as any).role;
         token.organizationId = (user as any).organizationId;
         token.id = (user as any).id;
-        const dbUser = await prisma.user.findUnique({ where: { id: (user as any).id }, select: { sessionVersion: true } });
-        token.sessionVersion = dbUser?.sessionVersion ?? 0;
+        token.sessionVersion = (user as any).sessionVersion ?? 0;
         token.revoked = false;
       } else if (token.id) {
-        const dbUser = await prisma.user.findUnique({ where: { id: token.id as string }, select: { sessionVersion: true, isActive: true } }).catch(() => null);
+        const dbUser = await prisma.user.findUnique({ where: { id: token.id as string }, select: { sessionVersion: true, isActive: true, role:true, organizationId:true } }).catch(() => null);
         if (!dbUser || !dbUser.isActive || dbUser.sessionVersion !== (token.sessionVersion ?? 0)) {
           token.revoked = true;
           token.role = "revoked";
           token.organizationId = null;
+        } else if (!token.revoked) {
+          token.role = dbUser.role;
+          token.organizationId = dbUser.organizationId;
         }
       }
       return token;

@@ -25,25 +25,15 @@ async function main() {
     });
   }
 
-  const passwordHash = await bcrypt.hash(password, 12);
   const existing = await prisma.user.findFirst({
     where: { role: "platform_admin" },
     orderBy: { createdAt: "asc" },
   });
 
   if (existing) {
-    await prisma.user.update({
-      where: { id: existing.id },
-      data: {
-        organizationId: platformOrg.id,
-        username,
-        name,
-        password: passwordHash,
-        role: "platform_admin",
-      },
-    });
-    console.log("Platform admin credentials synchronized from environment variables.");
+    console.log("Platform admin already exists; preserving account credentials and security settings.");
   } else {
+    const passwordHash = await bcrypt.hash(password, 12);
     await prisma.user.create({
       data: {
         organizationId: platformOrg.id,

@@ -14,7 +14,9 @@ export async function GET(_req:Request,{params}:{params:{id:string}}){
       autoBalanceReminderEnabled:true,balanceReminderDaysBefore:true,address:true,city:true,state:true,zip:true,timezone:true,createdAt:true,updatedAt:true,
       subscription:true,
       users:{select:{id:true,name:true,username:true,role:true,isActive:true,lastLoginAt:true,forcePasswordReset:true,tenantRoleId:true,createdAt:true,updatedAt:true}},
-      tenantRoles:true,categories:true,items:true,itemUnits:true,customers:true,drivers:true,coupons:true,depositRules:true,
+      tenantRoles:true,categories:true,items:true,itemUnits:true,customers:true,
+      drivers:{select:{id:true,organizationId:true,name:true,phone:true,email:true,isActive:true,defaultStopPay:true,createdAt:true,updatedAt:true}},
+      coupons:true,depositRules:true,
       businessHours:true,closedDates:true,addons:true,pages:true,website:true,messageTemplates:true,meetings:true,
     },
   });

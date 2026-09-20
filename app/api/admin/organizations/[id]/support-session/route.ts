@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { requirePlatformAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-
-const COOKIE="prcrm_support_tenant";
+import { SUPPORT_COOKIE, SUPPORT_SECONDS, createSupportSession, readSupportSession } from "@/lib/supportSession";
 
 export async function POST(req:NextRequest,{params}:{params:{id:string}}){
   const session=await requirePlatformAdmin();
@@ -13,12 +12,12 @@ export async function POST(req:NextRequest,{params}:{params:{id:string}}){
   });
   if(!organization)return NextResponse.json({error:"Tenant organization not found."},{status:404});
 
-  cookies().set(COOKIE,organization.id,{
+  cookies().set(SUPPORT_COOKIE,createSupportSession(organization.id,(session.user as any).id),{
     httpOnly:true,
     secure:process.env.NODE_ENV==="production",
     sameSite:"lax",
     path:"/",
-    maxAge:20*60,
+    maxAge:SUPPORT_SECONDS,
   });
 
   await prisma.auditLog.create({data:{
@@ -33,8 +32,8 @@ export async function POST(req:NextRequest,{params}:{params:{id:string}}){
 
 export async function DELETE(){
   const session=await requirePlatformAdmin();
-  const current=cookies().get(COOKIE)?.value||null;
-  cookies().set(COOKIE,"",{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",maxAge:0});
+  const current=readSupportSession(cookies().get(SUPPORT_COOKIE)?.value,(session.user as any).id);
+  cookies().set(SUPPORT_COOKIE,"",{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",maxAge:0});
   if(current){
     await prisma.auditLog.create({data:{
       organizationId:current,

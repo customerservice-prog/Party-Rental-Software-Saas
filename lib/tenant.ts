@@ -2,6 +2,7 @@ import { cookies, headers } from "next/headers";
 import { getServerSession } from "next-auth";
 import { prisma } from "./prisma";
 import { authOptions } from "./auth";
+import { SUPPORT_COOKIE, readSupportSession } from "./supportSession";
 
 /**
  * Resolves the current Organization (tenant) for a request based on the
@@ -14,6 +15,13 @@ import { authOptions } from "./auth";
  * from the authenticated request context.
  */
 export async function getCurrentOrganization() {
+  const session = await getServerSession(authOptions);
+  const sessionUser = session?.user as any;
+  if (sessionUser?.role === "platform_admin") {
+    const supportTenantId = readSupportSession(cookies().get(SUPPORT_COOKIE)?.value, sessionUser.id);
+    if (!supportTenantId) return null;
+    return prisma.organization.findFirst({where:{id:supportTenantId,slug:{not:"_platform_internal"}}});
+  }
         const headerList = headers();
         const slug = headerList.get("x-tenant-slug");
         const domain = headerList.get("x-tenant-domain");
@@ -30,21 +38,6 @@ export async function getCurrentOrganization() {
             if (org) {
                         return org.status !== "suspended" ? org : null;
             }
-  }
-
-  // Platform administrators may open a time-limited support session for a
-  // specific tenant from /admin. The session stays platform-authenticated;
-  // this HttpOnly cookie only chooses which tenant the support view resolves.
-  const session = await getServerSession(authOptions);
-  const sessionUser = session?.user as any;
-  if (sessionUser?.role === "platform_admin") {
-    const supportTenantId = cookies().get("prcrm_support_tenant")?.value;
-    if (supportTenantId) {
-      const supportOrg = await prisma.organization.findFirst({
-        where: { id: supportTenantId, slug: { not: "_platform_internal" } },
-      });
-      if (supportOrg) return supportOrg;
-    }
   }
 
   // No tenant could be resolved from the request host (e.g. this app is

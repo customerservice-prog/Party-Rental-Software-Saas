@@ -49,7 +49,7 @@ export default async function AdminAuditLogPage({searchParams}:{searchParams:{q?
       <Link href="/admin" className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-700 shadow-sm">← Overview</Link>
     </section>
 
-    <form method="get" className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[minmax(220px,1fr)_220px_180px_150px_150px_auto]">
+    <form method="get" className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 xl:grid-cols-3">
       <input name="q" defaultValue={q} placeholder="Search action, details, actor…" className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-400"/>
       <select name="org" defaultValue={orgFilter} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"><option value="">All organizations</option><option value="platform">Platform only</option>{orgs.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select>
       <input name="actor" defaultValue={actor} placeholder="Actor" className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"/>
@@ -60,7 +60,7 @@ export default async function AdminAuditLogPage({searchParams}:{searchParams:{q?
 
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,.04)]">
       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-        <div><h2 className="text-sm font-black text-slate-950">Recent events</h2><p className="mt-0.5 text-[11px] text-slate-400">Showing up to 200 records.</p></div>
+        <div><h2 className="text-sm font-black text-slate-950">Recent events</h2><p className="mt-0.5 text-[11px] text-slate-400">Showing up to 500 matching records.</p></div>
         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-500">{typedLogs.length}</span>
       </div>
       <div className="overflow-x-auto">
