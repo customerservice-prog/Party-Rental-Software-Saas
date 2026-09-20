@@ -1,3 +1,4 @@
+import { ORDER_STATUSES, orderSearchWhere } from "@/lib/orderFilters";
 import { NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
@@ -38,11 +39,12 @@ export async function GET(request: Request) {
         : {};
 
     const statusParam = searchParams.get("status") || "";
-    const validStatuses = ["quote", "pending", "confirmed", "cancelled", "completed"];
-    const statusWhere = validStatuses.includes(statusParam) ? { status: statusParam } : {};
+    const validStatuses: readonly string[] = ORDER_STATUSES;
+    const unpaid = searchParams.get("balance") === "unpaid";
+    const statusWhere = validStatuses.includes(statusParam) ? { status: statusParam } : unpaid ? {status:{in:["active","confirmed","completed"]}} : {};
 
     const orders = await prisma.order.findMany({
-      where: { organizationId: organization.id, ...dateWhere, ...statusWhere },
+      where: { organizationId: organization.id, ...dateWhere, ...statusWhere, ...orderSearchWhere((searchParams.get("q") || "").slice(0,200)), ...(unpaid ? {amountPaid:{lt:prisma.order.fields.totalAmount}} : {}) },
       orderBy: { createdAt: "desc" },
       include: { customer: true },
     });

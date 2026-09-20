@@ -1,106 +1,25 @@
 import Link from "next/link";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
-
-export default async function OrdersPage({
-  searchParams,
-}: {
-  searchParams: { status?: string };
-}) {
-    const organization = await requireCurrentOrganization();
-
-  const statusFilter = searchParams?.status?.trim() || "";
-  const validStatuses = ["quote", "pending", "confirmed", "cancelled", "completed"];
-  const statusWhere = validStatuses.includes(statusFilter) ? { status: statusFilter } : {};
-
-  const orders = await prisma.order.findMany({
-        where: { organizationId: organization.id, ...statusWhere },
-        include: { customer: true },
-        orderBy: { eventDate: "desc" },
-        take: 50,
-  });
-
-  return (
-    <div>
-    <div className="flex items-center justify-between mb-6">
-    <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-    <div className="flex gap-2">
-    <a
-      href={statusFilter ? `/api/orders/export?status=${encodeURIComponent(statusFilter)}` : "/api/orders/export"}
-      className="bg-white text-gray-700 border border-gray-300 rounded-md px-4 py-2 text-sm font-medium hover:bg-gray-50"
-      >
-    Export CSV
-    </a>
-    <Link href="/dashboard/orders/new" className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700">
-    New Order
-    </Link>
-    </div>
-    </div>
-    
-    <div className="mb-6 flex flex-wrap gap-2">
-      {[
-      { label: "All", value: "" },
-      { label: "Quote", value: "quote" },
-      { label: "Pending", value: "pending" },
-      { label: "Confirmed", value: "confirmed" },
-      { label: "Completed", value: "completed" },
-      { label: "Cancelled", value: "cancelled" },
-      ].map((tab) => (
-        <Link
-          key={tab.value || "all"}
-          href={tab.value ? `/dashboard/orders?status=${tab.value}` : "/dashboard/orders"}
-          className={`px-3 py-1.5 rounded-md text-sm font-medium border ${
-            statusFilter === tab.value
-            ? "bg-indigo-600 text-white border-indigo-600"
-            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-          }`}
-          >
-          {tab.label}
-        </Link>
-        ))}
-    </div>
-    
-    <div className="bg-white shadow rounded-lg overflow-hidden">
-    <table className="min-w-full divide-y divide-gray-200">
-    <thead className="bg-gray-50">
-    <tr>
-    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order #</th>
-    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event Date</th>
-    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid</th>
-    </tr>
-    </thead>
-    <tbody className="bg-white divide-y divide-gray-200">
-      {orders.length === 0 && (
-      <tr>
-      <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-      No orders yet.
-      </td>
-      </tr>
-    )}
-      {orders.map((order) => (
-      <tr key={order.id} className="hover:bg-gray-50">
-      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-      <Link href={"/dashboard/orders/" + order.id} className="text-indigo-600 hover:underline">
-        {order.orderNumber}
-      </Link>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {order.customer.firstName} {order.customer.lastName}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {order.eventDate.toDateString()}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{order.status}</td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.totalAmount.toFixed(2)}</td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.amountPaid.toFixed(2)}</td>
-      </tr>
-      ))}
-    </tbody>
-    </table>
-    </div>
-    </div>
-    );
+import { ORDER_STATUSES,orderSearchWhere } from "@/lib/orderFilters";
+import Icon from "../components/Icon";
+import {PageHeading,StatusBadge,EmptyState,money,eventDateLabel} from "../components/TenantUI";
+export default async function OrdersPage({searchParams}:{searchParams:{status?:string;q?:string;page?:string;balance?:string}}){
+ const org=await requireCurrentOrganization(),q=searchParams.q?.trim().slice(0,200)||"";
+ const status=ORDER_STATUSES.includes(searchParams.status as any)?searchParams.status!:"";
+ const unpaid=searchParams.balance==="unpaid";
+ const where={organizationId:org.id,...orderSearchWhere(q),...(status?{status}:unpaid?{status:{in:["active","confirmed","completed"]}}:{}),...(unpaid?{amountPaid:{lt:prisma.order.fields.totalAmount}}:{})};
+ const total=await prisma.order.count({where}),pages=Math.max(1,Math.ceil(total/25));
+ const page=Math.min(pages,Math.max(1,Math.floor(Number(searchParams.page)||1)));
+ const orders=await prisma.order.findMany({where,include:{customer:true},orderBy:[{eventDate:"desc"},{id:"asc"}],take:25,skip:(page-1)*25});
+ function url(patch:Record<string,string>={}){const params=new URLSearchParams({...q?{q}:{},...status?{status}:{},...unpaid?{balance:"unpaid"}:{},...patch});for(const [key,value]of Array.from(params.entries()))if(!value)params.delete(key);return "/dashboard/orders"+(params.size?"?"+params:"");}
+ const exportParams=new URLSearchParams({...q?{q}:{},...status?{status}:{},...unpaid?{balance:"unpaid"}:{}});
+ return <div className="space-y-6"><PageHeading eyebrow="Bookings" title="Orders" description="From the first quote to the final pickup. Keep every rental moving." actions={<><a href={"/api/orders/export?"+exportParams} className="tenant-button">Export CSV</a><Link href="/dashboard/orders/new" className="tenant-button tenant-button-primary"><Icon name="plus" className="h-4 w-4"/>New order</Link></>}/>
+ <section className="tenant-panel"><nav className="tenant-tabs" aria-label="Order status">{[{value:"",label:"All orders"},...ORDER_STATUSES.map(value=>({value,label:value[0].toUpperCase()+value.slice(1)}))].map(tab=><Link key={tab.value} href={url({status:tab.value,page:""})} className="tenant-tab" aria-current={status===tab.value?"page":undefined}>{tab.label}</Link>)}</nav>
+ <div className="flex flex-wrap items-center justify-between gap-3 p-5"><form className="flex w-full flex-wrap items-center gap-2 sm:w-auto" method="get"><div className="relative min-w-0 flex-1 sm:w-80"><Icon name="search" className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400"/><input aria-label="Search orders" name="q" defaultValue={q} placeholder="Order number, customer, or email" className="w-full !pl-9"/></div>{status&&<input type="hidden" name="status" value={status}/>}<label className="flex items-center gap-2 px-2 text-xs text-slate-600"><input type="checkbox" name="balance" value="unpaid" defaultChecked={unpaid}/>Balance due</label><button className="tenant-button" type="submit">Apply</button>{(q||unpaid)&&<Link href={url({q:"",balance:"",page:""})} className="text-xs font-medium text-slate-500">Clear</Link>}</form><p className="text-xs text-slate-500">{total} matching {total===1?"order":"orders"}</p></div>
+ {!orders.length?<EmptyState icon="orders" title={q||status||unpaid?"No orders match these filters":"Your first booking starts here"} description={q||status||unpaid?"Try another search or clear your filters to see more orders.":"Create a quote, add rental items, and keep the entire event in one place."} href={q||status||unpaid?"/dashboard/orders":"/dashboard/orders/new"} label={q||status||unpaid?"Clear filters":"Create an order"}/>:<>
+ <div className="hidden overflow-x-auto md:block"><table className="tenant-table"><thead><tr><th>Order</th><th>Customer</th><th>Event date</th><th>Status</th><th className="text-right">Total</th><th className="text-right">Balance due</th><th><span className="sr-only">Open order</span></th></tr></thead><tbody>{orders.map(o=><tr key={o.id}><td><Link href={"/dashboard/orders/"+o.id} className="font-semibold hover:underline">{o.orderNumber}</Link><p className="mt-1 text-[11px] font-normal capitalize text-slate-400">{o.deliveryType==="pickup"?"Customer pickup":"Delivery"}</p></td><td><p className="font-medium text-slate-700">{o.customer.firstName} {o.customer.lastName}</p><p className="mt-1 text-xs text-slate-400">{o.customer.email}</p></td><td className="whitespace-nowrap">{eventDateLabel(o.eventDate)}</td><td><StatusBadge status={o.status}/></td><td className="text-right tabular-nums">{money(o.totalAmount)}</td><td className="text-right tabular-nums"><span className={o.totalAmount>o.amountPaid?"font-medium text-amber-700":"text-emerald-700"}>{money(Math.max(0,o.totalAmount-o.amountPaid))}</span><p className="mt-1 text-[11px] text-slate-400">{money(o.amountPaid)} paid</p></td><td><Link href={"/dashboard/orders/"+o.id} aria-label={"Open order "+o.orderNumber}><Icon name="arrow" className="h-4 w-4"/></Link></td></tr>)}</tbody></table></div>
+ <div className="divide-y divide-slate-100 md:hidden">{orders.map(o=><Link href={"/dashboard/orders/"+o.id} key={o.id} className="block p-5 hover:bg-slate-50"><div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold text-slate-500">{o.orderNumber}</span><StatusBadge status={o.status}/></div><p className="mt-3 text-base font-semibold text-slate-900">{o.customer.firstName} {o.customer.lastName}</p><p className="mt-1 text-xs text-slate-500">{eventDateLabel(o.eventDate)} · {o.deliveryType==="pickup"?"Customer pickup":"Delivery"}</p><div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3"><span className="text-sm font-semibold text-slate-800">{money(o.totalAmount)}</span><span className="text-xs text-slate-500">{money(Math.max(0,o.totalAmount-o.amountPaid))} due →</span></div></Link>)}</div>
+ <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-4"><p className="text-xs text-slate-500">{(page-1)*25+1}–{Math.min(page*25,total)} of {total}</p><nav aria-label="Order pages" className="flex items-center gap-3">{page>1&&<Link href={url({page:String(page-1)})} className="tenant-button">Previous</Link>}<span className="text-xs text-slate-500">Page {page} of {pages}</span>{page<pages&&<Link href={url({page:String(page+1)})} className="tenant-button">Next</Link>}</nav></div></>}
+ </section></div>;
 }

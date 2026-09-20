@@ -18,6 +18,11 @@ function load(file, mocks = {}) {
   const nativeRequire = createRequire(filename);
   const localRequire = name => {
     if (Object.hasOwn(mocks, name)) return mocks[name];
+    if (name.endsWith('.css')) return {};
+    if(name.startsWith('./')||name.startsWith('../')) {
+      const resolved=path.resolve(path.dirname(filename),name);
+      for(const ext of ['.ts','.tsx'])if(fs.existsSync(resolved+ext))return load(path.relative(root,resolved+ext),mocks);
+    }
     if (name.startsWith('@/')) return load(name.slice(2) + '.ts', mocks);
     return nativeRequire(name);
   };
@@ -323,7 +328,7 @@ for(const role of ['owner','staff']) test('dashboard navigation and identity mat
   const React=require('react');
   const target={id:'u1',name:'Actual tenant user',role,organizationId:'tenant-1',isActive:true};
   let signedIn={user:target};let view=null;
-  const Nav=props=>React.createElement('nav',null,JSON.stringify(props));
+  const Nav=({children,supportBanner,...props})=>React.createElement('div',null,React.createElement('nav',null,JSON.stringify(props)),children);
   const layout=load('app/dashboard/layout.tsx',{
     'next-auth':{getServerSession:async()=>signedIn},'next/navigation':{redirect:()=>{throw Error('unexpected redirect');}},
     '@/lib/auth':{authOptions:{}},'@/lib/prisma':{prisma:{user:{findUnique:async()=>target}}},
@@ -338,4 +343,60 @@ for(const role of ['owner','staff']) test('dashboard navigation and identity mat
   const impersonated=renderToStaticMarkup(await layout.default({children:React.createElement('main',null,'Tenant content')}));
   assert.equal(impersonated,regular);
   assert.ok(impersonated.includes('Actual tenant user'));assert.ok(!impersonated.includes('Test admin'));
+});
+
+test('overview uses the tenant calendar day and rejects invalid month/year input',()=>{
+  const {dashboardDates}=load('lib/dashboardDates.ts');
+  const dates=dashboardDates(new Date('2026-09-20T02:00:00Z'),'America/New_York',{year:'NaN',month:'99'});
+  assert.equal(dates.today.toISOString(),'2026-09-19T00:00:00.000Z');
+  assert.equal(dates.year,2026);assert.equal(dates.month,8);
+  assert.equal(dates.weekEnd.toISOString(),'2026-09-26T00:00:00.000Z');
+  assert.equal(dashboardDates(new Date('2026-09-20T02:00:00Z'),'bad/timezone').today.toISOString(),'2026-09-20T00:00:00.000Z');
+});
+
+test('overview reports all recorded payments less refunds and all eligible balances',async()=>{
+  const queries=[];const capture=(kind,value)=>async args=>{queries.push({kind,...args});return value;};
+  const totalField={name:'totalAmount'};
+  const page=load('app/dashboard/page.tsx',{
+    '@/lib/tenant':{requireCurrentOrganization:async()=>({id:'tenant-1',timezone:'America/New_York'})},
+    '@/lib/prisma':{prisma:{item:{count:capture('items',8)},order:{fields:{totalAmount:totalField},findMany:capture('orders',[]),count:capture('count',4),aggregate:capture('balances',{_sum:{totalAmount:2000,amountPaid:1250}})},payment:{groupBy:capture('payments',[{type:'payment',_sum:{amount:1200}},{type:'refund',_sum:{amount:150}}])},orderItem:{findMany:capture('popular',[])}}},
+    './HomeCalendar':{__esModule:true,default:()=>null},'./HomeTasks':{__esModule:true,default:()=>null},'./BestSellersChart':{__esModule:true,default:()=>null},
+  });
+  const html=require('react-dom/server').renderToStaticMarkup(await page.default({searchParams:{}}));
+  assert.ok(html.includes('$1,050.00'));assert.ok(html.includes('$750.00'));
+  for(const query of queries)assert.equal(query.where.organizationId??query.where.order?.organizationId,'tenant-1');
+  const balances=queries.find(q=>q.kind==='balances');assert.equal(balances.take,undefined);assert.deepEqual(balances.where.status.in,['active','confirmed','completed']);assert.equal(balances.where.amountPaid.lt,totalField);
+  const payments=queries.find(q=>q.kind==='payments');assert.equal(payments.take,undefined);assert.ok(payments.where.createdAt.gte instanceof Date);
+});
+
+test('order search supports full customer names, status, balance, and bounded pagination',async()=>{
+  let listing;
+  const page=load('app/dashboard/orders/page.tsx',{
+    '@/lib/tenant':{requireCurrentOrganization:async()=>({id:'tenant-1'})},
+    '@/lib/prisma':{prisma:{order:{fields:{totalAmount:'total-field'},count:async()=>27,findMany:async args=>{listing=args;return [];}}}},
+  });
+  await page.default({searchParams:{q:'Jane Doe',status:'confirmed',balance:'unpaid',page:'999'}});
+  assert.equal(listing.where.organizationId,'tenant-1');assert.equal(listing.where.status,'confirmed');assert.equal(listing.where.AND.length,2);assert.equal(listing.where.amountPaid.lt,'total-field');assert.equal(listing.take,25);assert.equal(listing.skip,25);
+  await page.default({searchParams:{status:'invented',page:'-12'}});
+  assert.equal(listing.where.status,undefined);assert.equal(listing.skip,0);
+});
+
+test('order CSV export preserves the visible search and balance filters',async()=>{
+  let listing;
+  const api=load('app/api/orders/export/route.ts',{
+    '@/lib/tenant':{requireCurrentOrganization:async()=>({id:'tenant-1'})},'@/lib/authz':{requireStaffSession:async()=>({id:'admin-1'}),authzErrorResponse:e=>{throw e;}},'@/lib/audit':{logActivity:async()=>{}},
+    '@/lib/prisma':{prisma:{order:{fields:{totalAmount:'total-field'},findMany:async args=>{listing=args;return [];}}}},
+  });
+  const response=await api.GET(new Request('http://localhost/api/orders/export?q=Jane+Doe&status=active&balance=unpaid'));
+  assert.equal(response.status,200);assert.equal(listing.where.organizationId,'tenant-1');assert.equal(listing.where.status,'active');assert.equal(listing.where.AND.length,2);assert.equal(listing.where.amountPaid.lt,'total-field');assert.equal(listing.take,undefined);
+});
+
+test('customer CSV export respects the directory full-name and date filters',async()=>{
+  let listing;
+  const api=load('app/api/customers/export/route.ts',{
+    '@/lib/tenant':{requireCurrentOrganization:async()=>({id:'tenant-1'})},'@/lib/authz':{requireStaffSession:async()=>({id:'admin-1'}),authzErrorResponse:e=>{throw e;}},'@/lib/audit':{logActivity:async()=>{}},
+    '@/lib/prisma':{prisma:{customer:{findMany:async args=>{listing=args;return [];}}}},
+  });
+  const response=await api.GET(new Request('http://localhost/api/customers/export?q=Jane+Doe&from=2026-09-01&to=2026-09-19'));
+  assert.equal(response.status,200);assert.equal(listing.where.organizationId,'tenant-1');assert.equal(listing.where.AND.length,2);assert.equal(listing.where.createdAt.lte.toISOString(),'2026-09-19T23:59:59.999Z');
 });

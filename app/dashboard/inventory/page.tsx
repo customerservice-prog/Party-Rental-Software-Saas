@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
+import { useEffect, useState, FormEvent, Fragment } from "react";
+import {PageHeading, MetricCard, EmptyState, StatusBadge} from "../components/TenantUI";
+import Icon from "../components/Icon";
 import CatalogBrowser from "./CatalogBrowser";
 import ImportCsvModal from "./ImportCsvModal";
 import ItemUnitsPanel from "./ItemUnitsPanel";
@@ -95,6 +97,9 @@ export default function InventoryPage() {
   const [message, setMessage] = useState("");
   const [showCatalog, setShowCatalog] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [query, setQuery] = useState("");
+  const [condition, setCondition] = useState("all");
+  const [loadError, setLoadError] = useState("");
 
   const [newCategory, setNewCategory] = useState({ name: "", description: "", picture: "" });
   const [itemForms, setItemForms] = useState<Record<string, ItemFormState>>({});
@@ -106,25 +111,14 @@ export default function InventoryPage() {
   const [addonForms, setAddonForms] = useState<Record<string, AddonFormState>>({});
 
   async function load() {
-    setLoading(true);
-    const [catRes, itemRes, addonRes] = await Promise.all([
-      fetch("/api/categories"),
-      fetch("/api/items"),
-      fetch("/api/addons"),
-    ]);
-    if (catRes.ok) {
-      const data = await catRes.json();
-      setCategories(data.categories);
-    }
-    if (itemRes.ok) {
-      const data = await itemRes.json();
-      setItems(data.items);
-    }
-    if (addonRes.ok) {
-      const data = await addonRes.json();
-      setAddons(data.addons);
-    }
-    setLoading(false);
+    setLoading(true); setLoadError("");
+    try {
+      const responses=await Promise.all([fetch("/api/categories"),fetch("/api/items"),fetch("/api/addons")]);
+      if(responses.some(response=>!response.ok))throw new Error("Inventory could not be loaded. Check your access or try again.");
+      const [cats,stock,extras]=await Promise.all(responses.map(response=>response.json()));
+      setCategories(cats.categories); setItems(stock.items); setAddons(extras.addons);
+    } catch(e) { setLoadError(e instanceof Error?e.message:"Inventory could not be loaded."); }
+    finally {setLoading(false);}
   }
 
   useEffect(() => {
@@ -304,41 +298,15 @@ export default function InventoryPage() {
     }
   }
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
+  if (loading) return <div role="status" aria-label="Loading inventory" className="space-y-5"><div className="h-16 animate-pulse rounded-xl bg-slate-200/60"/><div className="grid grid-cols-2 gap-4 lg:grid-cols-4">{[1,2,3,4].map(n=><div key={n} className="h-28 animate-pulse rounded-xl bg-slate-200/60"/>)}</div><div className="h-64 animate-pulse rounded-2xl bg-slate-200/60"/></div>;
+  if(loadError)return <div className="tenant-panel p-8" role="alert"><h1>Inventory unavailable</h1><p className="my-4 text-sm text-slate-500">{loadError}</p><button className="tenant-button" onClick={load}>Try again</button></div>;
+  const matches=(item:Item)=>item.name.toLowerCase().includes(query.toLowerCase())&&(condition==="all"||(condition==="attention"?!!item.status&&item.status!=="available":item.displayToCustomer));
+  const visibleCategories=categories.filter(category=>!query&&condition==="all"||items.some(item=>item.categoryId===category.id&&matches(item)));
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-bold">Inventory</h1>
-        <div className="flex items-center gap-2">
-          <a
-            href="/dashboard/inventory/packages"
-            className="bg-white text-gray-700 border border-gray-300 rounded px-4 py-2 text-sm font-medium hover:bg-gray-50"
-          >
-            Packages
-          </a>
-          <button
-            onClick={() => setShowCatalog(true)}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-          >
-            Add from Catalog
-          </button>
-          <button
-            onClick={() => setShowImport(true)}
-            className="bg-white text-gray-700 border border-gray-300 rounded px-4 py-2 text-sm font-medium hover:bg-gray-50"
-          >
-            Import CSV
-          </button>
-          <a
-            href="/api/items/export"
-            className="bg-white text-gray-700 border border-gray-300 rounded px-4 py-2 text-sm font-medium hover:bg-gray-50"
-          >
-            Export CSV
-          </a>
-        </div>
-      </div>
+    <div className="tenant-inventory space-y-6">
+      <PageHeading eyebrow="Rental catalog" title="Inventory" description="Everything you rent, organized and ready for the next event." actions={<><a href="/dashboard/inventory/packages" className="tenant-button">Packages</a><button onClick={()=>setShowImport(true)} className="tenant-button">Import CSV</button><a href="/api/items/export" className="tenant-button">Export CSV</a><button onClick={()=>setShowCatalog(true)} className="tenant-button tenant-button-primary"><Icon name="plus" className="h-4 w-4"/>Add from catalog</button></>}/>
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Inventory summary"><MetricCard label="Rental items" value={items.length} detail="Across your entire catalog" icon="box"/><MetricCard label="Categories" value={categories.length} detail="Organized for easy browsing" icon="orders"/><MetricCard label="On your website" value={items.filter(item=>item.displayToCustomer).length} detail="Items marked visible to customers" icon="globe"/><MetricCard label="Need attention" value={items.filter(item=>item.status&&item.status!=="available").length} detail="Items not marked available" icon="shield"/></section>
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4"><label className="relative min-w-[150px] flex-1"><span className="sr-only">Search inventory</span><Icon name="search" className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search your rental items…" className="w-full !pl-9"/></label><select aria-label="Filter inventory" value={condition} onChange={e=>setCondition(e.target.value)}><option value="all">All items</option><option value="attention">Needs attention</option><option value="visible">Visible on website</option></select><span className="text-xs text-slate-500">{items.filter(matches).length} items</span></div>
       {showCatalog && (
         <CatalogBrowser
           onClose={() => setShowCatalog(false)}
@@ -366,11 +334,11 @@ export default function InventoryPage() {
           }}
         />
       )}
-      {message && <p className="text-sm text-indigo-700">{message}</p>}
+      {message && <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{message}</p>}
 
-      <div className="bg-white border rounded p-4">
-        <h2 className="font-semibold text-lg mb-3">Add Category</h2>
-        <form onSubmit={addCategory} className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <details className="tenant-panel p-5" open={categories.length===0}>
+        <summary className="cursor-pointer text-sm font-semibold text-slate-800">Add a rental category</summary>
+        <form onSubmit={addCategory} className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
           <input
             className="border rounded px-3 py-2"
             placeholder="Category name"
@@ -399,7 +367,7 @@ export default function InventoryPage() {
             Add Category
           </button>
         </form>
-      </div>
+      </details>
 
       {categories.length === 0 && (
         <p className="text-gray-500">
@@ -408,14 +376,15 @@ export default function InventoryPage() {
         </p>
       )}
 
+      {categories.length>0&&visibleCategories.length===0&&<div className="tenant-panel"><EmptyState title="No matching rental items" description="Try another search or choose All items."/></div>}
       <div className="space-y-6">
-        {categories.map((category) => {
-          const categoryItems = items.filter((i) => i.categoryId === category.id);
+        {visibleCategories.map((category) => {
+          const categoryItems = items.filter((i) => i.categoryId === category.id&&matches(i));
           const form = itemFormFor(category.id);
           return (
-            <div key={category.id} className="border rounded p-4 bg-white">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-semibold text-lg">{category.name}</h2>
+            <div key={category.id} className="tenant-panel p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div><h2 className="font-semibold text-base text-slate-800">{category.name} <span className="ml-2 rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-500">{categoryItems.length}</span></h2>{category.description&&<p className="mt-1 text-xs text-slate-500">{category.description}</p>}</div>
                 <button
                   onClick={() => deleteCategory(category.id)}
                   className="text-sm text-red-600 hover:underline"
@@ -424,7 +393,7 @@ export default function InventoryPage() {
                 </button>
               </div>
 
-              <table className="w-full text-sm text-left mb-4">
+              <div className="overflow-x-auto"><table className="w-full text-sm text-left mb-4">
                 <thead>
                   <tr className="text-gray-500 border-b">
                     <th className="py-1">Photo</th>
@@ -545,8 +514,8 @@ export default function InventoryPage() {
                         </td>
                       </tr>
                     ) : (
-                      <>
-                        <tr key={item.id} className="border-b last:border-0">
+                      <Fragment key={item.id}>
+                        <tr className="border-b last:border-0">
                           <td className="py-1">
                             {item.picture ? (
                               <img src={item.picture} alt={item.name} className="h-10 w-10 object-cover rounded" />
@@ -565,14 +534,13 @@ export default function InventoryPage() {
                           <td className="py-1">
                             <input
                               type="checkbox"
+                              aria-label={"Show "+item.name+" on website"}
                               checked={item.displayToCustomer}
                               onChange={() => toggleVisible(item)}
                             />
                           </td>
                           <td className="py-1">
-                            <span className={item.status === "available" || !item.status ? "text-green-700" : (item.status === "damaged" || item.status === "needs_repair") ? "text-yellow-700" : "text-red-700"}>
-                              {(item.status || "available").replace("_", " ")}
-                            </span>
+                            <StatusBadge status={item.status||"available"}/>
                           </td>
                           <td className="py-1 space-x-2">
                             <button onClick={() => startEdit(item)} className="text-indigo-600 hover:underline">
@@ -668,7 +636,7 @@ export default function InventoryPage() {
                             </td>
                           </tr>
                         )}
-                      </>
+                      </Fragment>
                     );
                   })}
                   {categoryItems.length === 0 && (
@@ -679,11 +647,11 @@ export default function InventoryPage() {
                     </tr>
                   )}
                 </tbody>
-              </table>
+              </table></div>
 
-              <form
+              <details className="mt-3 border-t border-slate-100 pt-4"><summary className="cursor-pointer text-sm font-semibold text-emerald-700">Add an item to {category.name}</summary><form
                 onSubmit={(e) => addItem(category.id, e)}
-                className="grid grid-cols-1 md:grid-cols-6 gap-2 border-t pt-3"
+                className="mt-4 grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-3"
               >
                 <input
                   className="border rounded px-2 py-1"
@@ -730,7 +698,7 @@ export default function InventoryPage() {
                 <button className="rounded-md bg-indigo-600 px-3 py-1 text-sm font-medium text-white hover:bg-indigo-700" type="submit">
                   Add Item
                 </button>
-              </form>
+              </form></details>
             </div>
           );
         })}

@@ -1,3 +1,4 @@
+import "./tenant.css";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -65,17 +66,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const userName = viewer?.name || (session.user as any).name || (session.user as any).email || "User";
 
   return (
-    <div className="min-h-screen">
-      <div className="sticky top-0 z-50">
-      {supportBanner}
       <DashboardNav
         showSettings={role === "owner"}
         orgName={organization.name}
         userName={userName}
         role={role}
-      />
-      </div>
-      <div className="pt-20 flex flex-1 flex-col min-h-screen">
+        supportBanner={supportBanner}
+      >
+      <div className="space-y-4">
         {maintenanceEnabled && (
           <div className="border-b border-amber-300 bg-amber-100 px-6 py-3 text-sm font-semibold text-amber-950">
             <b>Platform maintenance</b>{maintenanceMessage ? <span className="ml-2">{maintenanceMessage}</span> : <span className="ml-2">Some features may be temporarily unavailable.</span>}
@@ -108,8 +106,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 : "Your free trial ends in " + billing.trialDaysLeft + " day(s)."}
             </div>
           )}
-        <div className="flex-1 p-6 bg-gray-50">{children}</div>
+        <div>{children}</div>
       </div>
-    </div>
+    </DashboardNav>
   );
 }

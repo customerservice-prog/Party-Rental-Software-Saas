@@ -30,14 +30,16 @@ export async function GET(request: Request) {
     if (toParam) {
       const toDate = new Date(toParam);
       if (!isNaN(toDate.getTime())) {
-        toDate.setHours(23, 59, 59, 999);
+        toDate.setUTCHours(23, 59, 59, 999);
         dateFilter.lte = toDate;
       }
     }
     const dateWhere = (dateFilter.gte || dateFilter.lte) ? { createdAt: dateFilter } : {};
 
+    const q=(searchParams.get("q")||"").trim().slice(0,200);
+    const searchWhere=q?{AND:q.split(/\s+/).slice(0,8).map(word=>({OR:[{firstName:{contains:word,mode:"insensitive" as const}},{lastName:{contains:word,mode:"insensitive" as const}},{email:{contains:word,mode:"insensitive" as const}},{phone:{contains:word,mode:"insensitive" as const}}]}))}:{};
     const customers: CustomerExportRow[] = await prisma.customer.findMany({
-      where: { organizationId: organization.id, ...dateWhere },
+      where: { organizationId: organization.id, ...dateWhere, ...searchWhere },
       orderBy: { createdAt: "desc" },
       include: { _count: { select: { orders: true } } },
     });
