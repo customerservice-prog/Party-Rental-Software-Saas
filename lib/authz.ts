@@ -34,8 +34,8 @@ export async function requireStaffSession(organizationId: string): Promise<Sessi
   const session = await getServerSession(authOptions);
   const user = session?.user as (SessionUser & Record<string, unknown>) | undefined;
 
-  if (!user) {
-    throw new AuthzError("You must be signed in to do this.", 401);
+  if (!user || user.role === "revoked" || (user as any).revoked === true) {
+    throw new AuthzError("Your session is no longer valid. Sign in again.", 401);
   }
 
   if (user.role === "platform_admin") {
