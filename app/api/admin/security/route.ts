@@ -60,7 +60,7 @@ export async function POST(req:NextRequest){
     const duplicate=await prisma.user.findFirst({where:{role:"platform_admin",username}});
     if(duplicate)return NextResponse.json({error:"That platform-admin username already exists."},{status:409});
     const hash=await bcrypt.hash(password,12);
-    const admin=await prisma.user.create({data:{organizationId:platformOrg.id,name,username,password:hash,role:"platform_admin",isActive:true,forcePasswordReset:true}});
+    const admin=await prisma.user.create({data:{organizationId:platformOrg.id,name,username,password:hash,role:"platform_admin",isActive:true,forcePasswordReset:false}});
     await prisma.auditLog.create({data:{action:"platform.admin.created",performedBy:actor,details:JSON.stringify({adminId:admin.id,username,name})}});
     return NextResponse.json({success:true,id:admin.id});
   }
@@ -87,7 +87,7 @@ export async function POST(req:NextRequest){
     const password=String(body.password||"");
     if(password.length<12)return NextResponse.json({error:"New password must be at least 12 characters."},{status:400});
     const hash=await bcrypt.hash(password,12);
-    await prisma.user.update({where:{id},data:{password:hash,forcePasswordReset:true,isActive:true}});
+    await prisma.user.update({where:{id},data:{password:hash,forcePasswordReset:false,isActive:true}});
     await prisma.auditLog.create({data:{action:"platform.admin.password_reset",performedBy:actor,details:JSON.stringify({adminId:id,username:target.username})}});
     return NextResponse.json({success:true});
   }
