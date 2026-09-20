@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { activeLoginLockWhere } from "@/lib/loginPolicy";
 
 export const dynamic="force-dynamic";
 export const revalidate=0;
@@ -17,7 +18,7 @@ export default async function PlatformAlertsPage(){
       select:{id:true,name:true,slug:true,status:true,createdAt:true,automationsLastRunAt:true,stripeAccountId:true,resendApiKey:true,senderEmail:true,twilioAccountSid:true,twilioAuthToken:true,twilioFromNumber:true,website:{select:{publishedAt:true}},_count:{select:{items:true,orders:true}}},
     }),
     prisma.sentMessage.findMany({where:{status:"failed",createdAt:{gte:d1}},select:{id:true,organizationId:true,channel:true,providerError:true,createdAt:true},orderBy:{createdAt:"desc"},take:50}),
-    prisma.loginThrottle.findMany({where:{failCount:{gte:5},failExpiresAt:{gte:now}},select:{id:true,ip:true,failCount:true,failExpiresAt:true}}),
+    prisma.loginThrottle.findMany({where:activeLoginLockWhere(now),select:{id:true,ip:true,failCount:true,failExpiresAt:true,burstCount:true,burstExpiresAt:true}}),
     prisma.platformSubscription.findMany({where:{status:{in:["past_due","unpaid","trial_ended"]}},include:{organization:{select:{id:true,name:true}}}}),
   ]);
 
@@ -34,7 +35,7 @@ export default async function PlatformAlertsPage(){
     if(o.automationsLastRunAt&&o.automationsLastRunAt<d1)alerts.push({id:"auto-"+o.id,severity:"info",title:o.name+" automations appear stale",detail:"Last automation run "+o.automationsLastRunAt.toLocaleString(),href:"/admin/organizations/"+o.id+"/support"});
     if((o.resendApiKey&&!o.senderEmail)||((o.twilioAccountSid||o.twilioAuthToken)&&!(o.twilioAccountSid&&o.twilioAuthToken&&o.twilioFromNumber)))alerts.push({id:"integration-"+o.id,severity:"warning",title:o.name+" has incomplete messaging setup",detail:"One or more provider credentials are only partially configured.",href:"/admin/organizations/"+o.id+"/support"});
   }
-  for(const l of lockedIps)alerts.push({id:"ip-"+l.id,severity:"critical",title:"Login abuse lock active",detail:l.ip+" · "+l.failCount+" failures · lock until "+l.failExpiresAt?.toLocaleTimeString(),href:"/admin/security"});
+  for(const l of lockedIps)alerts.push({id:"ip-"+l.id,severity:"critical",title:"Login abuse lock active",detail:l.ip+" · "+l.failCount+" failures · "+l.burstCount+" recent attempts",href:"/admin/security"});
 
   const critical=alerts.filter(a=>a.severity==="critical").length,warning=alerts.filter(a=>a.severity==="warning").length;
   return <div className="space-y-6">

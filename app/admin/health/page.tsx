@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { activeLoginLockWhere } from "@/lib/loginPolicy";
 
 export const dynamic="force-dynamic";
 export const revalidate=0;
@@ -20,7 +21,7 @@ export default async function PlatformHealthPage(){
     prisma.sentMessage.count({where:{status:"queued",createdAt:{gte:since24}}}),
     prisma.blockedBookingAttempt.count({where:{createdAt:{gte:since24}}}),
     prisma.organization.findMany({where:{slug:{not:"_platform_internal"}},select:{id:true,name:true,automationsLastRunAt:true},take:500}),
-    prisma.loginThrottle.count({where:{failCount:{gte:5},failExpiresAt:{gte:now}}}),
+    prisma.loginThrottle.count({where:activeLoginLockWhere(now)}),
     prisma.organization.findMany({where:{slug:{not:"_platform_internal"}},select:{id:true,name:true,slug:true,resendApiKey:true,senderEmail:true,twilioAccountSid:true,twilioAuthToken:true,twilioFromNumber:true,stripeAccountId:true,customDomain:true,status:true},orderBy:{name:"asc"}}),
   ]);
 

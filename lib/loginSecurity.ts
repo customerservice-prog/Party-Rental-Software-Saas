@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { LOGIN_FAIL_LIMIT as FAIL_LIMIT, LOGIN_BURST_LIMIT as BURST_LIMIT } from "./loginPolicy";
 
 // Brute-force / abuse protection for the credentials login flow, mirroring
 // the reference app's core/control_login_throttle.py:
@@ -10,9 +11,7 @@ import { prisma } from "./prisma";
 // in-memory cache, so it survives redeploys/multiple server instances.
 
 const FAIL_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const FAIL_LIMIT = 40; // matches reference app's CONTROL_LOGIN_FAILS_PER_15_MIN default
 const BURST_WINDOW_MS = 60 * 1000; // 1 minute
-const BURST_LIMIT = 30; // matches reference app's CONTROL_LOGIN_POST_BURST_PER_MIN default
 
 export const LOGIN_LOCK_MESSAGE =
   "Too many failed sign-in attempts from this network. Wait about 15 minutes and try again, or contact support.";

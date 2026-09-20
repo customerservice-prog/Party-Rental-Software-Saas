@@ -5,6 +5,7 @@ confirmed as the successful Railway production deployment.
 
 ## Corrections
 
+- Security, Health, and Alerts share the actual sign-in lock thresholds, including burst locks; five failures no longer falsely show an account lock.
 - Security Center login-lock clearing handles the actual UI payload rather than
   requiring an unrelated administrator target ID. Missing records return 404.
 - Support responses contain selected user fields and integration booleans,
@@ -35,7 +36,7 @@ Run `node --test tests/platform-admin.test.cjs`, `npx tsc --noEmit`, and
 session callbacks against isolated data adapters; it does not modify production
 accounts, publish announcements, initiate charges, or send customer messages.
 
-At this review, all 26 regression tests, TypeScript checks, and the complete
+At this review, all 28 regression tests, TypeScript checks, and the complete
 Next.js production build passed. All 16 static admin page URLs redirected an
 unauthenticated production request to `/platform-login`. Four admin read API
 URLs also rejected or redirected unauthenticated requests.

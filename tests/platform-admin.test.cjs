@@ -219,3 +219,22 @@ test('support dashboard viewing does not trigger customer automations',async()=>
   });
   await layout.default({children:null});assert.equal(runs,0);
 });
+
+test('admin monitoring uses the same lock thresholds as sign-in enforcement', async()=>{
+  const policy=load('lib/loginPolicy.ts');
+  let row={failCount:5,failExpiresAt:new Date(Date.now()+60000),burstCount:0,burstExpiresAt:null};
+  const security=load('lib/loginSecurity.ts',{'./prisma':{prisma:{loginThrottle:{findUnique:async()=>row}}},'./loginPolicy':policy});
+  assert.equal(policy.isThrottleLocked(row),false);
+  assert.equal(await security.isLoginLocked('test-ip'),false);
+  row.failCount=policy.LOGIN_FAIL_LIMIT;
+  assert.equal(policy.isThrottleLocked(row),true);
+  assert.equal(await security.isLoginLocked('test-ip'),true);
+});
+
+test('admin monitoring includes burst locks and excludes expired locks',async()=>{
+  const policy=load('lib/loginPolicy.ts');
+  const row={failCount:0,failExpiresAt:null,burstCount:policy.LOGIN_BURST_LIMIT,burstExpiresAt:new Date(Date.now()+60000)};
+  assert.equal(policy.isThrottleLocked(row),true);
+  row.burstExpiresAt=new Date(Date.now()-1000);
+  assert.equal(policy.isThrottleLocked(row),false);
+});

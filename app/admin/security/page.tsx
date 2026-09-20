@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { isThrottleLocked } from "@/lib/loginPolicy";
 
 type Admin={id:string;name:string;username:string;isActive:boolean;lastLoginAt:string|null;createdAt:string;mfaEnabled:boolean};
 type Throttle={id:string;ip:string;failCount:number;failExpiresAt:string|null;burstCount:number;burstExpiresAt:string|null;updatedAt:string};
@@ -62,7 +63,7 @@ export default function SecurityCenterPage(){
     await action({action:"admin.reset_password",id:admin.id,password:next});
   }
 
-  const locked=throttles.filter(t=>t.failCount>=5&&t.failExpiresAt&&new Date(t.failExpiresAt)>new Date());
+  const locked=throttles.filter(t=>isThrottleLocked(t));
 
   return <div className="space-y-6">
     <section>
