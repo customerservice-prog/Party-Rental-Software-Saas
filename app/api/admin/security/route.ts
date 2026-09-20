@@ -76,6 +76,12 @@ export async function POST(req:NextRequest){
     return NextResponse.json({success:true});
   }
 
+  if(action==="admin.revoke_sessions"){
+    await prisma.user.update({where:{id},data:{sessionVersion:{increment:1}}});
+    await prisma.auditLog.create({data:{action:"platform.admin.sessions_revoked",performedBy:actor,details:JSON.stringify({adminId:id,username:target.username})}});
+    return NextResponse.json({success:true});
+  }
+
   if(action==="admin.toggle"){
     if(target.id===actor&&body.isActive===false)return NextResponse.json({error:"You cannot disable your own current platform-admin account."},{status:400});
     await prisma.user.update({where:{id},data:{isActive:Boolean(body.isActive)}});
@@ -87,7 +93,7 @@ export async function POST(req:NextRequest){
     const password=String(body.password||"");
     if(password.length<12)return NextResponse.json({error:"New password must be at least 12 characters."},{status:400});
     const hash=await bcrypt.hash(password,12);
-    await prisma.user.update({where:{id},data:{password:hash,forcePasswordReset:false,isActive:true}});
+    await prisma.user.update({where:{id},data:{password:hash,forcePasswordReset:false,isActive:true,sessionVersion:{increment:1}}});
     await prisma.auditLog.create({data:{action:"platform.admin.password_reset",performedBy:actor,details:JSON.stringify({adminId:id,username:target.username})}});
     return NextResponse.json({success:true});
   }
