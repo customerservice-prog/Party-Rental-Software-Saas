@@ -32,6 +32,7 @@ export const authOptions: NextAuthOptions = {
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
         tenantSlug: { label: "Business subdomain", type: "text" },
+        loginScope: { label: "Login scope", type: "text" },
       },
       async authorize(credentials, req) {
         if (!credentials?.username || !credentials?.password) {
@@ -49,19 +50,35 @@ export const authOptions: NextAuthOptions = {
           throw new Error(LOGIN_LOCK_MESSAGE);
         }
 
+        const loginScope = credentials.loginScope === "platform" ? "platform" : "tenant";
         let organization = null as Awaited<ReturnType<typeof getCurrentOrganization>>;
-
-        if (credentials.tenantSlug) {
-          const bySlug = await prisma.organization.findUnique({
-            where: { slug: credentials.tenantSlug.trim().toLowerCase() },
-          });
-          organization = bySlug && bySlug.status !== "suspended" ? bySlug : null;
-        } else {
-          organization = await getCurrentOrganization();
-        }
-
         let user;
-        if (organization) {
+
+        if (loginScope === "platform") {
+          // Platform login must NEVER inherit a remembered tenant/session.
+          // This keeps /platform-login independent even if the same browser
+          // is currently signed into a rental-company tenant account.
+          user = await prisma.user.findFirst({
+            where: {
+              username: credentials.username,
+              role: "platform_admin",
+            },
+          });
+        } else {
+          if (credentials.tenantSlug) {
+            const bySlug = await prisma.organization.findUnique({
+              where: { slug: credentials.tenantSlug.trim().toLowerCase() },
+            });
+            organization = bySlug && bySlug.status !== "suspended" ? bySlug : null;
+          } else {
+            organization = await getCurrentOrganization();
+          }
+
+          if (!organization) {
+            await noteLoginFailure(ip);
+            return null;
+          }
+
           user = await prisma.user.findUnique({
             where: {
               organizationId_username: {
@@ -70,16 +87,12 @@ export const authOptions: NextAuthOptions = {
               },
             },
           });
-        } else {
-          // No tenant identified for this login attempt (root/platform
-          // domain, no slug submitted). Only the platform_admin account
-          // may authenticate this way.
-          user = await prisma.user.findFirst({
-            where: {
-              username: credentials.username,
-              role: "platform_admin",
-            },
-          });
+
+          // A platform admin may never authenticate through the tenant login.
+          if (user?.role === "platform_admin") {
+            await noteLoginFailure(ip);
+            return null;
+          }
         }
 
         if (!user) {
