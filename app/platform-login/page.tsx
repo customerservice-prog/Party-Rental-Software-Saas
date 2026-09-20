@@ -9,13 +9,14 @@ export default function PlatformLoginPage() {
   const router = useRouter();
   const [username,setUsername]=useState("");
   const [password,setPassword]=useState("");
+  const [mfaCode,setMfaCode]=useState("");
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState("");
 
   async function submit(e:React.FormEvent){
     e.preventDefault();
     setLoading(true);setError("");
-    const res=await signIn("credentials",{username,password,tenantSlug:"",loginScope:"platform",redirect:false});
+    const res=await signIn("credentials",{username,password,mfaCode,tenantSlug:"",loginScope:"platform",redirect:false});
     if(res?.error){
       setLoading(false);
       setError(res.error==="CredentialsSignin"?"Invalid platform administrator credentials.":res.error);
@@ -84,6 +85,10 @@ export default function PlatformLoginPage() {
             <label className="block">
               <span className="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-400">Password</span>
               <input type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} required className="w-full rounded-xl border border-white/10 bg-white/[.06] px-4 py-3.5 text-base text-white outline-none placeholder:text-slate-600 focus:border-blue-500" placeholder="••••••••••••"/>
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-400">Authenticator code <span className="normal-case tracking-normal text-slate-600">(if enabled)</span></span>
+              <input inputMode="numeric" autoComplete="one-time-code" value={mfaCode} onChange={e=>setMfaCode(e.target.value.replace(/\D/g,"").slice(0,6))} className="w-full rounded-xl border border-white/10 bg-white/[.06] px-4 py-3.5 text-base tracking-[.35em] text-white outline-none placeholder:tracking-normal placeholder:text-slate-600 focus:border-blue-500" placeholder="6-digit code"/>
             </label>
             <button disabled={loading} className="w-full rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-950/30 transition hover:bg-blue-500 disabled:opacity-50">
               {loading?"Verifying administrator…":"Enter Platform Control Center"}
