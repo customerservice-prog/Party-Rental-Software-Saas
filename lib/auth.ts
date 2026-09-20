@@ -95,7 +95,7 @@ export const authOptions: NextAuthOptions = {
           }
         }
 
-        if (!user) {
+        if (!user || user.isActive === false) {
           await noteLoginFailure(ip);
           return null;
         }
@@ -107,6 +107,10 @@ export const authOptions: NextAuthOptions = {
         }
 
         await clearLoginFailures(ip);
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { lastLoginAt: new Date() },
+        }).catch(() => null);
 
         return {
           id: user.id,
