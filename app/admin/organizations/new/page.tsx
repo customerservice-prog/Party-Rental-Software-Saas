@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PLANS, TRIAL_DAYS } from "@/lib/plans";
 
@@ -16,6 +16,13 @@ export default function NewTenantPage(){
   const[trialDays,setTrialDays]=useState(TRIAL_DAYS);
   const[busy,setBusy]=useState(false);
   const[error,setError]=useState("");
+
+  useEffect(()=>{
+    fetch("/api/admin/platform-control",{cache:"no-store"}).then(r=>r.json()).then(d=>{
+      const setting=(d.settings||[]).find((s:any)=>s.key==="default_trial_days");
+      if(setting?.value!==undefined)setTrialDays(Math.max(0,Math.min(365,Number(setting.value)||0)));
+    }).catch(()=>{});
+  },[]);
 
   function slugify(v:string){return v.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")}
 
