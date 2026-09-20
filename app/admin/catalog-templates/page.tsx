@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { CATALOG_CATEGORIES, CATALOG_TEMPLATE_TYPES } from "@/lib/catalogTemplates";
 
 type Template = {
@@ -205,12 +206,15 @@ export default function CatalogTemplatesAdminPage() {
           <h1 className="mt-1 text-3xl font-black tracking-[-.035em] text-slate-950">Global rental templates</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Maintain the reusable inventory templates that every tenant can choose from during setup and inventory creation.</p>
         </div>
-        <button
-          onClick={() => setShowAddForm((v) => !v)}
-          className={showAddForm ? "rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-700 shadow-sm" : "rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-black text-white shadow-sm"}
-        >
-          {showAddForm ? "Cancel" : "+ Add template"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/catalog-templates/bulk" className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-700 shadow-sm">Import / Export / QA</Link>
+          <button
+            onClick={() => setShowAddForm((v) => !v)}
+            className={showAddForm ? "rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-700 shadow-sm" : "rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-black text-white shadow-sm"}
+          >
+            {showAddForm ? "Cancel" : "+ Add template"}
+          </button>
+        </div>
       </div>
 
       <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-800">
