@@ -5,6 +5,7 @@ import { getCurrentOrganization } from "@/lib/tenant";
 import { getBillingStatus } from "@/lib/billing";
 import { runBookingAutomations } from "@/lib/automations";
 import DashboardNav from "./DashboardNav";
+import PlatformSupportBanner from "./PlatformSupportBanner";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -13,8 +14,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   const organization = await getCurrentOrganization();
-  if (!organization || (session.user as any).organizationId !== organization.id) {
-    redirect("/login");
+  const sessionRole = (session.user as any).role;
+  const isPlatformSupport = sessionRole === "platform_admin";
+  if (!organization || (!isPlatformSupport && (session.user as any).organizationId !== organization.id)) {
+    redirect(isPlatformSupport ? "/admin" : "/login");
   }
 
   // Best-effort booking-lifecycle automation trigger (real booking
@@ -30,13 +33,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   const billing = await getBillingStatus(organization);
-  const role = (session.user as any).role;
+  const role = sessionRole;
   const userName = (session.user as any).name || (session.user as any).email || "User";
 
   return (
     <div className="min-h-screen">
+      {isPlatformSupport && <PlatformSupportBanner tenantName={organization.name} />}
       <DashboardNav
-        showSettings={role === "owner"}
+        showSettings={role === "owner" || role === "platform_admin"}
         orgName={organization.name}
         userName={userName}
         role={role}
