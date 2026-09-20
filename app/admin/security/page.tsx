@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react";
 
-type Admin={id:string;name:string;username:string;isActive:boolean;lastLoginAt:string|null;createdAt:string};
+type Admin={id:string;name:string;username:string;isActive:boolean;lastLoginAt:string|null;createdAt:string;mfaEnabled:boolean};
 type Throttle={id:string;ip:string;failCount:number;failExpiresAt:string|null;burstCount:number;burstExpiresAt:string|null;updatedAt:string};
 
 export default function SecurityCenterPage(){
   const[admins,setAdmins]=useState<Admin[]>([]);
   const[throttles,setThrottles]=useState<Throttle[]>([]);
+  const[currentAdminId,setCurrentAdminId]=useState<string|null>(null);
+  const[mfaSecret,setMfaSecret]=useState("");
+  const[mfaUri,setMfaUri]=useState("");
+  const[mfaCode,setMfaCode]=useState("");
   const[name,setName]=useState("");
   const[username,setUsername]=useState("");
   const[password,setPassword]=useState("");
@@ -18,7 +22,7 @@ export default function SecurityCenterPage(){
   async function load(){
     const r=await fetch("/api/admin/security",{cache:"no-store"});
     const d=await r.json().catch(()=>({}));
-    if(r.ok){setAdmins(d.admins||[]);setThrottles(d.throttles||[])}else setError(d.error||"Could not load security data.");
+    if(r.ok){setAdmins(d.admins||[]);setThrottles(d.throttles||[]);setCurrentAdminId(d.currentAdminId||null)}else setError(d.error||"Could not load security data.");
   }
   useEffect(()=>{load()},[]);
 
@@ -29,6 +33,23 @@ export default function SecurityCenterPage(){
     if(!r.ok)setError(d.error||"Security action failed.");else{setNotice("Security change saved.");await load()}
     setBusy(false);
     return r.ok;
+  }
+
+  async function startMfa(){
+    setBusy(true);setError("");setNotice("");
+    const r=await fetch("/api/admin/security",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"mfa.start"})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)setError(d.error||"Could not start MFA setup.");else{setMfaSecret(d.secret||"");setMfaUri(d.uri||"")}
+    setBusy(false);
+  }
+
+  async function enableMfa(){
+    if(await action({action:"mfa.enable",secret:mfaSecret,code:mfaCode})){setMfaSecret("");setMfaUri("");setMfaCode("");}
+  }
+
+  async function disableMfa(){
+    const code=prompt("Enter your current 6-digit authenticator code to disable MFA.");
+    if(code)await action({action:"mfa.disable",code});
   }
 
   async function createAdmin(){
@@ -57,13 +78,20 @@ export default function SecurityCenterPage(){
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 className="text-sm font-black">Platform administrators</h2><p className="mt-0.5 text-[11px] text-slate-400">Accounts with access to every tenant and platform control.</p></div><span className="rounded-full bg-slate-100 px-2.5 py-1 text-[9px] font-black text-slate-600">{admins.length}</span></div>
         <div className="divide-y divide-slate-100">
           {admins.map(a=><div key={a.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div><div className="flex items-center gap-2"><b className="text-sm">{a.name}</b><span className={"rounded-full px-2 py-0.5 text-[9px] font-black uppercase "+(a.isActive?"bg-emerald-50 text-emerald-700":"bg-slate-100 text-slate-500")}>{a.isActive?"Active":"Disabled"}</span></div><div className="mt-1 text-[11px] text-slate-400">@{a.username} · last login {a.lastLoginAt?new Date(a.lastLoginAt).toLocaleString():"never"}</div></div>
-            <div className="flex gap-2"><button disabled={busy} onClick={()=>resetPassword(a)} className="rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-black text-slate-600">Reset password</button><button disabled={busy} onClick={()=>action({action:"admin.toggle",id:a.id,isActive:!a.isActive})} className={"rounded-lg px-3 py-2 text-[10px] font-black "+(a.isActive?"bg-rose-50 text-rose-700":"bg-emerald-50 text-emerald-700")}>{a.isActive?"Disable":"Enable"}</button></div>
+            <div><div className="flex items-center gap-2"><b className="text-sm">{a.name}</b><span className={"rounded-full px-2 py-0.5 text-[9px] font-black uppercase "+(a.isActive?"bg-emerald-50 text-emerald-700":"bg-slate-100 text-slate-500")}>{a.isActive?"Active":"Disabled"}</span><span className={"rounded-full px-2 py-0.5 text-[9px] font-black uppercase "+(a.mfaEnabled?"bg-blue-50 text-blue-700":"bg-amber-50 text-amber-700")}>{a.mfaEnabled?"MFA on":"MFA off"}</span></div><div className="mt-1 text-[11px] text-slate-400">@{a.username} · last login {a.lastLoginAt?new Date(a.lastLoginAt).toLocaleString():"never"}</div></div>
+            <div className="flex flex-wrap gap-2"><button disabled={busy} onClick={()=>resetPassword(a)} className="rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-black text-slate-600">Reset password</button>{a.id!==currentAdminId&&a.mfaEnabled&&<button disabled={busy} onClick={()=>confirm("Reset MFA for "+a.username+"?")&&action({action:"admin.mfa_reset",id:a.id})} className="rounded-lg bg-amber-50 px-3 py-2 text-[10px] font-black text-amber-700">Reset MFA</button>}<button disabled={busy} onClick={()=>action({action:"admin.toggle",id:a.id,isActive:!a.isActive})} className={"rounded-lg px-3 py-2 text-[10px] font-black "+(a.isActive?"bg-rose-50 text-rose-700":"bg-emerald-50 text-emerald-700")}>{a.isActive?"Disable":"Enable"}</button></div>
           </div>)}
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="space-y-5">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-black">Your authenticator MFA</h2>
+          <p className="mt-1 text-[11px] leading-5 text-slate-400">Protect the current platform-admin account with a standard 6-digit TOTP authenticator.</p>
+          {admins.find(a=>a.id===currentAdminId)?.mfaEnabled ? <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4"><div className="text-xs font-black text-emerald-800">MFA is enabled</div><p className="mt-1 text-[10px] text-emerald-700">A valid authenticator code is required at platform login.</p><button disabled={busy} onClick={disableMfa} className="mt-3 rounded-lg bg-white px-3 py-2 text-[10px] font-black text-rose-600">Disable MFA</button></div> : !mfaSecret ? <button disabled={busy} onClick={startMfa} className="mt-4 w-full rounded-xl bg-blue-600 px-4 py-3 text-xs font-black text-white">Set up authenticator MFA</button> : <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4"><div className="text-[10px] font-black uppercase text-blue-700">Add to your authenticator app</div><p className="mt-2 text-[11px] text-blue-900">Use manual setup and enter this secret:</p><code className="mt-2 block break-all rounded-lg bg-white p-3 text-xs font-black tracking-wider text-slate-800">{mfaSecret}</code><details className="mt-2"><summary className="cursor-pointer text-[10px] font-bold text-blue-700">Show otpauth URI</summary><code className="mt-2 block break-all rounded bg-white p-2 text-[9px]">{mfaUri}</code></details><input inputMode="numeric" value={mfaCode} onChange={e=>setMfaCode(e.target.value.replace(/\D/g,"").slice(0,6))} placeholder="Enter 6-digit code" className="mt-3 w-full rounded-xl border border-blue-200 bg-white px-3 py-2.5 text-center text-lg font-black tracking-[.3em]"/><button disabled={busy||mfaCode.length!==6} onClick={enableMfa} className="mt-2 w-full rounded-xl bg-slate-950 px-4 py-3 text-xs font-black text-white disabled:opacity-40">Verify & enable MFA</button></div>}
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-sm font-black">Add platform administrator</h2>
         <p className="mt-1 text-[11px] leading-5 text-slate-400">Create separate administrator accounts instead of sharing the owner password.</p>
         <div className="mt-4 space-y-3">
@@ -72,6 +100,7 @@ export default function SecurityCenterPage(){
           <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Temporary password · 12+ characters" className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"/>
           <button disabled={busy||name.length<2||username.length<3||password.length<12} onClick={createAdmin} className="w-full rounded-xl bg-slate-950 px-4 py-3 text-xs font-black text-white disabled:opacity-40">Create platform admin</button>
         </div>
+      </div>
       </div>
     </section>
 
@@ -85,6 +114,6 @@ export default function SecurityCenterPage(){
       </div>
     </section>
 
-    <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5"><div className="text-[10px] font-black uppercase text-amber-700">Remaining hardening</div><p className="mt-2 text-xs leading-5 text-amber-900">Platform-admin accounts are separate and auditable. A dedicated TOTP/WebAuthn 2FA challenge is not yet implemented; this panel intentionally does not claim 2FA is active.</p></section>
+    <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5"><div className="text-[10px] font-black uppercase text-blue-700">Security posture</div><p className="mt-2 text-xs leading-5 text-blue-900">Platform-admin accounts support encrypted TOTP MFA, separate credentials, login throttling, individual disable/reset controls, and audited security actions. WebAuthn/passkeys are not yet enabled.</p></section>
   </div>;
 }
