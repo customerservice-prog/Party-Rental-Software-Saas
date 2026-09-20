@@ -188,44 +188,44 @@ export default function CatalogTemplatesAdminPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Catalog Templates ({templates.length})
-        </h1>
+    <div className="space-y-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Platform Catalog</div>
+          <h1 className="mt-1 text-3xl font-black tracking-[-.035em] text-slate-950">Global rental templates</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Maintain the reusable inventory templates that every tenant can choose from during setup and inventory creation.</p>
+        </div>
         <button
           onClick={() => setShowAddForm((v) => !v)}
-          className="bg-brand-600 text-white rounded px-4 py-2 text-sm font-medium"
+          className={showAddForm ? "rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-700 shadow-sm" : "rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-black text-white shadow-sm"}
         >
-          {showAddForm ? "Cancel" : "Add Template"}
+          {showAddForm ? "Cancel" : "+ Add template"}
         </button>
       </div>
 
-      <p className="text-sm text-gray-500 mb-4">
-        These are global platform templates only - adding, editing, or deactivating one here never
-        creates, changes, or deletes anything in any tenant's own inventory. Tenants copy a template
-        into their own Item only when they explicitly add it from their Inventory or onboarding page.
-      </p>
+      <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-800">
+        <b>Global platform data.</b> Editing these templates does not modify tenant inventory already copied into a rental company account.
+      </div>
 
-      {error && <div className="bg-red-50 text-red-700 p-3 rounded mb-4 text-sm">{error}</div>}
+      {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</div>}
 
       {showAddForm && (
-        <form onSubmit={submitAdd} className="bg-white shadow rounded-lg p-6 mb-6 space-y-3">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">New Template</h2>
+        <form onSubmit={submitAdd} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,.04)] space-y-4">
+          <h2 className="text-sm font-black text-slate-950">New Template</h2>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1">Name</label>
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-500">Name</label>
               <input
-                className="w-full border rounded p-2 text-sm"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
                 value={addForm.name}
                 onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Category</label>
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-500">Category</label>
               <select
-                className="w-full border rounded p-2 text-sm"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
                 value={addForm.categoryKey}
                 onChange={(e) => setAddForm({ ...addForm, categoryKey: e.target.value })}
               >
@@ -237,9 +237,9 @@ export default function CatalogTemplatesAdminPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Type</label>
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-500">Type</label>
               <select
-                className="w-full border rounded p-2 text-sm"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
                 value={addForm.type}
                 onChange={(e) => setAddForm({ ...addForm, type: e.target.value })}
               >
@@ -251,26 +251,26 @@ export default function CatalogTemplatesAdminPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Sort Order</label>
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-500">Sort Order</label>
               <input
                 type="number"
-                className="w-full border rounded p-2 text-sm"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
                 value={addForm.sortOrder}
                 onChange={(e) => setAddForm({ ...addForm, sortOrder: e.target.value })}
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-medium mb-1">Description (optional)</label>
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-500">Description (optional)</label>
               <input
-                className="w-full border rounded p-2 text-sm"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
                 value={addForm.description}
                 onChange={(e) => setAddForm({ ...addForm, description: e.target.value })}
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-medium mb-1">Search Keywords (comma separated, optional)</label>
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-500">Search Keywords (comma separated, optional)</label>
               <input
-                className="w-full border rounded p-2 text-sm"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
                 placeholder="e.g. jumper, moonwalk, bouncy castle"
                 value={addForm.keywords}
                 onChange={(e) => setAddForm({ ...addForm, keywords: e.target.value })}
@@ -280,22 +280,22 @@ export default function CatalogTemplatesAdminPage() {
           <button
             type="submit"
             disabled={saving}
-            className="bg-brand-600 text-white rounded px-4 py-2 text-sm font-medium disabled:opacity-50"
+            className="rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-black text-white disabled:opacity-50"
           >
             {saving ? "Saving..." : "Create Template"}
           </button>
         </form>
       )}
 
-      <div className="flex gap-3 mb-4">
+      <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,.04)] sm:grid-cols-[minmax(220px,1fr)_220px_auto]">
         <input
-          className="border rounded p-2 text-sm flex-1"
+          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
           placeholder="Search name, category, or keywords"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <select
-          className="border rounded p-2 text-sm"
+          className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400"
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
         >
@@ -306,28 +306,28 @@ export default function CatalogTemplatesAdminPage() {
             </option>
           ))}
         </select>
-        <label className="flex items-center gap-2 text-sm text-gray-600 whitespace-nowrap">
+        <label className="flex items-center gap-2 whitespace-nowrap rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
           <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
           Show inactive
         </label>
       </div>
 
       {loading ? (
-        <p className="text-gray-500 text-sm">Loading...</p>
+        <p className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-400">Loading...</p>
       ) : (
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,.04)]">
+          <table className="min-w-[1050px] w-full">
+            <thead className="bg-slate-50/80">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keywords</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-[.14em] text-slate-400">Name</th>
+                <th className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-[.14em] text-slate-400">Category</th>
+                <th className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-[.14em] text-slate-400">Type</th>
+                <th className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-[.14em] text-slate-400">Keywords</th>
+                <th className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-[.14em] text-slate-400">Status</th>
+                <th className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-[.14em] text-slate-400">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
@@ -341,14 +341,14 @@ export default function CatalogTemplatesAdminPage() {
                     <td colSpan={6} className="px-4 py-4 bg-gray-50">
                       <form onSubmit={submitEdit} className="grid grid-cols-2 gap-3">
                         <input
-                          className="border rounded p-2 text-sm"
+                          className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400"
                           value={editForm.name}
                           onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                           placeholder="Name"
                           required
                         />
                         <select
-                          className="border rounded p-2 text-sm"
+                          className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400"
                           value={editForm.categoryKey}
                           onChange={(e) => setEditForm({ ...editForm, categoryKey: e.target.value })}
                         >
@@ -359,7 +359,7 @@ export default function CatalogTemplatesAdminPage() {
                           ))}
                         </select>
                         <select
-                          className="border rounded p-2 text-sm"
+                          className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400"
                           value={editForm.type}
                           onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
                         >
@@ -371,7 +371,7 @@ export default function CatalogTemplatesAdminPage() {
                         </select>
                         <input
                           type="number"
-                          className="border rounded p-2 text-sm"
+                          className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400"
                           value={editForm.sortOrder}
                           onChange={(e) => setEditForm({ ...editForm, sortOrder: e.target.value })}
                           placeholder="Sort order"
@@ -392,7 +392,7 @@ export default function CatalogTemplatesAdminPage() {
                           <button
                             type="submit"
                             disabled={saving}
-                            className="bg-brand-600 text-white rounded px-4 py-2 text-sm font-medium disabled:opacity-50"
+                            className="rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-black text-white disabled:opacity-50"
                           >
                             Save
                           </button>
@@ -408,7 +408,7 @@ export default function CatalogTemplatesAdminPage() {
                     </td>
                   </tr>
                 ) : (
-                  <tr key={t.id} className="hover:bg-gray-50">
+                  <tr key={t.id} className="hover:bg-slate-50/70">
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{t.name}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{categoryLabel(t.categoryKey)}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{t.type}</td>
@@ -424,13 +424,13 @@ export default function CatalogTemplatesAdminPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm space-x-3 whitespace-nowrap">
-                      <button onClick={() => startEdit(t)} className="text-brand-600 hover:underline">
+                      <button onClick={() => startEdit(t)} className="font-bold text-blue-600 hover:text-blue-700">
                         Edit
                       </button>
-                      <button onClick={() => toggleActive(t)} className="text-gray-600 hover:underline">
+                      <button onClick={() => toggleActive(t)} className="font-bold text-slate-500 hover:text-slate-700">
                         {t.isActive ? "Deactivate" : "Reactivate"}
                       </button>
-                      <button onClick={() => deleteTemplate(t)} className="text-red-600 hover:underline">
+                      <button onClick={() => deleteTemplate(t)} className="font-bold text-rose-600 hover:text-rose-700">
                         Delete
                       </button>
                     </td>
