@@ -5,6 +5,7 @@ import { requireStaffSession, requireOwnerSession, authzErrorResponse } from "@/
 import { logActivity } from "@/lib/audit";
 import { sendEmailViaResend, textToHtml } from "@/lib/email";
 import { normalizeSmsNumber, sendSmsViaTwilio } from "@/lib/sms";
+import { platformFeatureEnabled } from "@/lib/platformControl";
 
 export async function GET() {
   try {
@@ -75,6 +76,8 @@ export async function POST(request: Request) {
     }
 
     if (channel === "sms") {
+      const smsEnabled = await platformFeatureEnabled("messaging.sms", organization.id, organization.planTier, true);
+      if (!smsEnabled) return NextResponse.json({ error: "SMS is disabled for this organization by the platform." }, { status: 403 });
       normalizedRecipient = normalizeSmsNumber(toAddress);
       if (!normalizedRecipient || normalizedRecipient.length < 11) {
         return NextResponse.json({ error: "Enter a valid mobile phone number." }, { status: 400 });
