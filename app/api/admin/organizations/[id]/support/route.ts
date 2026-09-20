@@ -51,7 +51,7 @@ export async function POST(req:NextRequest,{params}:{params:{id:string}}){
     return NextResponse.json({success:true,id});
   }
 
-  if(["user.enable","user.disable","user.reset_password","user.transfer_owner"].includes(action)){
+  if(["user.enable","user.disable","user.reset_password","user.transfer_owner","user.revoke_sessions"].includes(action)){
     const userId=String(body.userId||"");
     const user=await prisma.user.findFirst({where:{id:userId,organizationId:tenant.id,role:{not:"platform_admin"}}});
     if(!user)return NextResponse.json({error:"Tenant user not found."},{status:404});
@@ -67,8 +67,14 @@ export async function POST(req:NextRequest,{params}:{params:{id:string}}){
       const password=String(body.password||"");
       if(password.length<12)return NextResponse.json({error:"Temporary password must be at least 12 characters."},{status:400});
       const hash=await bcrypt.hash(password,12);
-      await prisma.user.update({where:{id:user.id},data:{password:hash,forcePasswordReset:true,isActive:true}});
+      await prisma.user.update({where:{id:user.id},data:{password:hash,forcePasswordReset:true,isActive:true,sessionVersion:{increment:1}}});
       await prisma.auditLog.create({data:{organizationId:tenant.id,action:"platform.user.password_reset",performedBy:actor,details:JSON.stringify({userId:user.id,username:user.username})}});
+      return NextResponse.json({success:true});
+    }
+
+    if(action==="user.revoke_sessions"){
+      await prisma.user.update({where:{id:user.id},data:{sessionVersion:{increment:1}}});
+      await prisma.auditLog.create({data:{organizationId:tenant.id,action:"platform.user.sessions_revoked",performedBy:actor,details:JSON.stringify({userId:user.id,username:user.username})}});
       return NextResponse.json({success:true});
     }
 
