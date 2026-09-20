@@ -138,6 +138,9 @@ model User {
   password       String
   name           String
   role           String   @default("staff")
+  isActive       Boolean  @default(true)
+  lastLoginAt    DateTime?
+  forcePasswordReset Boolean @default(false)
   tenantRoleId   String?
   tenantRole     TenantRole? @relation(fields: [tenantRoleId], references: [id])
   createdAt      DateTime @default(now())
