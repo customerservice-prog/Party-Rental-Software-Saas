@@ -49,6 +49,17 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (body.description !== undefined) {
     data.description = body.description ? String(body.description).trim() : null;
   }
+  if (body.imageUrl !== undefined) {
+    data.imageUrl = body.imageUrl ? String(body.imageUrl).trim() : null;
+  }
+  if (body.suggestedPrice !== undefined) {
+    if (body.suggestedPrice === null || body.suggestedPrice === "") data.suggestedPrice = null;
+    else {
+      const price = Number(body.suggestedPrice);
+      if (!Number.isFinite(price) || price < 0) return NextResponse.json({ error: "Suggested price must be zero or greater." }, { status: 400 });
+      data.suggestedPrice = price;
+    }
+  }
   if (body.keywords !== undefined) {
     data.keywords = Array.isArray(body.keywords)
       ? body.keywords.map((k: unknown) => String(k).trim()).filter(Boolean)
