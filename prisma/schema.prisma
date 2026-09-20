@@ -263,6 +263,8 @@ model CatalogTemplate {
   // CATALOG_TEMPLATE_TYPES in lib/catalogTemplates.ts.
   type         String   @default("rental")
   description  String?
+  imageUrl     String?
+  suggestedPrice Float?
   // Free-form structured hints (e.g. shape, size, color options) to help a
   // tenant configure their own copy faster. Never used to fabricate a
   // tenant's real quantity or price.
