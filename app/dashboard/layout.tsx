@@ -6,7 +6,7 @@ import { getBillingStatus } from "@/lib/billing";
 import { runBookingAutomations } from "@/lib/automations";
 import DashboardNav from "./DashboardNav";
 import PlatformSupportBanner from "./PlatformSupportBanner";
-import { getActivePlatformAnnouncements } from "@/lib/platformControl";
+import { getActivePlatformAnnouncements, getPlatformSetting } from "@/lib/platformControl";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -33,9 +33,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
     console.error("runBookingAutomations failed:", err);
   }
 
-  const [billing, platformAnnouncements] = await Promise.all([
+  const [billing, platformAnnouncements, maintenanceEnabled, maintenanceMessage] = await Promise.all([
     getBillingStatus(organization),
     getActivePlatformAnnouncements(organization.id, organization.planTier).catch(() => []),
+    getPlatformSetting<boolean>("maintenance_enabled", false).catch(() => false),
+    getPlatformSetting<string>("maintenance_message", "").catch(() => ""),
   ]);
   const role = sessionRole;
   const userName = (session.user as any).name || (session.user as any).email || "User";
@@ -50,6 +52,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
         role={role}
       />
       <div className="pt-20 flex flex-1 flex-col min-h-screen">
+        {maintenanceEnabled && (
+          <div className="border-b border-amber-300 bg-amber-100 px-6 py-3 text-sm font-semibold text-amber-950">
+            <b>Platform maintenance</b>{maintenanceMessage ? <span className="ml-2">{maintenanceMessage}</span> : <span className="ml-2">Some features may be temporarily unavailable.</span>}
+          </div>
+        )}
         {platformAnnouncements.map((announcement) => (
           <div key={announcement.id} className={
             "border-b px-6 py-3 text-sm " +
