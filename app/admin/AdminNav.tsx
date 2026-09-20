@@ -15,7 +15,16 @@ function LogoutIcon({className=""}:IconProps){return <svg viewBox="0 0 24 24" fi
 const nav=[
   {href:"/admin",label:"Overview",icon:GridIcon,exact:true},
   {href:"/admin/organizations",label:"Organizations",icon:BuildingIcon},
+  {href:"/admin/billing",label:"Billing & Revenue",icon:GridIcon},
+  {href:"/admin/onboarding",label:"Onboarding",icon:BuildingIcon},
+  {href:"/admin/analytics",label:"Analytics",icon:GridIcon},
+  {href:"/admin/health",label:"System Health",icon:ShieldIcon},
+  {href:"/admin/communications",label:"Communications",icon:GridIcon},
+  {href:"/admin/feature-flags",label:"Feature Flags",icon:ShieldIcon},
   {href:"/admin/catalog-templates",label:"Global Catalog",icon:BoxIcon},
+  {href:"/admin/security",label:"Security",icon:ShieldIcon},
+  {href:"/admin/data",label:"Data Admin",icon:BoxIcon},
+  {href:"/admin/settings",label:"Settings & Plans",icon:GridIcon},
   {href:"/admin/audit-log",label:"Audit Log",icon:ShieldIcon},
 ];
 
@@ -33,7 +42,7 @@ export default function AdminNav({adminName}:{adminName:string}){
         </Link>
       </div>
 
-      <div className="px-4 py-5">
+      <div className="flex-1 overflow-y-auto px-4 py-5">
         <div className="mb-2 px-3 text-[9px] font-black uppercase tracking-[.18em] text-slate-600">Platform</div>
         <nav className="space-y-1">
           {nav.map(item=>{
