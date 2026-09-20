@@ -10,6 +10,8 @@ type Template = {
   categoryKey: string;
   type: string;
   description: string | null;
+  imageUrl: string | null;
+  suggestedPrice: number | null;
   keywords: unknown;
   sortOrder: number;
   isActive: boolean;
@@ -20,6 +22,8 @@ const emptyForm = {
   categoryKey: CATALOG_CATEGORIES[0]?.key || "",
   type: "rental",
   description: "",
+  imageUrl: "",
+  suggestedPrice: "",
   keywords: "",
   sortOrder: "0",
 };
@@ -102,6 +106,8 @@ export default function CatalogTemplatesAdminPage() {
         categoryKey: addForm.categoryKey,
         type: addForm.type,
         description: addForm.description || null,
+        imageUrl: addForm.imageUrl || null,
+        suggestedPrice: addForm.suggestedPrice === "" ? null : Number(addForm.suggestedPrice),
         keywords: addForm.keywords
           ? addForm.keywords.split(",").map((k) => k.trim()).filter(Boolean)
           : [],
@@ -126,6 +132,8 @@ export default function CatalogTemplatesAdminPage() {
       categoryKey: t.categoryKey,
       type: t.type,
       description: t.description || "",
+      imageUrl: t.imageUrl || "",
+      suggestedPrice: t.suggestedPrice == null ? "" : String(t.suggestedPrice),
       keywords: keywordsToText(t.keywords),
       sortOrder: String(t.sortOrder),
     });
@@ -144,6 +152,8 @@ export default function CatalogTemplatesAdminPage() {
         categoryKey: editForm.categoryKey,
         type: editForm.type,
         description: editForm.description || null,
+        imageUrl: editForm.imageUrl || null,
+        suggestedPrice: editForm.suggestedPrice === "" ? null : Number(editForm.suggestedPrice),
         keywords: editForm.keywords
           ? editForm.keywords.split(",").map((k) => k.trim()).filter(Boolean)
           : [],
@@ -267,6 +277,16 @@ export default function CatalogTemplatesAdminPage() {
                 onChange={(e) => setAddForm({ ...addForm, description: e.target.value })}
               />
             </div>
+            <div className="col-span-2 grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-500">Image URL</label>
+                <input className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" value={addForm.imageUrl} onChange={(e)=>setAddForm({...addForm,imageUrl:e.target.value})} placeholder="https://…"/>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-500">Suggested rental price</label>
+                <input type="number" min="0" step="0.01" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" value={addForm.suggestedPrice} onChange={(e)=>setAddForm({...addForm,suggestedPrice:e.target.value})} placeholder="Optional"/>
+              </div>
+            </div>
             <div className="col-span-2">
               <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-500">Search Keywords (comma separated, optional)</label>
               <input
@@ -384,6 +404,21 @@ export default function CatalogTemplatesAdminPage() {
                         />
                         <input
                           className="border rounded p-2 text-sm col-span-2"
+                          value={editForm.imageUrl}
+                          onChange={(e) => setEditForm({ ...editForm, imageUrl: e.target.value })}
+                          placeholder="Image URL"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="border rounded p-2 text-sm"
+                          value={editForm.suggestedPrice}
+                          onChange={(e) => setEditForm({ ...editForm, suggestedPrice: e.target.value })}
+                          placeholder="Suggested rental price"
+                        />
+                        <input
+                          className="border rounded p-2 text-sm col-span-2"
                           value={editForm.keywords}
                           onChange={(e) => setEditForm({ ...editForm, keywords: e.target.value })}
                           placeholder="Search keywords, comma separated"
@@ -409,7 +444,7 @@ export default function CatalogTemplatesAdminPage() {
                   </tr>
                 ) : (
                   <tr key={t.id} className="hover:bg-slate-50/70">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{t.name}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900"><div className="flex items-center gap-3">{t.imageUrl?<img src={t.imageUrl} alt="" className="h-9 w-9 rounded-lg object-cover"/>:<div className="h-9 w-9 rounded-lg bg-slate-100"/>}<div><div className="font-black">{t.name}</div>{t.suggestedPrice!=null&&<div className="text-[10px] text-slate-400">Suggested ${t.suggestedPrice.toFixed(2)}</div>}</div></div></td>
                     <td className="px-4 py-3 text-sm text-gray-500">{categoryLabel(t.categoryKey)}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{t.type}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{keywordsToText(t.keywords) || "-"}</td>
