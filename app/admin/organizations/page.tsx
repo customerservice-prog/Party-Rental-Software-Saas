@@ -38,10 +38,13 @@ export default async function OrganizationsPage({searchParams}:{searchParams:{q?
   const rows=(rowsRaw as OrgRow[]).filter(org=>!plan||((org.subscription?.planTier||org.planTier)===plan));
 
   return <div className="space-y-5">
-    <section>
-      <div className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Tenant Directory</div>
-      <h1 className="mt-1 text-3xl font-black tracking-[-.035em] text-slate-950">Organizations</h1>
-      <p className="mt-2 text-sm text-slate-500">Search, review, and manage every rental company on Party Rental CRM.</p>
+    <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <div className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Tenant Directory</div>
+        <h1 className="mt-1 text-3xl font-black tracking-[-.035em] text-slate-950">Organizations</h1>
+        <p className="mt-2 text-sm text-slate-500">Search, review, and manage every rental company on Party Rental CRM.</p>
+      </div>
+      <Link href="/admin/organizations/new" className="rounded-xl bg-blue-600 px-4 py-3 text-xs font-black text-white shadow-sm">+ Create organization</Link>
     </section>
 
     <section className="rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,.04)]">
