@@ -2,18 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { requirePlatformAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
+import { generateTotpSecret, encryptTotpSecret, decryptTotpSecret, totpUri, verifyTotp } from "@/lib/totp";
 
 export async function GET(){
   await requirePlatformAdmin();
   const [admins,throttles]=await Promise.all([
     prisma.user.findMany({
       where:{role:"platform_admin"},
-      select:{id:true,name:true,username:true,isActive:true,lastLoginAt:true,createdAt:true,updatedAt:true},
+      select:{id:true,name:true,username:true,isActive:true,lastLoginAt:true,createdAt:true,updatedAt:true,mfaEnabled:true},
       orderBy:{createdAt:"asc"},
     }),
     prisma.loginThrottle.findMany({orderBy:{updatedAt:"desc"},take:100}),
   ]);
-  return NextResponse.json({admins,throttles});
+  const session=await requirePlatformAdmin();
+  return NextResponse.json({admins,throttles,currentAdminId:(session.user as any)?.id||null});
 }
 
 export async function POST(req:NextRequest){
@@ -24,6 +26,33 @@ export async function POST(req:NextRequest){
 
   let platformOrg=await prisma.organization.findUnique({where:{slug:"_platform_internal"}});
   if(!platformOrg)return NextResponse.json({error:"Platform internal organization is missing."},{status:500});
+
+  if(action==="mfa.start"){
+    const secret=generateTotpSecret();
+    const username=(session.user as any)?.name||"platform-admin";
+    return NextResponse.json({success:true,secret,uri:totpUri(secret,username)});
+  }
+
+  if(action==="mfa.enable"){
+    const secret=String(body.secret||"");
+    const code=String(body.code||"");
+    if(!secret||!verifyTotp(secret,code))return NextResponse.json({error:"Authenticator code is invalid. Check your device time and try again."},{status:400});
+    await prisma.user.update({where:{id:actor},data:{mfaEnabled:true,mfaSecret:encryptTotpSecret(secret)}});
+    await prisma.auditLog.create({data:{action:"platform.admin.mfa_enabled",performedBy:actor,details:"TOTP MFA enabled for current platform administrator"}});
+    return NextResponse.json({success:true});
+  }
+
+  if(action==="mfa.disable"){
+    const current=await prisma.user.findFirst({where:{id:actor,role:"platform_admin"}});
+    if(!current)return NextResponse.json({error:"Administrator account not found."},{status:404});
+    const code=String(body.code||"");
+    if(current.mfaEnabled){
+      if(!current.mfaSecret||!verifyTotp(decryptTotpSecret(current.mfaSecret),code))return NextResponse.json({error:"Enter a valid authenticator code to disable MFA."},{status:400});
+    }
+    await prisma.user.update({where:{id:actor},data:{mfaEnabled:false,mfaSecret:null}});
+    await prisma.auditLog.create({data:{action:"platform.admin.mfa_disabled",performedBy:actor,details:"TOTP MFA disabled for current platform administrator"}});
+    return NextResponse.json({success:true});
+  }
 
   if(action==="admin.create"){
     const name=String(body.name||"").trim(),username=String(body.username||"").trim(),password=String(body.password||"");
@@ -39,6 +68,13 @@ export async function POST(req:NextRequest){
   const id=String(body.id||"");
   const target=await prisma.user.findFirst({where:{id,role:"platform_admin"}});
   if(!target)return NextResponse.json({error:"Platform administrator not found."},{status:404});
+
+  if(action==="admin.mfa_reset"){
+    if(target.id===actor)return NextResponse.json({error:"Use your authenticator code to disable MFA on your own account."},{status:400});
+    await prisma.user.update({where:{id},data:{mfaEnabled:false,mfaSecret:null}});
+    await prisma.auditLog.create({data:{action:"platform.admin.mfa_reset",performedBy:actor,details:JSON.stringify({adminId:id,username:target.username})}});
+    return NextResponse.json({success:true});
+  }
 
   if(action==="admin.toggle"){
     if(target.id===actor&&body.isActive===false)return NextResponse.json({error:"You cannot disable your own current platform-admin account."},{status:400});
