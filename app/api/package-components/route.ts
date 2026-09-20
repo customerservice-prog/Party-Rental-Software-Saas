@@ -4,9 +4,13 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { getPackageComponents, getPackagesUsingComponent } from "@/lib/packages";
+import { platformFeatureEnabled } from "@/lib/platformControl";
 
 export async function GET(req: NextRequest) {
   const organization = await requireCurrentOrganization();
+  if (!await platformFeatureEnabled("inventory.packages", organization.id, organization.planTier, true)) {
+    return NextResponse.json({ error: "Packages are disabled for this organization by the platform." }, { status: 403 });
+  }
   try {
     await requirePermission(organization.id, "inventory.view");
   } catch (err) {
@@ -40,6 +44,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const organization = await requireCurrentOrganization();
+  if (!await platformFeatureEnabled("inventory.packages", organization.id, organization.planTier, true)) {
+    return NextResponse.json({ error: "Packages are disabled for this organization by the platform." }, { status: 403 });
+  }
   let user;
   try {
     user = await requirePermission(organization.id, "inventory.manage");
@@ -129,6 +136,9 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const organization = await requireCurrentOrganization();
+  if (!await platformFeatureEnabled("inventory.packages", organization.id, organization.planTier, true)) {
+    return NextResponse.json({ error: "Packages are disabled for this organization by the platform." }, { status: 403 });
+  }
   let user;
   try {
     user = await requirePermission(organization.id, "inventory.manage");
