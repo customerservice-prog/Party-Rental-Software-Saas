@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { getCurrentOrganization } from "@/lib/tenant";
 import { getBillingStatus } from "@/lib/billing";
 import { runBookingAutomations } from "@/lib/automations";
@@ -17,6 +18,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const organization = await getCurrentOrganization();
   const sessionRole = (session.user as any).role;
   const isPlatformSupport = sessionRole === "platform_admin";
+  if (!isPlatformSupport) {
+    const currentUser = await prisma.user.findUnique({
+      where: { id: (session.user as any).id },
+      select: { forcePasswordReset: true, isActive: true },
+    });
+    if (!currentUser?.isActive) redirect("/login");
+    if (currentUser.forcePasswordReset) redirect("/change-password");
+  }
   if (!organization || (!isPlatformSupport && (session.user as any).organizationId !== organization.id)) {
     redirect(isPlatformSupport ? "/admin" : "/login");
   }
