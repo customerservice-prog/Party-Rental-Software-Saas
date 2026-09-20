@@ -32,6 +32,7 @@ type BillingData = {
   annualBilledTotal: number | null;
   includedSummary: string[];
   };
+  checkoutPlans: { code: string; name: string; monthlyPrice: number | null; annualMonthlyPrice: number | null }[];
   seats: {
   office: { current: number; limit: number | null };
   crew: { current: number; limit: number | null };
@@ -56,11 +57,6 @@ const STATUS_COLORS: Record<string, string> = {
   canceled: "bg-gray-200 text-gray-700",
 };
 
-const CHECKOUT_PLANS: { code: string; name: string; monthlyPrice: number; annualMonthlyPrice: number }[] = [
-  { code: "starter", name: "Starter", monthlyPrice: 49, annualMonthlyPrice: 39 },
-  { code: "growth", name: "Growth", monthlyPrice: 99, annualMonthlyPrice: 79 },
-  { code: "pro", name: "Pro", monthlyPrice: 199, annualMonthlyPrice: 159 },
-  ];
 
 function formatDate(value: string | null): string {
   if (!value) return "Not available yet";
@@ -156,7 +152,7 @@ async function openBillingPortal() {
     setActionLoading("");
   }
 }
-  function planButton(p: { code: string; name: string; monthlyPrice: number; annualMonthlyPrice: number }) {
+  function planButton(p: { code: string; name: string; monthlyPrice: number | null; annualMonthlyPrice: number | null }) {
     const price = billingInterval === "annual" ? p.annualMonthlyPrice : p.monthlyPrice;
     const isCurrent = plan.code === p.code;
     return h(
@@ -171,7 +167,7 @@ async function openBillingPortal() {
           (isCurrent ? "border-indigo-600 bg-indigo-50 cursor-default" : "border-gray-200 hover:border-indigo-400"),
       },
       h("div", { className: "font-semibold text-gray-900" }, p.name),
-      h("div", { className: "text-sm text-gray-600" }, "$" + price + "/mo"),
+      h("div", { className: "text-sm text-gray-600" }, price == null ? "Custom" : "$" + price + "/mo"),
       isCurrent
       ? h("div", { className: "text-xs text-indigo-600 mt-1 font-medium" }, "Current plan")
       : h("div", { className: "text-xs text-gray-500 mt-1" }, actionLoading === p.code ? "Redirecting..." : "Choose plan")
@@ -186,7 +182,7 @@ if (error || !data) {
   return h("div", { className: "p-6 text-red-600" }, error || "Unable to load billing information.");
 }
 
-const { subscription, billing, plan, seats } = data;
+const { subscription, billing, plan, seats, checkoutPlans } = data;
   const statusKey = (billing.subscriptionStatus || "trialing").toLowerCase();
   const statusLabel = STATUS_LABELS[statusKey] || statusKey;
   const statusColor = STATUS_COLORS[statusKey] || "bg-gray-100 text-gray-700";
@@ -312,7 +308,7 @@ return h(
         )
       ),
     actionError ? h("p", { className: "text-sm text-red-600 mb-3" }, actionError) : null,
-    h("div", { className: "flex flex-wrap gap-3" }, CHECKOUT_PLANS.map(planButton)),
+    h("div", { className: "flex flex-wrap gap-3" }, checkoutPlans.map(planButton)),
     h(
       "p",
       { className: "text-xs text-gray-500 mt-3" },
