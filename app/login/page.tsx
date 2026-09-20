@@ -17,9 +17,13 @@ export default function TenantLoginPage(){
   const[password,setPassword]=useState("");
   const[loading,setLoading]=useState(false);
   const[error,setError]=useState("");
+  const[signupSuccess,setSignupSuccess]=useState(false);
 
   useEffect(()=>{
-    const remembered=readCookie("tenant_slug");
+    const query=new URLSearchParams(window.location.search);
+    const business=query.get("business");
+    setSignupSuccess(query.get("signup")==="success");
+    const remembered=business&&/^[a-z0-9-]+$/.test(business)?business:readCookie("tenant_slug");
     if(remembered)setTenantSlug(remembered);
   },[]);
 
@@ -31,6 +35,7 @@ export default function TenantLoginPage(){
       setError("Enter your rental company's business subdomain.");
       return;
     }
+    try {
     const res=await signIn("credentials",{username,password,tenantSlug:tenantSlug.trim().toLowerCase(),loginScope:"tenant",redirect:false});
     if(res?.error){
       setLoading(false);
@@ -43,8 +48,11 @@ export default function TenantLoginPage(){
       setError("Platform administrators must use the separate Platform Admin login.");
       return;
     }
+    if(!session?.user){setError("Sign-in could not be confirmed. Please try again.");return;}
     router.replace("/dashboard");
     router.refresh();
+    } catch {setError("Could not connect to sign in. Please try again.");}
+    finally {setLoading(false);}
   }
 
   return <main className="min-h-screen bg-slate-50">
@@ -68,6 +76,7 @@ export default function TenantLoginPage(){
             <p className="mt-2 text-sm leading-6 text-slate-500">This login is for business owners and staff using Party Rental CRM for their rental company.</p>
           </div>
 
+          {signupSuccess&&<div role="status" className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">Your business account is ready. Sign in with the username and password you just created to start setting up your rentals.</div>}
           {error&&<div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
 
           <form onSubmit={submit} className="mt-6 space-y-4">

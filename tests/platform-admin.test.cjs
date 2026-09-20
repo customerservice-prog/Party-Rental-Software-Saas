@@ -400,3 +400,17 @@ test('customer CSV export respects the directory full-name and date filters',asy
   const response=await api.GET(new Request('http://localhost/api/customers/export?q=Jane+Doe&from=2026-09-01&to=2026-09-19'));
   assert.equal(response.status,200);assert.equal(listing.where.organizationId,'tenant-1');assert.equal(listing.where.AND.length,2);assert.equal(listing.where.createdAt.lte.toISOString(),'2026-09-19T23:59:59.999Z');
 });
+
+test('signup field validation always produces readable text instead of a React object error',()=>{
+ const {signupErrorMessage,suggestBusinessSlug}=load('lib/signupFeedback.ts');
+ assert.equal(signupErrorMessage({error:{formErrors:[],fieldErrors:{slug:['Must be at least 3 characters']}}}),'Business address: Must be at least 3 characters');
+ assert.equal(signupErrorMessage({error:'That address is taken'}),'That address is taken');
+ assert.equal(typeof signupErrorMessage(null),'string');
+ assert.equal(suggestBusinessSlug('Lakeside Events & Rentals!'),'lakeside-events-rentals');
+});
+
+test('malformed signup requests return validation errors without creating an account',async()=>{
+ let writes=0;const api=load('app/api/signup/route.ts',{'@/lib/prisma':{prisma:{organization:{create:async()=>{writes++;}}}}});
+ const response=await api.POST(new Request('http://localhost/api/signup',{method:'POST',body:'invalid json'}));
+ assert.equal(response.status,400);assert.equal(writes,0);
+});

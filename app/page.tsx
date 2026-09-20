@@ -4,7 +4,7 @@ import { getOrganizationFromHost } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import StorefrontNav from "./StorefrontNav";
 import StorefrontFooter from "./StorefrontFooter";
-import MarketingHomePage from "./(marketing)/_components/MarketingHomePage";
+import MarketingHomePage, {HOME_FAQS} from "./(marketing)/_components/MarketingHomePage";
 import MarketingHeader from "./(marketing)/_components/MarketingHeader";
 import MarketingFooter from "./(marketing)/_components/MarketingFooter";
 import { pageMetadata, SITE_NAME } from "@/lib/seo";
@@ -42,11 +42,7 @@ export default async function RootPage() {
   const organization = await getOrganizationFromHost();
   if (!organization) {
     const softwareSchema = { "@context":"https://schema.org", "@type":"SoftwareApplication", name:"Party Rental CRM", applicationCategory:"BusinessApplication", operatingSystem:"Web", description:"Party rental management software for online bookings, inventory, payments, customers, contracts and delivery operations.", offers:{"@type":"Offer", price:"49", priceCurrency:"USD"} };
-    const faqSchema = { "@context":"https://schema.org", "@type":"FAQPage", mainEntity:[
-      {"@type":"Question",name:"What is party rental software?",acceptedAnswer:{"@type":"Answer",text:"Party rental software helps event rental companies manage online bookings, inventory availability, customers, payments, contracts, delivery and pickup work from one connected system."}},
-      {"@type":"Question",name:"Does Party Rental CRM include a rental website?",acceptedAnswer:{"@type":"Answer",text:"Yes. Party Rental CRM includes a customer-facing rental catalog and booking flow connected to the same rental data used by the business."}},
-      {"@type":"Question",name:"Can party rental software help prevent double bookings?",acceptedAnswer:{"@type":"Answer",text:"Availability can be tied to rental quantities and event dates so already-committed inventory is surfaced before another reservation is accepted."}}
-    ]};
+    const faqSchema = { "@context":"https://schema.org", "@type":"FAQPage", mainEntity:HOME_FAQS.map(([name,text])=>({"@type":"Question",name,acceptedAnswer:{"@type":"Answer",text}})) };
     return <div className="flex min-h-screen flex-col"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(softwareSchema)}}/><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(faqSchema)}}/><MarketingHeader/><main className="flex-1"><MarketingHomePage/></main><MarketingFooter/></div>;
   }
 
