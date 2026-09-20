@@ -80,6 +80,7 @@ export default function PlatformSettingsPage(){
       </div>
 
       <div className="space-y-4">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900"><b>Stripe safety:</b> price overrides affect platform displays and entitlement limits immediately. Subscription checkout is blocked if the matching Stripe lookup-key price does not equal the configured amount, preventing accidental over/under-charging.</div>
         {PLANS.map(plan=>{
           const override=overrideMap.get(plan.code);
           const model:PlanOverride=override||{
