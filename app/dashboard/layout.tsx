@@ -6,6 +6,7 @@ import { getBillingStatus } from "@/lib/billing";
 import { runBookingAutomations } from "@/lib/automations";
 import DashboardNav from "./DashboardNav";
 import PlatformSupportBanner from "./PlatformSupportBanner";
+import { getActivePlatformAnnouncements } from "@/lib/platformControl";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -32,7 +33,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
     console.error("runBookingAutomations failed:", err);
   }
 
-  const billing = await getBillingStatus(organization);
+  const [billing, platformAnnouncements] = await Promise.all([
+    getBillingStatus(organization),
+    getActivePlatformAnnouncements(organization.id, organization.planTier).catch(() => []),
+  ]);
   const role = sessionRole;
   const userName = (session.user as any).name || (session.user as any).email || "User";
 
@@ -46,6 +50,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
         role={role}
       />
       <div className="pt-20 flex flex-1 flex-col min-h-screen">
+        {platformAnnouncements.map((announcement) => (
+          <div key={announcement.id} className={
+            "border-b px-6 py-3 text-sm " +
+            (announcement.tone === "danger" ? "border-rose-200 bg-rose-50 text-rose-800" :
+             announcement.tone === "warning" ? "border-amber-200 bg-amber-50 text-amber-800" :
+             announcement.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-800" :
+             "border-blue-200 bg-blue-50 text-blue-800")
+          }>
+            <b>{announcement.title}</b>{announcement.body ? <span className="ml-2">{announcement.body}</span> : null}
+          </div>
+        ))}
         {billing.message && role === "owner" && (
           <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-sm px-6 py-2">
             {billing.message}
