@@ -1,4 +1,5 @@
 import { getServerSession } from "next-auth";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { authOptions } from "./auth";
 import { prisma } from "./prisma";
@@ -33,7 +34,18 @@ export async function requireStaffSession(organizationId: string): Promise<Sessi
   const session = await getServerSession(authOptions);
   const user = session?.user as (SessionUser & Record<string, unknown>) | undefined;
 
-  if (!user || user.organizationId !== organizationId) {
+  if (!user) {
+    throw new AuthzError("You must be signed in to do this.", 401);
+  }
+
+  if (user.role === "platform_admin") {
+    const supportTenantId = cookies().get("prcrm_support_tenant")?.value;
+    if (supportTenantId === organizationId) {
+      return { id: user.id, role: user.role, organizationId };
+    }
+  }
+
+  if (user.organizationId !== organizationId) {
     throw new AuthzError("You must be signed in to do this.", 401);
   }
 
@@ -46,7 +58,7 @@ export async function requireStaffSession(organizationId: string): Promise<Sessi
 // should not be editable by regular staff logins.
 export async function requireOwnerSession(organizationId: string): Promise<SessionUser> {
   const user = await requireStaffSession(organizationId);
-  if (user.role !== "owner") {
+  if (user.role !== "owner" && user.role !== "platform_admin") {
     throw new AuthzError("Only an account owner can do this.", 403);
   }
   return user;
@@ -71,7 +83,7 @@ export async function requirePermission(
   code: PermissionCode
 ): Promise<SessionUser> {
   const user = await requireStaffSession(organizationId);
-  if (user.role === "owner") return user;
+  if (user.role === "owner" || user.role === "platform_admin") return user;
 
   const dbUser = await prisma.user.findUnique({
     where: { id: user.id },
