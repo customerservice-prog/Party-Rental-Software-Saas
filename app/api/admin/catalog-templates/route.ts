@@ -57,6 +57,11 @@ export async function POST(req: NextRequest) {
   const categoryKey = String(body.categoryKey || "").trim();
   const type = String(body.type || "rental").trim();
   const description = body.description ? String(body.description).trim() : null;
+  const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : null;
+  const suggestedPrice = body.suggestedPrice === null || body.suggestedPrice === "" || body.suggestedPrice === undefined ? null : Number(body.suggestedPrice);
+  if (suggestedPrice !== null && (!Number.isFinite(suggestedPrice) || suggestedPrice < 0)) {
+    return NextResponse.json({ error: "Suggested price must be zero or greater." }, { status: 400 });
+  }
   const keywords = Array.isArray(body.keywords)
     ? body.keywords.map((k: unknown) => String(k).trim()).filter(Boolean)
     : [];
@@ -79,7 +84,7 @@ export async function POST(req: NextRequest) {
   }
 
   const template = await prisma.catalogTemplate.create({
-    data: { slug, name, categoryKey, type, description, keywords, sortOrder, isActive: true },
+    data: { slug, name, categoryKey, type, description, imageUrl, suggestedPrice, keywords, sortOrder, isActive: true },
   });
 
   return NextResponse.json({ template });
