@@ -19,6 +19,7 @@ const nav=[
   {href:"/admin/onboarding",label:"Onboarding",icon:BuildingIcon},
   {href:"/admin/analytics",label:"Analytics",icon:GridIcon},
   {href:"/admin/health",label:"System Health",icon:ShieldIcon},
+  {href:"/admin/alerts",label:"Alerts",icon:ShieldIcon},
   {href:"/admin/communications",label:"Communications",icon:GridIcon},
   {href:"/admin/feature-flags",label:"Feature Flags",icon:ShieldIcon},
   {href:"/admin/catalog-templates",label:"Global Catalog",icon:BoxIcon},
