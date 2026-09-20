@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireCurrentOrganization } from "@/lib/tenant";
 import { requireOwnerSession, authzErrorResponse } from "@/lib/authz";
 import { stripe, getPlatformPrice } from "@/lib/stripe";
-import { normalizePlanCode, TRIAL_DAYS } from "@/lib/plans";
+import { normalizePlanCode } from "@/lib/plans";
+import { getEffectivePlanCommercial } from "@/lib/platformPlans";
 import type { BillingInterval } from "@/lib/plans";
 
 export async function POST(request: NextRequest) {
@@ -26,13 +27,31 @@ if (planCode === "enterprise") {
     );
 }
 
-const price = await getPlatformPrice(planCode, interval);
+const [price, commercial] = await Promise.all([
+  getPlatformPrice(planCode, interval),
+  getEffectivePlanCommercial(planCode),
+]);
+
+if (!commercial.isEnabled) {
+  return NextResponse.json({ error: "This plan is currently disabled by the platform." }, { status: 409 });
+}
 
 if (!price) {
   return NextResponse.json(
     { error: "This plan is not available for checkout right now. Please try again shortly or contact support." },
     { status: 500 }
     );
+}
+
+const configuredMonthly = interval === "annual" ? commercial.annualMonthlyPrice : commercial.monthlyPrice;
+const expectedUnitAmount = configuredMonthly == null
+  ? null
+  : Math.round(configuredMonthly * (interval === "annual" ? 12 : 1) * 100);
+if (expectedUnitAmount !== null && price.unit_amount !== expectedUnitAmount) {
+  return NextResponse.json(
+    { error: "This plan's platform price was changed but the matching Stripe price has not been synchronized yet. Contact platform support before checking out." },
+    { status: 409 }
+  );
 }
 
 const existingSubscription = await prisma.platformSubscription.findUnique({
@@ -80,7 +99,7 @@ try {
     customer: customerId,
     line_items: [{ price: price.id, quantity: 1 }],
     subscription_data: {
-      trial_period_days: TRIAL_DAYS,
+      trial_period_days: commercial.trialDays,
       metadata: { organizationId: organization.id, planCode },
     },
     success_url: `${appUrl}/dashboard/settings/billing?checkout=success`,
