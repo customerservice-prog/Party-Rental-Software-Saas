@@ -143,6 +143,7 @@ model User {
   forcePasswordReset Boolean @default(false)
   mfaEnabled     Boolean  @default(false)
   mfaSecret      String?
+  sessionVersion Int      @default(0)
   tenantRoleId   String?
   tenantRole     TenantRole? @relation(fields: [tenantRoleId], references: [id])
   createdAt      DateTime @default(now())
