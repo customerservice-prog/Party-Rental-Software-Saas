@@ -256,6 +256,77 @@ async function main() {
   await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "InventoryQuantityException_org_order_idx" ON "InventoryQuantityException" ("organizationId","orderId","createdAt")`);
   await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "InventoryQuantityException_resource_type_open_unique" ON "InventoryQuantityException" ("resourceId","type") WHERE "status"='open' AND "resourceId" IS NOT NULL`);
 
+  // Platform-admin control-center tables. Kept additive/raw so tenant
+  // business schema remains backward compatible.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "TenantSupportNote" (
+      "id" TEXT PRIMARY KEY,
+      "organizationId" TEXT NOT NULL,
+      "body" TEXT NOT NULL,
+      "createdBy" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "TenantSupportNote_org_created_idx" ON "TenantSupportNote" ("organizationId","createdAt" DESC)`);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "PlatformFeatureFlag" (
+      "id" TEXT PRIMARY KEY,
+      "key" TEXT NOT NULL UNIQUE,
+      "label" TEXT NOT NULL,
+      "description" TEXT,
+      "enabledGlobally" BOOLEAN NOT NULL DEFAULT FALSE,
+      "planTiers" JSONB NOT NULL DEFAULT '[]'::jsonb,
+      "organizationIds" JSONB NOT NULL DEFAULT '[]'::jsonb,
+      "createdBy" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "PlatformAnnouncement" (
+      "id" TEXT PRIMARY KEY,
+      "title" TEXT NOT NULL,
+      "body" TEXT NOT NULL,
+      "tone" TEXT NOT NULL DEFAULT 'info',
+      "audienceType" TEXT NOT NULL DEFAULT 'all',
+      "audienceValue" TEXT,
+      "status" TEXT NOT NULL DEFAULT 'draft',
+      "startsAt" TIMESTAMP(3),
+      "endsAt" TIMESTAMP(3),
+      "createdBy" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "PlatformAnnouncement_status_window_idx" ON "PlatformAnnouncement" ("status","startsAt","endsAt")`);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "PlatformSetting" (
+      "key" TEXT PRIMARY KEY,
+      "value" JSONB NOT NULL,
+      "updatedBy" TEXT,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "PlatformPlanOverride" (
+      "planCode" TEXT PRIMARY KEY,
+      "monthlyPrice" DOUBLE PRECISION,
+      "annualMonthlyPrice" DOUBLE PRECISION,
+      "trialDays" INTEGER,
+      "officeUsers" INTEGER,
+      "crewUsers" INTEGER,
+      "locations" INTEGER,
+      "isEnabled" BOOLEAN NOT NULL DEFAULT TRUE,
+      "updatedBy" TEXT,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // External payment reference makes Stripe/webhook processing idempotent.
   // This is additive and nullable so existing payment rows remain valid.
   await prisma.$executeRawUnsafe(`ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "externalReference" TEXT`);
