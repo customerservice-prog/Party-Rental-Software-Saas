@@ -1,1 +1,0 @@
-Observed-usage, catalog readiness and navigation integration applied. Exact-commit validation required.

@@ -1,1 +1,0 @@
-Source guards integrated on the review branch. This is not a validation or production deployment claim.

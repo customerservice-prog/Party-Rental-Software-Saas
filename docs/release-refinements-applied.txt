@@ -1,1 +1,0 @@
-Tenant session invalidation and bounded observed-cohort reporting are integrated. Exact-head tests still required.
