@@ -1,0 +1,36 @@
+name: Public release visual check
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: public-release-visual
+  cancel-in-progress: true
+jobs:
+  public-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser tools (no application or provider credentials)
+        run: |
+          mkdir -p "$RUNNER_TEMP/public-browser"
+          cd "$RUNNER_TEMP/public-browser"
+          npm init -y
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Wait for public visual release and inspect desktop/mobile pages
+        env:
+          NODE_PATH: ${{ runner.temp }}/public-browser/node_modules
+        run: node scripts/public-release-visual.cjs
+      - name: Save public browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-release-evidence
+          retention-days: 7
+          path: test-results/public-release/
