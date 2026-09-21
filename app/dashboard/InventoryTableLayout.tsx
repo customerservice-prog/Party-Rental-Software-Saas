@@ -1,13 +1,12 @@
 "use client";
 import {useEffect} from "react";
-import {usePathname} from "next/navigation";
 import "./inventory-mobile.css";
 // Enhance only the seven-column inventory tables, never scheduling grids or
 // nested unit/add-on tables. React retains all original controls and handlers.
+// This persistent layout component needs no router context: scoped observation
+// also handles client navigation into inventory and loading-state remounts.
 export default function InventoryTableLayout(){
-  const pathname=usePathname();
   useEffect(()=>{
-    if(pathname!=="/dashboard/inventory")return;
     const root=document.getElementById("tenant-main");if(!root)return;
     let frame=0;
     const apply=()=>{
@@ -33,6 +32,6 @@ export default function InventoryTableLayout(){
     const observer=new MutationObserver(()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(apply);});
     apply();observer.observe(root,{childList:true,subtree:true});
     return()=>{observer.disconnect();cancelAnimationFrame(frame);};
-  },[pathname]);
+  },[]);
   return null;
 }
