@@ -39,6 +39,12 @@ jobs:
           node-version: '22'
       - name: Install dependencies (repository has no lockfile)
         run: npm install
+      - name: Record dependency advisory coverage
+        run: |
+          mkdir -p test-results
+          npm audit --json > test-results/dependency-audit-all.json || true
+          npm audit --omit=dev --json > test-results/dependency-audit-runtime.json || true
+          node -e 'for(const p of ["all","runtime"]){const r=require("./test-results/dependency-audit-"+p+".json");if(!r.metadata)throw Error("Missing audit metadata");console.log(p,r.metadata.vulnerabilities);}'
       - name: Regression tests
         run: node --test tests/*.test.cjs
       - name: Typecheck
@@ -57,6 +63,7 @@ jobs:
             if curl -fsS http://localhost:3000/platform-login > /dev/null; then break; fi
             sleep 2
           done
+          node scripts/image-safety-smoke.cjs
           node scripts/admin-browser-smoke.cjs
       - name: Preserve validation evidence
         if: always()
