@@ -58,6 +58,8 @@ jobs:
             sleep 2
           done
           node scripts/admin-browser-smoke.cjs
+      - name: Visual QA - marketing, platform and tenant workspace
+        run: node scripts/admin-visual-qa.cjs
       - name: Preserve validation evidence
         if: always()
         uses: actions/upload-artifact@v4
