@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { generateTotpSecret, encryptTotpSecret, decryptTotpSecret, totpUri, verifyTotp } from "@/lib/totp";
 
 export async function GET(){
-  const session=await requirePlatformAdmin();
+  const session=await requirePlatformAdmin('security');
   const [admins,throttles]=await Promise.all([
     prisma.user.findMany({
       where:{role:"platform_admin"},
@@ -18,7 +18,7 @@ export async function GET(){
 }
 
 export async function POST(req:NextRequest){
-  const session=await requirePlatformAdmin();
+  const session=await requirePlatformAdmin('security');
   const actor=(session.user as any)?.id||"platform_admin";
   const body=await req.json().catch(()=>({}));
   const action=String(body.action||"");
@@ -72,7 +72,7 @@ export async function POST(req:NextRequest){
     const duplicate=await prisma.user.findFirst({where:{role:"platform_admin",username}});
     if(duplicate)return NextResponse.json({error:"That platform-admin username already exists."},{status:409});
     const hash=await bcrypt.hash(password,12);
-    const admin=await prisma.user.create({data:{organizationId:platformOrg.id,name,username,password:hash,role:"platform_admin",isActive:true,forcePasswordReset:false}});
+    const admin=await prisma.$transaction(async tx=>{const created=await tx.user.create({data:{organizationId:platformOrg.id,name,username,password:hash,role:'platform_admin',isActive:true,forcePasswordReset:false}});await tx.$executeRawUnsafe('INSERT INTO "PlatformAdminGrant" ("userId","accessRole","updatedBy") VALUES ($1,$2,$3)',created.id,'administrator',actor);return created;});
     await prisma.auditLog.create({data:{action:"platform.admin.created",performedBy:actor,details:JSON.stringify({adminId:admin.id,username,name})}});
     return NextResponse.json({success:true,id:admin.id});
   }

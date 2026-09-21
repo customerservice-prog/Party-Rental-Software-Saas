@@ -4,7 +4,7 @@ import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { CATALOG_CATEGORIES, catalogCategoryLabel } from "@/lib/catalogTemplates";
 
-type CatalogTemplateRow = { id: string; name: string; categoryKey: string; type: string; keywords: unknown; sortOrder: number; isActive: boolean };
+type CatalogTemplateRow = { imageUrl?:string|null; id: string; name: string; categoryKey: string; type: string; keywords: unknown; sortOrder: number; isActive: boolean };
 
 // Collapses a string down to just lowercase letters/digits so differences in
 // punctuation, spacing, and formatting never cause an otherwise-matching
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
   const q = searchParams.get("q")?.trim() || "";
   const categoryKey = searchParams.get("categoryKey") || "";
   const type = searchParams.get("type") || "";
-  const limit = Math.min(parseInt(searchParams.get("limit") || "200", 10) || 200, 500);
+  const limit = Math.max(1,Math.min(parseInt(searchParams.get("limit") || "200", 10) || 200, 500));
 
   const templates: CatalogTemplateRow[] = await prisma.catalogTemplate.findMany({
     where: {
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
     orderBy: [{ categoryKey: "asc" }, { sortOrder: "asc" }],
   });
 
-  let results = templates;
+  let results = templates.slice().sort((a,b)=>Number(Boolean(b.imageUrl?.trim()))-Number(Boolean(a.imageUrl?.trim())));
   if (q) {
     // Every word the tenant typed must match somewhere in the template's
     // name, category label, or internal search keywords - not just as one

@@ -1,3 +1,4 @@
+import {requirePlatformAdmin} from '@/lib/admin';
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { activeLoginLockWhere } from "@/lib/loginPolicy";
@@ -8,6 +9,8 @@ export const revalidate=0;
 type Alert={id:string;severity:"critical"|"warning"|"info";title:string;detail:string;href?:string};
 
 export default async function PlatformAlertsPage(){
+ await requirePlatformAdmin('operations');
+
   const now=new Date();
   const d3=new Date(Date.now()-3*86400000);
   const d1=new Date(Date.now()-86400000);

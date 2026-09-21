@@ -1,3 +1,4 @@
+import {requirePlatformAdmin} from '@/lib/admin';
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
@@ -16,6 +17,8 @@ function actionTone(action:string){
 }
 
 export default async function AdminAuditLogPage({searchParams: searchParamsPromise}:{searchParams:Promise<{q?:string;org?:string;actor?:string;from?:string;to?:string}>}){
+ await requirePlatformAdmin('platform');
+
   const searchParams = await searchParamsPromise;
 
   const q=searchParams.q?.trim()||"";

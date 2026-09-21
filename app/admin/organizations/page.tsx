@@ -1,3 +1,4 @@
+import {requirePlatformAdmin} from '@/lib/admin';
 import Link from "next/link";
 import ViewAsTenantButton from "@/app/admin/ViewAsTenantButton";
 import { prisma } from "@/lib/prisma";
@@ -16,6 +17,8 @@ function planLabel(code:string){return getPlan(code).name}
 function initials(name:string){return name.split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()||"PR"}
 
 export default async function OrganizationsPage({searchParams: searchParamsPromise}:{searchParams:Promise<{q?:string;status?:string;plan?:string}>}){
+ await requirePlatformAdmin('organizations');
+
   const searchParams = await searchParamsPromise;
 
   const q=searchParams.q?.trim()||"";

@@ -7,7 +7,7 @@ import { SUPPORT_COOKIE, SUPPORT_SECONDS, createSupportSession, readSupportSessi
 export async function POST(req:NextRequest,{params: paramsPromise}:{params:Promise<{id:string}>}){
   const params = await paramsPromise;
 
-  const session=await requirePlatformAdmin();
+  const session=await requirePlatformAdmin('support');
   const organization=await prisma.organization.findFirst({
     where:{id:params.id,slug:{not:"_platform_internal"}},
     select:{id:true,name:true,slug:true,status:true},
@@ -42,7 +42,7 @@ export async function POST(req:NextRequest,{params: paramsPromise}:{params:Promi
 }
 
 export async function DELETE(){
-  const session=await requirePlatformAdmin();
+  const session=await requirePlatformAdmin('support');
   const current=readSupportSessionDetails((await cookies()).get(SUPPORT_COOKIE)?.value,(session.user as any).id);
   (await cookies()).set(SUPPORT_COOKIE,"",{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",maxAge:0});
   if(current){

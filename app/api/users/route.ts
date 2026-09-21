@@ -195,6 +195,12 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
+  // Credentials and access changes invalidate previously issued sessions,
+  // including sessions currently open through platform support.
+  if (data.password !== undefined || (data.role !== undefined && data.role !== target.role) || (data.tenantRoleId !== undefined && data.tenantRoleId !== target.tenantRoleId)) {
+    data.sessionVersion = { increment: 1 };
+  }
+
   const updated = await prisma.user.update({
     where: { id },
     data,

@@ -8,7 +8,7 @@ export const dynamic="force-dynamic";
 export default async function TenantUsersPage({searchParams: searchParamsPromise}:{searchParams:Promise<Record<string,string|string[]|undefined>>}) {
   const searchParams = await searchParamsPromise;
 
-  await requirePlatformAdmin();
+  await requirePlatformAdmin('support');
   const {q,status,page:requested,pageSize}=directoryParams(searchParams);
   const where={organization:{slug:{not:"_platform_internal"}},role:{not:"platform_admin"},...(status==="disabled"?{isActive:false}:status==="active"?{isActive:true}:{}),...(q?{OR:[{name:{contains:q,mode:"insensitive" as const}},{username:{contains:q,mode:"insensitive" as const}},{organization:{name:{contains:q,mode:"insensitive" as const}}}]}:{})};
   const total=await prisma.user.count({where});

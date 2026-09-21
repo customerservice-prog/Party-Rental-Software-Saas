@@ -1,0 +1,3 @@
+import Link from 'next/link';
+import {requirePlatformAdmin} from '@/lib/admin';
+export default async function AccessDenied(){await requirePlatformAdmin('console');return <section className="space-y-4 rounded-2xl border bg-white p-6"><h1>Access not granted</h1><p className="text-sm leading-6 text-slate-600">Your platform role does not include this tool. A full platform administrator can review your access in Security &gt; Administrator roles. No data was changed.</p><div className="flex flex-wrap gap-4 text-sm font-bold text-blue-600"><Link href="/admin">Overview</Link><Link href="/admin/catalog-templates">Catalog</Link></div></section>;}

@@ -259,7 +259,7 @@ function supportFixture() {
   };
   const headers={'next/headers':{cookies:()=>({get:()=>cookie?{value:cookie}:undefined,set:(name,value,opts)=>{assert.equal(name,support.SUPPORT_COOKIE);cookie=value;options=opts;}})}};
   const api=route('app/api/admin/organizations/[id]/support-session/route.ts',db,headers);
-  const viewer=load('lib/tenantViewer.ts',{'./prisma':{prisma:db},'./supportSession':support,...headers});
+  const viewer=load('lib/tenantViewer.ts',{'@/lib/admin':{getPlatformAdminAccess:async()=> 'administrator'},'./prisma':{prisma:db},'./supportSession':support,...headers});
   const authz=load('lib/authz.ts',{'next-auth':{getServerSession:async()=>adminSession},'./auth':{authOptions:{}},'./prisma':{prisma:db},'./permissions':load('lib/permissions.ts'),'./tenantViewer':viewer});
   return {users,events,db,headers,api,viewer,authz,get cookie(){return cookie},get options(){return options},start:body=>api.POST(request(body),{params:{id:'tenant-1'}})};
 }

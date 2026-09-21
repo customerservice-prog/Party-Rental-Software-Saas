@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET(_req:Request,{params: paramsPromise}:{params:Promise<{id:string}>}){
   const params = await paramsPromise;
 
-  const session=await requirePlatformAdmin();
+  const session=await requirePlatformAdmin('data');
   const org=await prisma.organization.findFirst({
     where:{id:params.id,slug:{not:"_platform_internal"}},
     select:{

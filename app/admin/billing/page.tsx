@@ -10,7 +10,7 @@ const money=(n:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency
 export default async function PlatformBillingPage({searchParams: searchParamsPromise}:{searchParams:Promise<Record<string,string|string[]|undefined>>}) {
   const searchParams = await searchParamsPromise;
 
-  await requirePlatformAdmin();
+  await requirePlatformAdmin('billing');
   const {q,status,page:requestedPage,pageSize}=directoryParams(searchParams);
   const [subs,plans]=await Promise.all([
     prisma.platformSubscription.findMany({where:{organization:{slug:{not:"_platform_internal"}}},select:{organizationId:true,planTier:true,status:true,billingInterval:true,foundingCustomer:true,stripeSubId:true,currentPeriodEnd:true,organization:{select:{name:true,slug:true,trialEndsAt:true}}},orderBy:[{updatedAt:"desc"},{id:"asc"}]}),

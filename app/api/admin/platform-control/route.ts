@@ -33,7 +33,7 @@ function dateOrNull(v:unknown){
 }
 
 export async function GET(){
-  await requirePlatformAdmin();
+  await requirePlatformAdmin('platform');
   const [flags,announcements,settings,plans]=await Promise.all([
     prisma.$queryRawUnsafe(`SELECT * FROM "PlatformFeatureFlag" ORDER BY "label" ASC`) as Promise<FlagRow[]>,
     prisma.$queryRawUnsafe(`SELECT * FROM "PlatformAnnouncement" ORDER BY "createdAt" DESC LIMIT 200`) as Promise<AnnouncementRow[]>,
@@ -44,7 +44,7 @@ export async function GET(){
 }
 
 export async function POST(req:NextRequest){
-  const session=await requirePlatformAdmin();
+  const session=await requirePlatformAdmin('platform');
   const actor=(session.user as any)?.id||"platform_admin";
   const body=await req.json().catch(()=>({}));
   const action=String(body.action||"");

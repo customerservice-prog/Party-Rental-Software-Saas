@@ -7,7 +7,7 @@ export const dynamic="force-dynamic";
 export async function POST(request:Request,{params: paramsPromise}:{params:Promise<{id:string}>}) {
   const params = await paramsPromise;
 
-  const session=await requirePlatformAdmin();
+  const session=await requirePlatformAdmin('billing');
   if(!isAdminRequestOriginAllowed(request))return NextResponse.json({error:"Cross-origin checks are not allowed."},{status:403});
   const local=await prisma.platformSubscription.findFirst({where:{organizationId:params.id,organization:{slug:{not:"_platform_internal"}}},select:{stripeSubId:true,stripeCustomerId:true,status:true}});
   if(!local)return NextResponse.json({error:"Tenant subscription not found."},{status:404});
