@@ -1,0 +1,47 @@
+name: Prepare reviewed framework upgrade
+on:
+  push:
+    branches: ['admin/outstanding-20260921']
+    paths: ['scripts/migrate-next16.cjs', '.github/workflows/prepare-next-upgrade.yml']
+permissions:
+  contents: write
+jobs:
+  prepare:
+    if: github.repository == 'customerservice-prog/Party-Rental-Software-Saas' && github.ref == 'refs/heads/admin/outstanding-20260921'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - run: node scripts/migrate-next16.cjs
+      - name: Commit generated migration and deterministic lockfile to review branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app lib middleware.ts package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Migrate asynchronous Next request APIs and lock reviewed dependencies'
+            git push origin HEAD:admin/outstanding-20260921
+          fi
+          git rev-parse HEAD
+      - name: Preserve generated source for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prepared-upgrade-source
+          retention-days: 3
+          path: |
+            app/
+            lib/
+            scripts/
+            tests/
+            prisma/
+            public/
+            docs/
+            package*.json
+            *.js
+            *.ts
+            *.mjs
