@@ -1,0 +1,2 @@
+import Link from 'next/link';
+export default function AutomationLayout({children}:{children:React.ReactNode}){return <div className="space-y-5"><nav aria-label="Automation sections" className="flex flex-wrap gap-2"><Link href="/dashboard/automations" className="rounded-lg border bg-white px-4 py-3 text-sm font-semibold">Booking automations</Link><Link href="/dashboard/automations/schedule" className="rounded-lg border bg-white px-4 py-3 text-sm font-semibold">Scheduled delivery controls</Link></nav>{children}</div>;}

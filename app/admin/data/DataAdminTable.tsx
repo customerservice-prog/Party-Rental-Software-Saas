@@ -24,7 +24,7 @@ export default function DataAdminTable({organizations}:{organizations:Org[]}){
   return <div className="space-y-4">
     {(message||error)&&<div className={"rounded-xl border px-4 py-3 text-sm font-bold "+(error?"border-rose-200 bg-rose-50 text-rose-700":"border-emerald-200 bg-emerald-50 text-emerald-700")}>{error||message}</div>}
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 px-5 py-4"><h2 className="text-sm font-black">Tenant data controls</h2><p className="mt-0.5 text-[11px] text-slate-400">Hard deletion is intentionally not exposed here; archive preserves recovery and auditability.</p></div>
+      <div className="border-b border-slate-100 px-5 py-4"><h2 className="text-sm font-black">Tenant data controls</h2><p className="mt-0.5 text-[11px] text-slate-400">Archive preserves recovery and auditability. Permanent database deletion has a separate review workflow.</p></div>
       <div className="overflow-x-auto"><table className="min-w-[900px] w-full">
         <thead className="bg-slate-50/80"><tr className="text-left text-[9px] font-black uppercase tracking-wide text-slate-400"><th className="px-5 py-3">Tenant</th><th className="px-5 py-3">Records</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Created</th><th className="px-5 py-3">Export</th><th className="px-5 py-3">Archive</th></tr></thead>
         <tbody className="divide-y divide-slate-100">{rows.map(org=><tr key={org.id}>
