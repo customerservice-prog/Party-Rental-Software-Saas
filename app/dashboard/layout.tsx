@@ -7,6 +7,7 @@ import { getCurrentOrganization } from "@/lib/tenant";
 import { getBillingStatus } from "@/lib/billing";
 import { runBookingAutomations } from "@/lib/automations";
 import DashboardNav from "./DashboardNav";
+import InventoryTableLayout from "./InventoryTableLayout";
 import PlatformSupportBanner from "./PlatformSupportBanner";
 import { getActivePlatformAnnouncements, getPlatformSetting } from "@/lib/platformControl";
 import { resolveTenantViewer } from "@/lib/tenantViewer";
@@ -73,6 +74,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         role={role}
         supportBanner={supportBanner}
       >
+      <InventoryTableLayout/>
       <div className="space-y-4">
         {maintenanceEnabled && (
           <div className="border-b border-amber-300 bg-amber-100 px-6 py-3 text-sm font-semibold text-amber-950">

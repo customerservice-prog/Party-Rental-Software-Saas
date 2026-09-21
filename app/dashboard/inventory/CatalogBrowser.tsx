@@ -1,279 +1,96 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Icon from "../components/Icon";
+import { MAX_CATALOG_SELECTIONS, parseCatalogInput } from "@/lib/catalogSelection";
+import "./catalog-library.css";
 
 type CatalogCategory = { key: string; label: string; description: string };
-type CatalogTemplate = {
-  id: string;
-  name: string;
-  categoryKey: string;
-  type: string;
-};
+type CatalogTemplate = { id: string; name: string; categoryKey: string; type: string; imageUrl?: string | null; description?: string | null };
+type Selection = { quantity: string; price: string };
+type AddResult = { created: { id: string; name: string }[]; skipped: { name: string; reason: string }[] };
+const TYPES: Record<string,string> = { rental:"Rental", service:"Service", consumable:"Consumable", addon:"Add-on", package:"Package" };
+const blank = (): Selection => ({ quantity:"", price:"" });
 
-type Selection = {
-  quantity: string;
-  price: string;
-};
+function TemplatePhoto({template}:{template:CatalogTemplate}) {
+  const [failed,setFailed]=useState(false);
+  useEffect(()=>setFailed(false),[template.imageUrl]);
+  return <div className="catalog-photo">{template.imageUrl&&!failed ? <img src={template.imageUrl} alt={`${template.name} template photo`} width={240} height={160} loading="lazy" onError={()=>setFailed(true)}/> : <span><Icon name="box"/><small>{failed?"Photo unavailable":"Add your own photo"}</small></span>}</div>;
+}
 
-const TYPE_LABELS: Record<string, string> = {
-  rental: "Rental",
-  service: "Service",
-  consumable: "Consumable",
-  addon: "Add-on",
-  package: "Package",
-};
-
-export default function CatalogBrowser({
-  onClose,
-  onAdded,
-  priorityCategoryKeys,
-}: {
-  onClose: () => void;
-  onAdded: (result: { created: { id: string; name: string }[]; skipped: { name: string; reason: string }[] }) => void;
-  priorityCategoryKeys?: string[];
-}) {
-  const [step, setStep] = useState<"browse" | "configure">("browse");
-  const [categories, setCategories] = useState<CatalogCategory[]>([]);
-  const [templates, setTemplates] = useState<CatalogTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [selections, setSelections] = useState<Record<string, Selection>>({});
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (query.trim()) params.set("q", query.trim());
-    if (activeCategory) params.set("categoryKey", activeCategory);
-    fetch("/api/catalog-templates?" + params.toString())
-      .then((r) => r.json())
-      .then((data) => {
-        setTemplates(data.templates || []);
-        if (categories.length === 0) setCategories(data.categories || []);
-      })
-      .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, activeCategory]);
-
-  const orderedCategories = useMemo(() => {
-    if (!priorityCategoryKeys || priorityCategoryKeys.length === 0) return categories;
-    const byKey = new Map(categories.map((c) => [c.key, c]));
-    const ordered: CatalogCategory[] = [];
-    for (const key of priorityCategoryKeys) {
-      const c = byKey.get(key);
-      if (c) ordered.push(c);
-    }
-    for (const c of categories) {
-      if (!ordered.includes(c)) ordered.push(c);
-    }
-    return ordered;
-  }, [categories, priorityCategoryKeys]);
-
-  function toggleSelect(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+export default function CatalogBrowser({onClose,onAdded,priorityCategoryKeys}:{onClose:()=>void;onAdded:(result:AddResult)=>void;priorityCategoryKeys?:string[]}) {
+  const dialog=useRef<HTMLDialogElement>(null);
+  const [step,setStep]=useState<"browse"|"configure">("browse");
+  const [categories,setCategories]=useState<CatalogCategory[]>([]),[templates,setTemplates]=useState<CatalogTemplate[]>([]);
+  const [query,setQuery]=useState(""),[category,setCategory]=useState("");
+  // Keep the selected objects independently of current search results. Switching
+  // category/search must never silently discard a tenant's selection.
+  const [selected,setSelected]=useState<Record<string,CatalogTemplate>>({});
+  const [selections,setSelections]=useState<Record<string,Selection>>({});
+  const [loading,setLoading]=useState(true),[submitting,setSubmitting]=useState(false),[error,setError]=useState("");
+  const [retry,setRetry]=useState(0);
+  const selectedTemplates=Object.values(selected);
+  useEffect(()=>{
+    const element=dialog.current,previous=document.activeElement as HTMLElement|null;
+    const overflow=document.body.style.overflow;
+    element?.showModal();document.body.style.overflow="hidden";
+    return()=>{element?.close();document.body.style.overflow=overflow;previous?.focus();};
+  },[]);
+  useEffect(()=>{
+    const controller=new AbortController();setLoading(true);setError("");
+    const timer=setTimeout(async()=>{
+      try {
+        const params=new URLSearchParams({q:query.trim(),categoryKey:category,limit:"200"});
+        const response=await fetch(`/api/catalog-templates?${params}`,{signal:controller.signal,cache:"no-store"});
+        const data=await response.json().catch(()=>null);
+        if(!response.ok||!Array.isArray(data?.templates))throw new Error(data?.error||"Could not load the catalog. Check your access and try again.");
+        if(!controller.signal.aborted){setTemplates(data.templates);setCategories(data.categories||[]);}
+      } catch(e) {if(!controller.signal.aborted)setError(e instanceof Error?e.message:"Could not load the catalog.");}
+      finally {if(!controller.signal.aborted)setLoading(false);}
+    },180);
+    return()=>{clearTimeout(timer);controller.abort();};
+  },[query,category,retry]);
+  const orderedCategories=useMemo(()=>{
+    const priority=new Set(priorityCategoryKeys||[]);
+    return [...categories.filter(c=>priority.has(c.key)),...categories.filter(c=>!priority.has(c.key))];
+  },[categories,priorityCategoryKeys]);
+  function toggle(template:CatalogTemplate) {
+    if(!selected[template.id]&&selectedTemplates.length>=MAX_CATALOG_SELECTIONS){setError(`Add up to ${MAX_CATALOG_SELECTIONS} items at a time.`);return;}
+    setSelected(current=>{const next={...current};if(next[template.id])delete next[template.id];else next[template.id]=template;return next;});
   }
-
-  const selectedTemplates = templates.filter((t) => selectedIds.has(t.id));
-
-  function goToConfigure() {
-    const next: Record<string, Selection> = { ...selections };
-    for (const t of selectedTemplates) {
-      if (!next[t.id]) next[t.id] = { quantity: "", price: "" };
-    }
-    setSelections(next);
-    setStep("configure");
-  }
-
-  function updateSelection(id: string, field: "quantity" | "price", value: string) {
-    setSelections((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
-  }
-
-  async function submit() {
-    setSubmitting(true);
+  function setValue(id:string,key:keyof Selection,value:string){setSelections(current=>({...current,[id]:{...(current[id]||blank()),[key]:value}}));}
+  async function submit(){
+    if(submitting||!selectedTemplates.length)return;
     setError("");
-    const body = {
-      selections: selectedTemplates.map((t) => {
-        const s = selections[t.id] || { quantity: "", price: "" };
-        const quantity = s.quantity.trim() === "" ? undefined : parseInt(s.quantity, 10);
-        const price = s.price.trim() === "" ? undefined : parseFloat(s.price);
-        return {
-          templateId: t.id,
-          quantity: quantity !== undefined && !Number.isNaN(quantity) ? quantity : undefined,
-          price: price !== undefined && !Number.isNaN(price) ? price : undefined,
-        };
-      }),
-    };
-    const res = await fetch("/api/catalog-templates/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    setSubmitting(false);
-    if (res.ok) {
-      const data = await res.json();
+    let entries;
+    try {
+      entries=selectedTemplates.map(template=>{
+        const values=selections[template.id]||blank(),unlimited=["service","consumable"].includes(template.type);
+        return {templateId:template.id,quantity:unlimited?undefined:parseCatalogInput(values.quantity,"quantity"),price:parseCatalogInput(values.price,"price")};
+      });
+    } catch(e){setError(e instanceof Error?e.message:"Check the quantities and prices.");return;}
+    setSubmitting(true);
+    try {
+      const response=await fetch("/api/catalog-templates/add",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({selections:entries})});
+      const data=await response.json().catch(()=>null);
+      if(!response.ok||!Array.isArray(data?.created)||!Array.isArray(data?.skipped))throw new Error(data?.error||"Could not confirm the catalog addition. Review your inventory before retrying.");
       onAdded(data);
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error || "Could not add items. Please try again.");
-    }
+    } catch(e){setError(e instanceof Error?e.message:"Could not add these items. Please try again.");}
+    finally {setSubmitting(false);}
   }
-
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center overflow-y-auto py-8">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4">
-        <div className="flex items-center justify-between border-b px-6 py-4">
-          <div>
-            <h2 className="text-lg font-semibold">Party Rental CRM Catalog</h2>
-            <p className="text-sm text-gray-500">
-              {step === "browse"
-                ? "Select the equipment your company actually carries. Nothing is added until you confirm quantity and price."
-                : "Enter what you own and what you charge. Leave blank to set later - we never guess these for you."}
-            </p>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none" aria-label="Close">
-            &times;
-          </button>
-        </div>
-
-        {step === "browse" && (
-          <div className="p-6">
-            <div className="flex flex-col md:flex-row gap-3 mb-4">
-              <input
-                className="border rounded px-3 py-2 flex-1"
-                placeholder="Search (e.g. chair, tent, 20x40, linen)"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              <select
-                className="border rounded px-3 py-2"
-                value={activeCategory}
-                onChange={(e) => setActiveCategory(e.target.value)}
-              >
-                <option value="">All categories</option>
-                {orderedCategories.map((c) => (
-                  <option key={c.key} value={c.key}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {loading ? (
-              <p className="text-gray-500 text-sm">Loading catalog...</p>
-            ) : templates.length === 0 ? (
-              <p className="text-gray-500 text-sm">
-                No templates matched. Try a different search, or use "Add Manually" / "Create Custom Item" back on the
-                Inventory page - our catalog will never be the only way to add something you rent.
-              </p>
-            ) : (
-              <div className="max-h-96 overflow-y-auto border rounded divide-y">
-                {templates.map((t) => (
-                  <label key={t.id} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 cursor-pointer">
-                    <span className="flex items-center gap-3">
-                      <input type="checkbox" checked={selectedIds.has(t.id)} onChange={() => toggleSelect(t.id)} />
-                      <span>
-                        <span className="block text-sm font-medium text-gray-800">{t.name}</span>
-                        <span className="block text-xs text-gray-400">
-                          {(categories.find((c) => c.key === t.categoryKey) || {}).label || t.categoryKey} ·{" "}
-                          {TYPE_LABELS[t.type] || t.type}
-                        </span>
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between mt-4">
-              <span className="text-sm text-gray-500">{selectedIds.size} selected</span>
-              <div className="space-x-2">
-                <button onClick={onClose} className="text-sm text-gray-500 px-3 py-2">
-                  Cancel
-                </button>
-                <button
-                  disabled={selectedIds.size === 0}
-                  onClick={goToConfigure}
-                  className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  Continue ({selectedIds.size})
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {step === "configure" && (
-          <div className="p-6">
-            {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
-            <div className="max-h-96 overflow-y-auto border rounded">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-gray-50 text-gray-500 sticky top-0">
-                  <tr>
-                    <th className="py-2 px-3">Item</th>
-                    <th className="py-2 px-3">Quantity you own</th>
-                    <th className="py-2 px-3">Your rental price</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {selectedTemplates.map((t) => {
-                    const isUnlimited = t.type === "service" || t.type === "consumable";
-                    const s = selections[t.id] || { quantity: "", price: "" };
-                    return (
-                      <tr key={t.id}>
-                        <td className="py-2 px-3">{t.name}</td>
-                        <td className="py-2 px-3">
-                          <input
-                            className="border rounded px-2 py-1 w-24"
-                            placeholder={isUnlimited ? "n/a" : "0"}
-                            value={s.quantity}
-                            disabled={isUnlimited}
-                            onChange={(e) => updateSelection(t.id, "quantity", e.target.value)}
-                          />
-                          {isUnlimited && (
-                            <span className="block text-xs text-gray-400">Not limited by quantity</span>
-                          )}
-                        </td>
-                        <td className="py-2 px-3">
-                          <input
-                            className="border rounded px-2 py-1 w-28"
-                            placeholder="Set later"
-                            value={s.price}
-                            onChange={(e) => updateSelection(t.id, "price", e.target.value)}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <p className="text-xs text-gray-400 mt-2">
-              New items are added as hidden from your storefront until you review and publish them from the Inventory
-              page.
-            </p>
-            <div className="flex items-center justify-between mt-4">
-              <button onClick={() => setStep("browse")} className="text-sm text-gray-500 px-3 py-2">
-                Back
-              </button>
-              <button
-                disabled={submitting}
-                onClick={submit}
-                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {submitting ? "Adding..." : "Add " + selectedTemplates.length + " Item(s)"}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+  return <dialog ref={dialog} className="catalog-library" aria-labelledby="catalog-library-title" onCancel={event=>{if(submitting)event.preventDefault();else onClose();}}>
+    <header className="catalog-library-header"><div><p className="catalog-kicker">YOUR RENTAL INVENTORY</p><h2 id="catalog-library-title">{step==="browse"?"Find your first rentals. Or your next ones.":"Make these rentals yours."}</h2><p>{step==="browse"?"Browse template photos and descriptions. Select only the equipment and services your business offers.":"Review what you own and what you charge. Template photos and descriptions are copied into your own editable inventory."}</p></div><button type="button" disabled={submitting} onClick={onClose} aria-label="Close catalog" className="catalog-close"><Icon name="close"/></button></header>
+    <div className="catalog-library-body">
+      {error&&<div className="catalog-error" role="alert"><p>{error}</p>{step==="browse"&&<button type="button" onClick={()=>setRetry(r=>r+1)}>Try again</button>}</div>}
+      {step==="browse"?<>
+        <div className="catalog-filters"><label><span>Search the catalog</span><input type="search" autoFocus placeholder="Try chair, tent, table, linen…" value={query} onChange={e=>setQuery(e.target.value)}/></label><label><span>Rental category</span><select value={category} onChange={e=>setCategory(e.target.value)}><option value="">All categories</option>{orderedCategories.map(c=><option key={c.key} value={c.key}>{c.label}</option>)}</select></label></div>
+        <div className="catalog-result-summary"><p>{loading?"Finding rentals…":`${templates.length} matching templates${templates.length===200?" · refine your search for more":""}`}</p><span>Selections stay saved across filters</span></div>
+        {loading?<div className="catalog-grid" role="status" aria-label="Loading catalog">{[1,2,3,4,5,6].map(n=><div key={n} className="catalog-skeleton"/>)}</div>:error?null:templates.length?<div className="catalog-grid">{templates.map(template=><label key={template.id} className={`catalog-template${selected[template.id]?" is-selected":""}`}><TemplatePhoto template={template}/><div className="catalog-template-content"><div className="catalog-template-meta"><span>{categories.find(c=>c.key===template.categoryKey)?.label||template.categoryKey} · {TYPES[template.type]||template.type}</span><input type="checkbox" aria-label={`Select ${template.name}`} checked={Boolean(selected[template.id])} onChange={()=>toggle(template)}/></div><strong>{template.name}</strong><p>{template.description||"Set your details, add your photos, and choose your rental price after adding this template."}</p></div></label>)}</div>:<div className="catalog-empty"><Icon name="search"/><h3>No matching rentals</h3><p>Try a broader search, choose another category, or create your own item from Inventory.</p><button type="button" onClick={()=>{setQuery("");setCategory("");}}>Clear filters</button></div>}
+      </>:<>
+        <div className="catalog-private-note"><Icon name="shield"/><p><b>Private until you publish.</b> Added items stay hidden from your storefront. Blank quantity or price is stored as 0 for later review; a template never invents stock you own.</p></div>
+        <div className="catalog-configurations">{selectedTemplates.map(template=>{const values=selections[template.id]||blank(),unlimited=["service","consumable"].includes(template.type);return <section key={template.id} className="catalog-configuration"><div className="catalog-configuration-name"><TemplatePhoto template={template}/><div><h3>{template.name}</h3><span>{TYPES[template.type]||template.type}</span></div><button type="button" disabled={submitting} aria-label={`Remove ${template.name}`} onClick={()=>toggle(template)}><Icon name="close"/></button></div><div className="catalog-configuration-inputs"><label><span>Quantity you own</span><input aria-label={`Quantity you own for ${template.name}`} inputMode="numeric" placeholder={unlimited?"Not quantity-limited":"Set later (0)"} value={values.quantity} disabled={submitting||unlimited} onChange={e=>setValue(template.id,"quantity",e.target.value)}/>{unlimited&&<small>Service / consumable: not limited by stock.</small>}</label><label><span>Your rental price ($)</span><input aria-label={`Your rental price for ${template.name}`} inputMode="decimal" placeholder="Set later (0.00)" value={values.price} disabled={submitting} onChange={e=>setValue(template.id,"price",e.target.value)}/></label></div></section>;})}</div>
+      </>}
     </div>
-  );
+    <footer className="catalog-library-footer"><div aria-live="polite"><b>{selectedTemplates.length} selected</b><small>{step==="browse"?"Choose items, then set your quantities and prices.":"Your existing inventory will not be overwritten."}</small></div><div>{step==="browse"?<><button type="button" onClick={onClose} className="catalog-secondary">Cancel</button><button type="button" disabled={!selectedTemplates.length||loading} onClick={()=>{setError("");setStep("configure");}} className="catalog-primary">Configure {selectedTemplates.length} items<Icon name="arrow"/></button></>:<><button type="button" disabled={submitting} onClick={()=>{setError("");setStep("browse");}} className="catalog-secondary">Back</button><button type="button" disabled={submitting||!selectedTemplates.length} onClick={submit} className="catalog-primary">{submitting?"Adding to inventory…":`Add ${selectedTemplates.length} items`}</button></>}</div></footer>
+  </dialog>;
 }
