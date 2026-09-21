@@ -12,44 +12,77 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       DATABASE_URL: postgresql://test:test@localhost:5432/test
       NEXTAUTH_SECRET: isolated-ci-secret-not-for-production
       NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_ROOT_DOMAIN: localhost:3000
+      PUBLIC_BASE_URL: http://localhost:3000
+      PLATFORM_ADMIN_USERNAME: ci-admin
+      PLATFORM_ADMIN_PASSWORD: isolated-test-password-only
+      PLATFORM_ADMIN_NAME: CI Platform Admin
       NEXT_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@v4
-      - name: Archive exact reviewed source (no environment files)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies (repository has no lockfile)
+        run: npm install
+      - name: Regression tests
+        run: node --test tests/*.test.cjs
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Initialize isolated test database
+        run: npx prisma db push && node scripts/ensure-fulfillment-schema.js && node scripts/ensure-platform-admin.js
+      - name: Production build
+        run: npm run build
+      - name: Install browser runner
+        run: npm install --no-save --package-lock=false playwright@1.55.0 && npx playwright install --with-deps chromium
+      - name: Authenticated desktop and mobile smoke tests
+        run: |
+          mkdir -p test-results
+          npm run start > test-results/server.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/platform-login > /dev/null; then break; fi
+            sleep 2
+          done
+          node scripts/admin-browser-smoke.cjs
+      - name: Preserve validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-validation-evidence
+          retention-days: 7
+          path: test-results/
+      - name: Archive reviewed source without environment files
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: admin-review-source
           retention-days: 3
           path: |
             app/
-            components/
             lib/
             prisma/
             scripts/
             tests/
+            docs/
             public/
             types/
-            docs/
             *.json
             *.js
             *.mjs
             *.cjs
             *.ts
-            *.toml
             !.env*
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-      - run: npm ci
-      - name: Regression tests
-        run: node --test tests/*.test.cjs
-      - name: Typecheck
-        run: npx tsc --noEmit
-      - name: Production build
-        run: npm run build
