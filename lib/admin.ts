@@ -15,6 +15,7 @@ export async function requirePlatformAdmin(capability:PlatformCapability='platfo
  const user=session?.user as {id?:string;role?:string;revoked?:boolean}|undefined;
  if(!session||!user?.id||user.revoked||user.role!=='platform_admin')redirect('/platform-login');
  const role=await getPlatformAdminAccess(user.id);
- if(!role||!platformAllows(role,capability))redirect('/admin/access-denied');
+ if(!role)redirect('/platform-login');
+ if(!platformAllows(role,capability))redirect('/admin/access-denied');
  return session;
 }

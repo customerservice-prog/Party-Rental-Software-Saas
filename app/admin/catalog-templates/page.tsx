@@ -45,6 +45,7 @@ export default function CatalogTemplatesAdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  useEffect(()=>{setQuery(new URLSearchParams(window.location.search).get('q')||'');},[]);
   const [categoryFilter, setCategoryFilter] = useState("");
   const [showInactive, setShowInactive] = useState(true);
 
