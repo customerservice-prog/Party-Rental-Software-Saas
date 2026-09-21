@@ -1,0 +1,29 @@
+name: Dependency audit evidence
+on:
+  push:
+    branches: ['security/dependency-audit-*']
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Resolve dependency graph without install scripts
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Capture advisory reports
+        run: |
+          mkdir -p audit-evidence
+          npm audit --json > audit-evidence/all-dependencies.json || true
+          npm audit --omit=dev --json > audit-evidence/runtime-dependencies.json || true
+          cp package-lock.json audit-evidence/package-lock.json
+          node -e 'const fs=require("fs");for(const name of ["all-dependencies","runtime-dependencies"]){const report=JSON.parse(fs.readFileSync("audit-evidence/"+name+".json"));if(!report.metadata)throw new Error("Audit returned no metadata");console.log(name,JSON.stringify(report.metadata.vulnerabilities));for(const [pkg,v]of Object.entries(report.vulnerabilities||{}))console.log(pkg,v.severity,JSON.stringify(v.fixAvailable));}'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-evidence
+          path: audit-evidence/
+          retention-days: 7
