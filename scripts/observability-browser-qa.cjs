@@ -26,6 +26,15 @@ async function main(){
   const admin=await browser.newContext({viewport:{width:390,height:844}}),p=await admin.newPage();p.on('pageerror',e=>report.errors.push(e.message));
   await p.goto('http://localhost:3000/platform-login');await p.getByPlaceholder('Platform admin username').fill(process.env.PLATFORM_ADMIN_USERNAME);await p.locator('input[type=password]').fill(process.env.PLATFORM_ADMIN_PASSWORD);await p.getByRole('button',{name:'Enter Platform Control Center'}).click();await p.waitForURL('**/admin');
   for(const route of ['/admin/insights','/admin/catalog-readiness']){await p.goto('http://localhost:3000'+route);await p.locator('h1').waitFor();await p.waitForTimeout(300);assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);await p.screenshot({path:out+'/'+route.split('/').at(-1)+'-phone.png',fullPage:true});report.checks.push(route+' renders at phone width with real initialized photo/usage fixtures');}
+  // A document-overflow check alone cannot detect collapsed overlapping inputs.
+  for(const width of [360,390,768,1440]){
+   await p.setViewportSize({width,height:900});await p.goto('http://localhost:3000/admin/catalog-readiness');
+   const search=await p.getByRole('textbox',{name:'Search templates',exact:true}).boundingBox(),coverage=await p.getByRole('combobox',{name:'Catalog coverage'}).boundingBox();
+   assert.ok(search&&coverage&&search.width>=180&&coverage.width>=160,'Catalog controls collapsed at '+width);
+   assert.ok(search.x+search.width<=coverage.x+1||coverage.x+coverage.width<=search.x+1||search.y+search.height<=coverage.y+1||coverage.y+coverage.height<=search.y+1,'Catalog controls overlap at '+width);
+   if(width===390)await p.screenshot({path:out+'/catalog-readiness-phone.png',fullPage:true});
+  }
+  report.checks.push('Catalog search and coverage controls retain usable width without overlap at 360/390/768/1440px');
   await p.goto('http://localhost:3000/admin/catalog-readiness?status=ready');const link=p.getByRole('link',{name:'Edit template',exact:true}).first();const href=await link.getAttribute('href');const expected=new URL(href,'http://localhost:3000').searchParams.get('q');await link.click();await p.waitForURL('**/admin/catalog-templates?**');await p.waitForFunction(value=>Array.from(document.querySelectorAll('input')).some(i=>i.value===value),expected);report.checks.push('Readiness edit link opens the matching filtered global catalog editor');
   await admin.close();assert.equal(await db.sentMessage.count(),0);assert.deepEqual(report.errors,[]);
  }finally{await browser.close()}
