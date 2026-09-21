@@ -7,7 +7,9 @@ import HomeTasks from "./HomeTasks";
 import BestSellersChart from "./BestSellersChart";
 import Icon from "./components/Icon";
 import {PageHeading,MetricCard,StatusBadge,EmptyState,SectionHeading,money,eventDateLabel} from "./components/TenantUI";
-export default async function DashboardHomePage({searchParams}:{searchParams:{year?:string;month?:string}}){
+export default async function DashboardHomePage({searchParams: searchParamsPromise}:{searchParams:Promise<{year?:string;month?:string}>}){
+  const searchParams = await searchParamsPromise;
+
  const org=await requireCurrentOrganization(),now=new Date();
  const dates=dashboardDates(now,org.timezone,searchParams),active={in:["active","confirmed"]};
  const [itemCount,monthOrders,todayOrders,upcoming,weekCount,quoteCount,pendingCount,paymentGroups,balances,recentItems]=await Promise.all([

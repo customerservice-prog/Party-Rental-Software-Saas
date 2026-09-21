@@ -11,8 +11,10 @@ import { validateStopStatusTransition, isPickupOrder, ATTENTION_STATUSES } from 
 // to a different driver's run for the same date.
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { stopId: string } }
+  { params: paramsPromise }: { params: Promise<{ stopId: string }> }
 ) {
+  const params = await paramsPromise;
+
   const organization = await requireCurrentOrganization();
   let session;
   try {

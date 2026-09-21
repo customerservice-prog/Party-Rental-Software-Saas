@@ -4,7 +4,9 @@ import { requirePlatformAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { SUPPORT_COOKIE, SUPPORT_SECONDS, createSupportSession, readSupportSessionDetails } from "@/lib/supportSession";
 
-export async function POST(req:NextRequest,{params}:{params:{id:string}}){
+export async function POST(req:NextRequest,{params: paramsPromise}:{params:Promise<{id:string}>}){
+  const params = await paramsPromise;
+
   const session=await requirePlatformAdmin();
   const organization=await prisma.organization.findFirst({
     where:{id:params.id,slug:{not:"_platform_internal"}},
@@ -28,7 +30,7 @@ export async function POST(req:NextRequest,{params}:{params:{id:string}}){
     details:JSON.stringify({tenant:organization.name,slug:organization.slug,viewAsUserId:user.id,viewAsName:user.name,viewAsRole:user.role,expiresAt}),
   }});
 
-  cookies().set(SUPPORT_COOKIE,createSupportSession(organization.id,(session.user as any).id,user.id,user.sessionVersion),{
+  (await cookies()).set(SUPPORT_COOKIE,createSupportSession(organization.id,(session.user as any).id,user.id,user.sessionVersion),{
     httpOnly:true,
     secure:process.env.NODE_ENV==="production",
     sameSite:"lax",
@@ -41,8 +43,8 @@ export async function POST(req:NextRequest,{params}:{params:{id:string}}){
 
 export async function DELETE(){
   const session=await requirePlatformAdmin();
-  const current=readSupportSessionDetails(cookies().get(SUPPORT_COOKIE)?.value,(session.user as any).id);
-  cookies().set(SUPPORT_COOKIE,"",{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",maxAge:0});
+  const current=readSupportSessionDetails((await cookies()).get(SUPPORT_COOKIE)?.value,(session.user as any).id);
+  (await cookies()).set(SUPPORT_COOKIE,"",{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",maxAge:0});
   if(current){
     await prisma.auditLog.create({data:{
       organizationId:current.organizationId,

@@ -47,6 +47,9 @@ export function middleware(req: NextRequest) {
     url.pathname = rest === "" ? "/" : rest;
 
     const requestHeaders = new Headers(req.headers);
+    // Strip untrusted tenant hints before applying our own host routing.
+    requestHeaders.delete("x-tenant-slug");
+    requestHeaders.delete("x-tenant-domain");
     requestHeaders.set("x-tenant-slug", slug);
 
     const response = NextResponse.rewrite(url, {
@@ -60,7 +63,10 @@ export function middleware(req: NextRequest) {
 
   // Platform marketing site / signup / login / super-admin - no tenant context.
   if (isPlatformHost && isPlatformOnlyPath(pathname)) {
-    return NextResponse.next();
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.delete("x-tenant-slug");
+    requestHeaders.delete("x-tenant-domain");
+    return NextResponse.next({request:{headers:requestHeaders}});
   }
 
   // Custom domain or subdomain -> resolve tenant slug.
@@ -70,6 +76,9 @@ export function middleware(req: NextRequest) {
   }
 
   const requestHeaders = new Headers(req.headers);
+    // Strip untrusted tenant hints before applying our own host routing.
+    requestHeaders.delete("x-tenant-slug");
+    requestHeaders.delete("x-tenant-domain");
 
   if (tenantSlug) {
     requestHeaders.set("x-tenant-slug", tenantSlug);

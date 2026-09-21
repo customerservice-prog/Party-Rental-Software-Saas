@@ -4,7 +4,9 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import CheckoutClient from "./CheckoutClient";
 
-export default async function CheckoutPage({searchParams}:{searchParams:{resumeOrderId?:string}}){
+export default async function CheckoutPage({searchParams: searchParamsPromise}:{searchParams:Promise<{resumeOrderId?:string}>}){
+  const searchParams = await searchParamsPromise;
+
   const organization=await requireCurrentOrganization();
   if(searchParams.resumeOrderId){
     const pending=await prisma.order.findFirst({where:{id:searchParams.resumeOrderId,organizationId:organization.id,status:"pending"},include:{items:{select:{itemId:true}}}});

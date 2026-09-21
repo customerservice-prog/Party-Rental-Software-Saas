@@ -32,10 +32,12 @@ function serializeOrder(order: any) {
 }
 
 export default async function SchedulingPage({
-  searchParams,
+  searchParams: searchParamsPromise,
 }: {
-  searchParams: { year?: string; month?: string };
+  searchParams: Promise<{ year?: string; month?: string }>;
 }) {
+  const searchParams = await searchParamsPromise;
+
   const organization = await requireCurrentOrganization();
 
   const now = new Date();

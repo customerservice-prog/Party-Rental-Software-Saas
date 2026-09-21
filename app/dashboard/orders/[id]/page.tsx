@@ -9,7 +9,9 @@ import OrderPayments from "./OrderPayments";
 import PortalLinkButton from "./PortalLinkButton";
 import Icon from "../../components/Icon";
 import {PageHeading,MetricCard,SectionHeading,StatusBadge,money,eventDateLabel} from "../../components/TenantUI";
-export default async function OrderDetailPage({params}:{params:{id:string}}){
+export default async function OrderDetailPage({params: paramsPromise}:{params:Promise<{id:string}>}){
+  const params = await paramsPromise;
+
  const organization=await requireCurrentOrganization();
  const [order,drivers]=await Promise.all([
   prisma.order.findFirst({where:{id:params.id,organizationId:organization.id},include:{customer:true,items:{include:{item:true}},orderAddons:true,contract:true,deliveryDriver:true,pickupDriver:true}}),

@@ -10,7 +10,7 @@ type AuthenticatedUser = { id?: string; role?: string; organizationId?: string; 
 export async function resolveTenantViewer(authenticated: AuthenticatedUser | undefined) {
   if (!authenticated?.id || authenticated.revoked || authenticated.role === "revoked") return null;
   const isSupport = authenticated.role === "platform_admin";
-  const support = isSupport ? readSupportSessionDetails(cookies().get(SUPPORT_COOKIE)?.value, authenticated.id) : null;
+  const support = isSupport ? readSupportSessionDetails((await cookies()).get(SUPPORT_COOKIE)?.value, authenticated.id) : null;
   if (isSupport && !support) return null;
   const user = await prisma.user.findFirst({
     where: {

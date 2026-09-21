@@ -19,7 +19,9 @@ async function getTenant(id:string){
   });
 }
 
-export async function GET(_req:NextRequest,{params}:{params:{id:string}}){
+export async function GET(_req:NextRequest,{params: paramsPromise}:{params:Promise<{id:string}>}){
+  const params = await paramsPromise;
+
   await requirePlatformAdmin();
   const organization=await getTenant(params.id);
   if(!organization)return NextResponse.json({error:"Organization not found."},{status:404});
@@ -36,7 +38,9 @@ export async function GET(_req:NextRequest,{params}:{params:{id:string}}){
   },notes,health:{failedMessages,blockedAttempts}},{headers:{"Cache-Control":"no-store"}});
 }
 
-export async function POST(req:NextRequest,{params}:{params:{id:string}}){
+export async function POST(req:NextRequest,{params: paramsPromise}:{params:Promise<{id:string}>}){
+  const params = await paramsPromise;
+
   const session=await requirePlatformAdmin();
   const actor=(session.user as any)?.id||"platform_admin";
   const tenant=await prisma.organization.findFirst({where:{id:params.id,slug:{not:"_platform_internal"}},select:{id:true,name:true,slug:true}});

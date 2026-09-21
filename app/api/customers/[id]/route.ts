@@ -6,8 +6,10 @@ import { logActivity } from "@/lib/audit";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ) {
+  const params = await paramsPromise;
+
   try {
     const organization = await requireCurrentOrganization();
     const session = await requirePermission(organization.id, "customers.manage");

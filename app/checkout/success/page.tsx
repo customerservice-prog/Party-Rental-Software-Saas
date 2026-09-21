@@ -3,7 +3,9 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import ClearCartOnSuccess from "./ClearCartOnSuccess";
 
-export default async function CheckoutSuccessPage({searchParams}:{searchParams:{orderId?:string}}){
+export default async function CheckoutSuccessPage({searchParams: searchParamsPromise}:{searchParams:Promise<{orderId?:string}>}){
+  const searchParams = await searchParamsPromise;
+
   const organization=await requireCurrentOrganization();
   const order=searchParams.orderId?await prisma.order.findFirst({where:{id:searchParams.orderId,organizationId:organization.id},include:{customer:true,items:{include:{item:true}}}}):null;
   const balance=order?Math.max(0,order.totalAmount-order.amountPaid):0;

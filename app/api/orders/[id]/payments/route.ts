@@ -3,7 +3,9 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+
   const organization = await requireCurrentOrganization();
   try { await requirePermission(organization.id, "orders.view"); } catch (err) { return authzErrorResponse(err); }
   const order = await prisma.order.findFirst({ where: { id: params.id, organizationId: organization.id }, select: { id: true } });
@@ -12,7 +14,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   return NextResponse.json({ payments });
 }
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+
   const organization = await requireCurrentOrganization(); let user;
   try { user = await requirePermission(organization.id, "orders.manage"); } catch (err) { return authzErrorResponse(err); }
   const body = await request.json();
@@ -44,7 +48,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+
   const organization = await requireCurrentOrganization(); let user;
   try { user = await requirePermission(organization.id, "orders.manage"); } catch (err) { return authzErrorResponse(err); }
   const paymentId = request.nextUrl.searchParams.get("paymentId");

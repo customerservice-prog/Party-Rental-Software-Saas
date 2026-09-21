@@ -15,7 +15,9 @@ type OrgRow={
 function planLabel(code:string){return getPlan(code).name}
 function initials(name:string){return name.split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()||"PR"}
 
-export default async function OrganizationsPage({searchParams}:{searchParams:{q?:string;status?:string;plan?:string}}){
+export default async function OrganizationsPage({searchParams: searchParamsPromise}:{searchParams:Promise<{q?:string;status?:string;plan?:string}>}){
+  const searchParams = await searchParamsPromise;
+
   const q=searchParams.q?.trim()||"";
   const status=searchParams.status||"";
   const plan=searchParams.plan||"";

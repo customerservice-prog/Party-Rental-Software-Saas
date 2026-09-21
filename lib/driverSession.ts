@@ -57,7 +57,7 @@ export const DRIVER_SESSION_MAX_AGE = MAX_AGE_SECONDS;
 // suspended tenant - so every caller can treat those identically (redirect
 // to /driver/login) instead of crashing.
 export async function getCurrentDriver() {
-  const cookieStore = cookies();
+  const cookieStore = (await cookies());
   const raw = cookieStore.get(COOKIE_NAME)?.value;
   const parsed = parseDriverSessionCookieValue(raw);
   if (!parsed) return null;

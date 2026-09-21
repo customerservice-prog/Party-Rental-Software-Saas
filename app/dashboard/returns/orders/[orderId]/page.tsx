@@ -4,7 +4,9 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import ReturnReconciliation from "./ReturnReconciliation";
 
-export default async function OrderReturnPage({params}:{params:{orderId:string}}){
+export default async function OrderReturnPage({params: paramsPromise}:{params:Promise<{orderId:string}>}){
+  const params = await paramsPromise;
+
   const organization=await requireCurrentOrganization();
   const order=await prisma.order.findFirst({
     where:{id:params.orderId,organizationId:organization.id},

@@ -4,7 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { ORDER_STATUSES,orderSearchWhere } from "@/lib/orderFilters";
 import Icon from "../components/Icon";
 import {PageHeading,StatusBadge,EmptyState,money,eventDateLabel} from "../components/TenantUI";
-export default async function OrdersPage({searchParams}:{searchParams:{status?:string;q?:string;page?:string;balance?:string}}){
+export default async function OrdersPage({searchParams: searchParamsPromise}:{searchParams:Promise<{status?:string;q?:string;page?:string;balance?:string}>}){
+  const searchParams = await searchParamsPromise;
+
  const org=await requireCurrentOrganization(),q=searchParams.q?.trim().slice(0,200)||"";
  const status=ORDER_STATUSES.includes(searchParams.status as any)?searchParams.status!:"";
  const unpaid=searchParams.balance==="unpaid";

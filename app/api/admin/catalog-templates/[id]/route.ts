@@ -19,7 +19,9 @@ async function requireAdmin() {
 // reference, and Item.sourceTemplateName already snapshots the name at
 // copy time, so editing a template here cannot silently change what any
 // tenant sees on an item they already added.
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -81,7 +83,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 // references it, refuses and tells the admin to deactivate instead -
 // matching the platform rule to never destroy data whose consequences
 // aren't fully understood.
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 

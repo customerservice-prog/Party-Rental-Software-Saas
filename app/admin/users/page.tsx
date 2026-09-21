@@ -5,7 +5,9 @@ import { directoryParams } from "@/lib/adminReadiness";
 import { ConsoleHeader, SearchForm, Pager, Empty } from "../_components/Console";
 import ViewAsTenantButton from "../ViewAsTenantButton";
 export const dynamic="force-dynamic";
-export default async function TenantUsersPage({searchParams}:{searchParams:Record<string,string|string[]|undefined>}) {
+export default async function TenantUsersPage({searchParams: searchParamsPromise}:{searchParams:Promise<Record<string,string|string[]|undefined>>}) {
+  const searchParams = await searchParamsPromise;
+
   await requirePlatformAdmin();
   const {q,status,page:requested,pageSize}=directoryParams(searchParams);
   const where={organization:{slug:{not:"_platform_internal"}},role:{not:"platform_admin"},...(status==="disabled"?{isActive:false}:status==="active"?{isActive:true}:{}),...(q?{OR:[{name:{contains:q,mode:"insensitive" as const}},{username:{contains:q,mode:"insensitive" as const}},{organization:{name:{contains:q,mode:"insensitive" as const}}}]}:{})};

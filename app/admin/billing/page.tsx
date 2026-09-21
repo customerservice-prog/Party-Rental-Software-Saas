@@ -7,7 +7,9 @@ import { ConsoleHeader, Metric, Notice, Empty, Pager, SearchForm } from "../_com
 export const dynamic="force-dynamic";
 export const revalidate=0;
 const money=(n:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:2}).format(n);
-export default async function PlatformBillingPage({searchParams}:{searchParams:Record<string,string|string[]|undefined>}) {
+export default async function PlatformBillingPage({searchParams: searchParamsPromise}:{searchParams:Promise<Record<string,string|string[]|undefined>>}) {
+  const searchParams = await searchParamsPromise;
+
   await requirePlatformAdmin();
   const {q,status,page:requestedPage,pageSize}=directoryParams(searchParams);
   const [subs,plans]=await Promise.all([

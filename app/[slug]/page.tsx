@@ -36,10 +36,12 @@ function excerptFromBlocks(blocks: Block[]): string {
 }
 
 export async function generateMetadata({
-  params,
+  params: paramsPromise,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
+  const params = await paramsPromise;
+
   const organization = await getCurrentOrganization().catch(() => null);
   if (!organization) return {};
 
@@ -74,10 +76,12 @@ export async function generateMetadata({
 // error — so this uses getCurrentOrganization() and checks for null
 // instead of requireCurrentOrganization(), which throws.
 export default async function CustomPage({
-  params,
+  params: paramsPromise,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const params = await paramsPromise;
+
   const organization = await getCurrentOrganization();
 
   if (!organization) {

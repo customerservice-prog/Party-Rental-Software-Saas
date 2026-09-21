@@ -7,8 +7,10 @@ const VALID_STATUSES = ["quote", "pending", "confirmed", "completed", "cancelled
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ) {
+  const params = await paramsPromise;
+
   const organization = await requireCurrentOrganization();
   try {
     await requireStaffSession(organization.id);

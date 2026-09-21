@@ -5,7 +5,9 @@ import { configurationState, directoryParams } from "@/lib/adminReadiness";
 import { ConsoleHeader, SearchForm, Pager, Empty, Notice } from "../_components/Console";
 import CheckProviders from "./CheckProviders";
 export const dynamic="force-dynamic";
-export default async function IntegrationsPage({searchParams}:{searchParams:Record<string,string|string[]|undefined>}) {
+export default async function IntegrationsPage({searchParams: searchParamsPromise}:{searchParams:Promise<Record<string,string|string[]|undefined>>}) {
+  const searchParams = await searchParamsPromise;
+
   await requirePlatformAdmin();
   const {q,page:requested,pageSize}=directoryParams(searchParams);
   const where={slug:{not:"_platform_internal"},...(q?{OR:[{name:{contains:q,mode:"insensitive" as const}},{slug:{contains:q,mode:"insensitive" as const}}]}:{})};

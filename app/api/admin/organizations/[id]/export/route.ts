@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { requirePlatformAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(_req:Request,{params}:{params:{id:string}}){
+export async function GET(_req:Request,{params: paramsPromise}:{params:Promise<{id:string}>}){
+  const params = await paramsPromise;
+
   const session=await requirePlatformAdmin();
   const org=await prisma.organization.findFirst({
     where:{id:params.id,slug:{not:"_platform_internal"}},

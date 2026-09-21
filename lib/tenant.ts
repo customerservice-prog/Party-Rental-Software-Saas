@@ -22,7 +22,7 @@ export async function getCurrentOrganization() {
     if (!viewer) return null;
     return prisma.organization.findFirst({where:{id:viewer.organizationId,slug:{not:"_platform_internal"}}});
   }
-        const headerList = headers();
+        const headerList = (await headers());
         const slug = headerList.get("x-tenant-slug");
         const domain = headerList.get("x-tenant-domain");
 
@@ -84,7 +84,7 @@ export async function requireCurrentOrganization() {
  * must never happen. Use this helper anywhere that ambiguity exists.
  */
 export async function getOrganizationFromHost() {
-        	const headerList = headers();
+        	const headerList = (await headers());
         	const slug = headerList.get("x-tenant-slug");
         	const domain = headerList.get("x-tenant-domain");
 

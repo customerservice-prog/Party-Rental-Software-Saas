@@ -12,7 +12,9 @@ type PortalRow = {
   createdAt: Date;
 };
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+
   const org = await requireCurrentOrganization();
   try { await requirePermission(org.id, "orders.view"); } catch (err) { return authzErrorResponse(err); }
   const order = await prisma.order.findFirst({ where: { id: params.id, organizationId: org.id }, select: { id: true } });
@@ -30,7 +32,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+
   const org = await requireCurrentOrganization();
   let user;
   try { user = await requirePermission(org.id, "orders.manage"); } catch (err) { return authzErrorResponse(err); }
@@ -64,7 +68,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   return NextResponse.json({ url: `${origin}/portal/${token}`, expiresAt });
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+
   const org = await requireCurrentOrganization();
   let user;
   try { user = await requirePermission(org.id, "orders.manage"); } catch (err) { return authzErrorResponse(err); }

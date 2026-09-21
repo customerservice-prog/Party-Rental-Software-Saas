@@ -4,7 +4,9 @@ import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { optimizeRentalRoute } from "@/lib/routeOptimization";
 
-export async function POST(_req:Request,{params}:{params:{runId:string}}){
+export async function POST(_req:Request,{params: paramsPromise}:{params:Promise<{runId:string}>}){
+  const params = await paramsPromise;
+
   const organization=await requireCurrentOrganization();
   try{await requirePermission(organization.id,"drivers.manage")}catch(err){return authzErrorResponse(err)}
   const run=await prisma.driverRun.findFirst({where:{id:params.runId,organizationId:organization.id},include:{stops:{include:{order:true}}}});

@@ -56,7 +56,9 @@ async function notifyCustomerForStatus(args:{organizationId:string;orderId:strin
   }
 }
 
-export async function PATCH(req: NextRequest,{ params }: { params: { stopId: string } }) {
+export async function PATCH(req: NextRequest,{ params: paramsPromise }: { params: Promise<{ stopId: string }> }) {
+  const params = await paramsPromise;
+
   const driver = await getCurrentDriver();
   if (!driver) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   const stop = await prisma.driverRunStop.findFirst({ where: { id: params.stopId, driverRun: { driverId: driver.id, organizationId: driver.organizationId } }, include: { driverRun: true, order: true } });
