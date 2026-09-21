@@ -1,0 +1,55 @@
+name: Platform admin validation
+on:
+  push:
+    branches: [main, 'admin/**']
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: admin-validation-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/test
+      NEXTAUTH_SECRET: isolated-ci-secret-not-for-production
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Archive exact reviewed source (no environment files)
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-review-source
+          retention-days: 3
+          path: |
+            app/
+            components/
+            lib/
+            prisma/
+            scripts/
+            tests/
+            public/
+            types/
+            docs/
+            *.json
+            *.js
+            *.mjs
+            *.cjs
+            *.ts
+            *.toml
+            !.env*
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Regression tests
+        run: node --test tests/*.test.cjs
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Production build
+        run: npm run build
