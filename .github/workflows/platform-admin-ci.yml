@@ -21,7 +21,9 @@ jobs:
           POSTGRES_PASSWORD: test
           POSTGRES_DB: test
         ports: ['5432:5432']
-        options: --health-cmd 'pg_isready -U test -d test' --health-interval 5s --health-timeout 5s --health-retries 10
+        options: >-
+          --health-cmd "pg_isready -U test -d test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       DATABASE_URL: postgresql://test:test@localhost:5432/test
       NEXTAUTH_SECRET: isolated-ci-secret-not-for-production
@@ -51,6 +53,8 @@ jobs:
         run: npx tsc --noEmit
       - name: Initialize isolated test database
         run: npx prisma db push && node scripts/ensure-fulfillment-schema.js && node scripts/ensure-platform-admin.js && node scripts/ensure-operations-schema.cjs
+      - name: Database-backed webhook and recurring revenue checks
+        run: node scripts/operations-ledger-qa.cjs
       - name: Production build
         run: npm run build
       - name: Install browser runner
