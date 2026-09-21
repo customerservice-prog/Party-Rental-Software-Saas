@@ -1,0 +1,22 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const {PrismaClient}=require('@prisma/client'),bcrypt=require('bcryptjs'),{chromium}=require('playwright');
+if(process.env.CI!=='true'||process.env.DATABASE_URL!=='postgresql://test:test@localhost:5432/test'||process.env.NEXTAUTH_URL!=='http://localhost:3000'||process.env.STRIPE_SECRET_KEY)throw Error('Disposable CI database only.');
+const db=new PrismaClient(),out='test-results/operations',report={environment:'Isolated PostgreSQL; no provider credentials',checks:[],errors:[]};fs.mkdirSync(out,{recursive:true});
+async function main(){const browser=await chromium.launch();try{
+ const platform=await db.organization.findUniqueOrThrow({where:{slug:'_platform_internal'}}),hash=await bcrypt.hash('operations-test-password',10);
+ const people={};for(const role of ['support','billing','operations','catalog']){const user=await db.user.create({data:{organizationId:platform.id,username:'qa-'+role,name:'QA '+role,role:'platform_admin',password:hash}});people[role]=user;await db.$executeRawUnsafe('INSERT INTO "PlatformAdminGrant" ("userId","accessRole","updatedBy") VALUES ($1,$2,$3)',user.id,role,'ci-fixture');}
+ async function login(page,username,password){await page.goto('http://localhost:3000/platform-login');await page.getByPlaceholder('Platform admin username').fill(username);await page.locator('input[type=password]').fill(password);await page.getByRole('button',{name:'Enter Platform Control Center'}).click();await page.waitForURL(url=>url.pathname==='/admin'||url.pathname==='/admin/catalog-templates');}
+ const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();
+ page.on('pageerror',e=>report.errors.push(e.message));
+ for(const path of ['sync-schema','unblock-billing','setup'])assert.equal((await context.request.post('http://localhost:3000/api/admin/'+path,{data:{}})).status(),410);
+ for(const method of ['get','delete'])assert.equal((await context.request[method]('http://localhost:3000/api/admin/login-throttle-debug')).status(),410);
+ report.checks.push('Legacy schema, billing, throttle and bootstrap bypasses are retired');
+ await login(page,process.env.PLATFORM_ADMIN_USERNAME,process.env.PLATFORM_ADMIN_PASSWORD);
+ for(const path of ['/admin/operations','/admin/revenue','/admin/access']){await page.goto('http://localhost:3000'+path);await page.locator('h1').waitFor();await page.waitForTimeout(350);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);await page.screenshot({path:out+'/'+path.split('/').at(-1)+'-phone.png',fullPage:true});report.checks.push('Rendered '+path+' at phone width');}
+ await page.goto('http://localhost:3000/admin/revenue');await page.getByRole('button',{name:'Refresh linked subscriptions'}).click();await page.getByRole('status').filter({hasText:'0 checked; 0 failed'}).waitFor();assert.ok((await db.$queryRawUnsafe('SELECT * FROM "PlatformOperationRun" WHERE kind=$1','billing.refresh')).length);report.checks.push('No-link billing refresh logs a completed operation without calling providers');
+ await context.close();
+ const allowed={support:'/admin/users',billing:'/admin/revenue',operations:'/admin/operations',catalog:'/admin/catalog-templates'};
+ for(const role of Object.keys(people)){const ctx=await browser.newContext(),p=await ctx.newPage();await login(p,'qa-'+role,'operations-test-password');await p.goto('http://localhost:3000'+allowed[role]);assert.ok(!p.url().includes('access-denied'),role+' cannot open its allowed screen');await p.goto('http://localhost:3000/admin/security');await p.waitForURL('**/admin/access-denied');const r=await ctx.request.post('http://localhost:3000/api/admin/security',{data:{action:'admin.create',name:'Forbidden',username:'forbidden-'+role,password:'forbidden-test-password'}});assert.ok(r.url().includes('access-denied')||r.status()===403);assert.equal(await db.user.count({where:{username:'forbidden-'+role}}),0);report.checks.push(role+': allowed screen opens; security page and direct administrator creation denied');await ctx.close();}
+ assert.equal(await db.sentMessage.count(),0);assert.deepEqual(report.errors,[]);
+}finally{await browser.close()}}
+main().catch(e=>{report.errors.push(e.stack);process.exitCode=1}).finally(async()=>{fs.writeFileSync(out+'/report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await db.$disconnect()});
