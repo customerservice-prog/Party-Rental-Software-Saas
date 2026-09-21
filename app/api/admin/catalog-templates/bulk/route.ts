@@ -6,14 +6,14 @@ import { CATALOG_TEMPLATE_TYPES, isValidCatalogCategoryKey } from "@/lib/catalog
 function slugify(s:string){return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"")}
 
 export async function GET(){
-  await requirePlatformAdmin();
+  await requirePlatformAdmin('catalog');
   const templates=await prisma.catalogTemplate.findMany({orderBy:[{categoryKey:"asc"},{sortOrder:"asc"}]});
   const payload={exportedAt:new Date().toISOString(),version:1,templates};
   return new NextResponse(JSON.stringify(payload,null,2),{headers:{"Content-Type":"application/json; charset=utf-8","Content-Disposition":'attachment; filename="party-rental-crm-global-catalog.json"',"Cache-Control":"no-store"}});
 }
 
 export async function POST(req:NextRequest){
-  const session=await requirePlatformAdmin();
+  const session=await requirePlatformAdmin('catalog');
   const actor=(session.user as any)?.id||"platform_admin";
   const body=await req.json().catch(()=>({}));
   const action=String(body.action||"");

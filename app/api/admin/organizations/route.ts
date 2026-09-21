@@ -23,7 +23,7 @@ const DEFAULT_ROLES=[
 ];
 
 export async function POST(req:NextRequest){
-  const session=await requirePlatformAdmin();
+  const session=await requirePlatformAdmin('platform');
   const body=await req.json().catch(()=>({}));
   const parsed=schema.safeParse(body);
   if(!parsed.success)return NextResponse.json({error:"Check the organization, owner, and password fields.",details:parsed.error.flatten()},{status:400});

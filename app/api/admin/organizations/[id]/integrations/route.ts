@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request:Request,{params: paramsPromise}:{params:Promise<{id:string}>}) {
   const params = await paramsPromise;
 
-  const session = await requirePlatformAdmin();
+  const session = await requirePlatformAdmin('operations');
   // Same-origin UI only. Do not let an external site trigger authenticated provider traffic.
   if (!isAdminRequestOriginAllowed(request)) return NextResponse.json({error:"Cross-origin checks are not allowed."},{status:403});
   const tenant = await prisma.organization.findFirst({where:{id:params.id,slug:{not:"_platform_internal"}},select:{id:true,stripeAccountId:true,resendApiKey:true,senderEmail:true,twilioAccountSid:true,twilioAuthToken:true,twilioFromNumber:true,customDomain:true}});

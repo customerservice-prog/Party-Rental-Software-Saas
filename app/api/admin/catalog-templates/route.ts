@@ -1,3 +1,4 @@
+import {requirePlatformAdmin} from '@/lib/admin';
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -14,14 +15,7 @@ import { CATALOG_TEMPLATE_TYPES, isValidCatalogCategoryKey } from "@/lib/catalog
 // older /seed endpoint's temporary owner-only fallback) since this is new
 // surface being built after the /admin section and platform_admin role
 // already existed.
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  const user = session?.user as { role?: string } | undefined;
-  if (!user || user.role !== "platform_admin") {
-    return null;
-  }
-  return session;
-}
+async function requireAdmin(){return requirePlatformAdmin('catalog');}
 
 function slugify(s: string) {
   return s

@@ -38,7 +38,7 @@ export async function GET(
 ) {
   const params = await paramsPromise;
 
-  await requirePlatformAdmin();
+  await requirePlatformAdmin('organizations');
 
   const organization = await prisma.organization.findUnique({
     where: { id: params.id },
@@ -66,7 +66,7 @@ export async function PATCH(
 ) {
   const params = await paramsPromise;
 
-  const session = await requirePlatformAdmin();
+  const session = await requirePlatformAdmin('platform');
 
   const body = await req.json();
   const parsed = updateSchema.safeParse(body);

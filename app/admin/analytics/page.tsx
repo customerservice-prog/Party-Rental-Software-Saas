@@ -4,7 +4,7 @@ import { ConsoleHeader, Metric, Notice } from "../_components/Console";
 export const dynamic="force-dynamic";
 const pct=(n:number,total:number)=>total?`${Math.round(n/total*100)}%`:"—";
 export default async function PlatformAnalyticsPage(){
-  await requirePlatformAdmin();
+  await requirePlatformAdmin('analytics');
   const now=new Date(),since=new Date(Date.now()-30*86400000);
   const scope={organization:{slug:{not:"_platform_internal"}}};
   const [orgs,orders,users,messages]=await Promise.all([

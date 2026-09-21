@@ -1,3 +1,5 @@
+import {redirect} from 'next/navigation';
+import {getPlatformAdminAccess} from '@/lib/admin';
 import Link from "next/link";
 import {prisma} from "@/lib/prisma";
 import {requirePlatformAdmin} from "@/lib/admin";
@@ -7,7 +9,9 @@ export const dynamic="force-dynamic";
 const money=(n:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(n);
 const initials=(name:string)=>name.trim().split(/\s+/).slice(0,2).map(word=>word[0]||"").join("").toUpperCase()||"PR";
 export default async function PlatformOverviewPage(){
-  await requirePlatformAdmin();
+  const accessSession=await requirePlatformAdmin('console');
+ const accessRole=await getPlatformAdminAccess((accessSession.user as {id:string}).id);if(accessRole==='catalog')redirect('/admin/catalog-templates');
+ await requirePlatformAdmin('overview');
   const scope={organization:{slug:{not:"_platform_internal"}}};
   const [orgs,orders,customers,users,activity]=await Promise.all([
     prisma.organization.findMany({where:{slug:{not:"_platform_internal"}},orderBy:[{createdAt:"desc"},{id:"asc"}],select:{id:true,name:true,slug:true,status:true,createdAt:true,subscription:{select:{status:true}},_count:{select:{orders:true}}}}),

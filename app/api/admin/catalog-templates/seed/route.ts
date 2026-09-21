@@ -1,3 +1,4 @@
+import {requirePlatformAdmin} from '@/lib/admin';
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -13,14 +14,10 @@ import { isValidCatalogCategoryKey } from "@/lib/catalogTemplates";
 // Temporary owner-only utility, matching the existing precedent in
 // app/api/admin/sync-schema/route.ts: this platform has no platform_admin
 // account provisioned yet, so - like that route - this is restricted to
-// any authenticated "owner" rather than requirePlatformAdmin(). Switch this
-// to requirePlatformAdmin() once a platform admin account exists.
+// any authenticated "owner" rather than requirePlatformAdmin('catalog'). Switch this
+// to requirePlatformAdmin('catalog') once a platform admin account exists.
 export async function POST() {
-  const session = await getServerSession(authOptions);
-  const user = session?.user as { role?: string } | undefined;
-  if (!user || user.role !== "owner") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  await requirePlatformAdmin('catalog');
 
   let created = 0;
   let updated = 0;

@@ -8,7 +8,7 @@ export const dynamic="force-dynamic";
 type Probe<T>={ok:true;value:T}|{ok:false};
 async function probe<T>(run:()=>Promise<T>):Promise<Probe<T>>{try{return {ok:true,value:await run()}}catch{return {ok:false}}}
 export default async function PlatformHealthPage() {
-  await requirePlatformAdmin();
+  await requirePlatformAdmin('operations');
   const checkedAt=new Date(),since=new Date(checkedAt.getTime()-86400000);
   const scope={organization:{slug:{not:"_platform_internal"}}};
   const [database,failures,queued,locks,automations]=await Promise.all([

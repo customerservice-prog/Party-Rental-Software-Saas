@@ -10,6 +10,9 @@ export const adminNavigation:{name:string;links:AdminDestination[]}[]=[
     {href:"/admin/analytics",label:"Analytics",icon:"chart",description:"Signups and recorded platform usage"},
   ]},
   {name:"Operations",links:[
+    {href:'/admin/operations',label:'Operations center',icon:'shield',description:'Webhook recovery, job history and certificate checks'},
+    {href:'/admin/revenue',label:'Verified revenue',icon:'wallet',description:'Live subscription prices and recurring discount coverage'},
+    {href:'/admin/access',label:'Administrator roles',icon:'users',description:'Grant least-privilege platform access'},
     {href:"/admin/health",label:"System health",icon:"shield",description:"Database, messaging and automation signals"},
     {href:"/admin/integrations",label:"Integrations",icon:"globe",description:"Read-only provider connection checks"},
     {href:"/admin/alerts",label:"Support alerts",icon:"clock",description:"Accounts and workflows needing review"},

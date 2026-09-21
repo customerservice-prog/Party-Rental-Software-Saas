@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
+  await require('./ensure-operations-schema.cjs').ensure(prisma);
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "RentalFulfillment" (
       "id" TEXT PRIMARY KEY,

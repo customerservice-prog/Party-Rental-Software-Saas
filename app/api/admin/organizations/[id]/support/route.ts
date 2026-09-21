@@ -22,7 +22,7 @@ async function getTenant(id:string){
 export async function GET(_req:NextRequest,{params: paramsPromise}:{params:Promise<{id:string}>}){
   const params = await paramsPromise;
 
-  await requirePlatformAdmin();
+  await requirePlatformAdmin('support');
   const organization=await getTenant(params.id);
   if(!organization)return NextResponse.json({error:"Organization not found."},{status:404});
   const notes=(await prisma.$queryRawUnsafe(
@@ -41,7 +41,7 @@ export async function GET(_req:NextRequest,{params: paramsPromise}:{params:Promi
 export async function POST(req:NextRequest,{params: paramsPromise}:{params:Promise<{id:string}>}){
   const params = await paramsPromise;
 
-  const session=await requirePlatformAdmin();
+  const session=await requirePlatformAdmin('support');
   const actor=(session.user as any)?.id||"platform_admin";
   const tenant=await prisma.organization.findFirst({where:{id:params.id,slug:{not:"_platform_internal"}},select:{id:true,name:true,slug:true}});
   if(!tenant)return NextResponse.json({error:"Organization not found."},{status:404});

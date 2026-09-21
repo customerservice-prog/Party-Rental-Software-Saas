@@ -8,7 +8,7 @@ export const dynamic="force-dynamic";
 export default async function IntegrationsPage({searchParams: searchParamsPromise}:{searchParams:Promise<Record<string,string|string[]|undefined>>}) {
   const searchParams = await searchParamsPromise;
 
-  await requirePlatformAdmin();
+  await requirePlatformAdmin('operations');
   const {q,page:requested,pageSize}=directoryParams(searchParams);
   const where={slug:{not:"_platform_internal"},...(q?{OR:[{name:{contains:q,mode:"insensitive" as const}},{slug:{contains:q,mode:"insensitive" as const}}]}:{})};
   const total=await prisma.organization.count({where});
