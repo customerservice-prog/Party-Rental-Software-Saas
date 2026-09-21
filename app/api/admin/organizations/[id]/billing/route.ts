@@ -1,3 +1,4 @@
+import { isAdminRequestOriginAllowed } from "@/lib/adminRequest";
 import { NextResponse } from "next/server";
 import { requirePlatformAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
@@ -5,8 +6,7 @@ import { stripe } from "@/lib/stripe";
 export const dynamic="force-dynamic";
 export async function POST(request:Request,{params}:{params:{id:string}}) {
   const session=await requirePlatformAdmin();
-  const origin=request.headers.get("origin");
-  if(origin && origin!==new URL(request.url).origin)return NextResponse.json({error:"Cross-origin checks are not allowed."},{status:403});
+  if(!isAdminRequestOriginAllowed(request))return NextResponse.json({error:"Cross-origin checks are not allowed."},{status:403});
   const local=await prisma.platformSubscription.findFirst({where:{organizationId:params.id,organization:{slug:{not:"_platform_internal"}}},select:{stripeSubId:true,stripeCustomerId:true,status:true}});
   if(!local)return NextResponse.json({error:"Tenant subscription not found."},{status:404});
   if(!local.stripeSubId)return NextResponse.json({error:"No Stripe subscription is linked. An active local record alone does not establish a paid subscription."},{status:409});
