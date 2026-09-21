@@ -3,7 +3,9 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import Icon from "../components/Icon";
 import {PageHeading,EmptyState} from "../components/TenantUI";
-export default async function CustomersPage({searchParams}:{searchParams:{q?:string;from?:string;to?:string;page?:string}}){
+export default async function CustomersPage({searchParams: searchParamsPromise}:{searchParams:Promise<{q?:string;from?:string;to?:string;page?:string}>}){
+  const searchParams = await searchParamsPromise;
+
  const org=await requireCurrentOrganization(),q=searchParams.q?.trim().slice(0,200)||"",from=searchParams.from?.trim()||"",to=searchParams.to?.trim()||"";
  const dateFilter:{gte?:Date;lte?:Date}={};
  if(from&&!isNaN(+new Date(from)))dateFilter.gte=new Date(from);

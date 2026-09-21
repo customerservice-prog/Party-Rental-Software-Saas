@@ -10,8 +10,10 @@ import { isValidPermissionCode } from "@/lib/permissions";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ) {
+  const params = await paramsPromise;
+
   const organization = await requireCurrentOrganization();
   let session;
   try {
@@ -55,8 +57,10 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ) {
+  const params = await paramsPromise;
+
   const organization = await requireCurrentOrganization();
   let session;
   try {

@@ -18,10 +18,12 @@ return new Date(y, m - 1, 1).toLocaleString("en-US", { month: "long", year: "num
 }
 
 export default async function ReportsPage({
-searchParams,
+searchParams: searchParamsPromise,
 }: {
-searchParams: { from?: string; to?: string; tab?: string };
+searchParams: Promise<{ from?: string; to?: string; tab?: string }>;
 }) {
+  const searchParams = await searchParamsPromise;
+
 const organization = await requireCurrentOrganization();
 
 try {

@@ -12,7 +12,9 @@ const money = (n: number) => new Intl.NumberFormat("en-US", { style: "currency",
 
 type FulfillmentRow = { status: string; deliveredAt: Date | null; returnedAt: Date | null };
 
-export default async function CustomerPortalPage({ params }: { params: { token: string } }) {
+export default async function CustomerPortalPage({ params: paramsPromise }: { params: Promise<{ token: string }> }) {
+  const params = await paramsPromise;
+
   const access = await resolveCustomerPortalToken(params.token);
   if (!access) notFound();
 

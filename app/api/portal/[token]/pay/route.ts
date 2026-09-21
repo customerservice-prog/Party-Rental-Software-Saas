@@ -3,7 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { resolveCustomerPortalToken } from "@/lib/customerPortal";
 
-export async function POST(req: NextRequest, { params }: { params: { token: string } }) {
+export async function POST(req: NextRequest, { params: paramsPromise }: { params: Promise<{ token: string }> }) {
+  const params = await paramsPromise;
+
   const access = await resolveCustomerPortalToken(params.token);
   if (!access) return NextResponse.json({ error: "This customer portal link is invalid or expired." }, { status: 404 });
 

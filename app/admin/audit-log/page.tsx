@@ -15,7 +15,9 @@ function actionTone(action:string){
   return "bg-blue-50 text-blue-700";
 }
 
-export default async function AdminAuditLogPage({searchParams}:{searchParams:{q?:string;org?:string;actor?:string;from?:string;to?:string}}){
+export default async function AdminAuditLogPage({searchParams: searchParamsPromise}:{searchParams:Promise<{q?:string;org?:string;actor?:string;from?:string;to?:string}>}){
+  const searchParams = await searchParamsPromise;
+
   const q=searchParams.q?.trim()||"";
   const orgFilter=searchParams.org||"";
   const actor=searchParams.actor?.trim()||"";

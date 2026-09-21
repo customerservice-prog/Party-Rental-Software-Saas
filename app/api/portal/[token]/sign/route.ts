@@ -4,7 +4,9 @@ import { resolveCustomerPortalToken } from "@/lib/customerPortal";
 
 const DEFAULT_TERMS="By signing below, you agree to the rental company's rental terms and accept financial responsibility for the rented equipment during the rental period.";
 
-export async function POST(req:NextRequest,{params}:{params:{token:string}}){
+export async function POST(req:NextRequest,{params: paramsPromise}:{params:Promise<{token:string}>}){
+  const params = await paramsPromise;
+
   const access=await resolveCustomerPortalToken(params.token);
   if(!access)return NextResponse.json({error:"This customer portal link is invalid or expired."},{status:404});
 

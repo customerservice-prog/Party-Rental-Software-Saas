@@ -8,7 +8,9 @@ import StorefrontNav from "../../StorefrontNav";
 import StorefrontFooter from "../../StorefrontFooter";
 import { AddToCartButton } from "../../StorefrontCartControls";
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({ params: paramsPromise }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const params = await paramsPromise;
+
   const organization = await requireCurrentOrganization().catch(() => null);
   if (!organization) return {};
   const category = await prisma.category.findFirst({ where: { organizationId: organization.id, slug: params.slug, displayToCustomer: true } });
@@ -18,7 +20,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   return { ...pageMetadata({ title, description, path: `/t/${organization.slug}/rentals/${params.slug}` }), title: { absolute: title } };
 }
 
-export default async function CategoryPage({ params }: { params: { slug: string } }) {
+export default async function CategoryPage({ params: paramsPromise }: { params: Promise<{ slug: string }> }) {
+  const params = await paramsPromise;
+
   const organization = await requireCurrentOrganization();
   const category = await prisma.category.findFirst({ where: { organizationId: organization.id, slug: params.slug, displayToCustomer: true } });
   if (!category) notFound();

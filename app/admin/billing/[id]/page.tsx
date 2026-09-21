@@ -5,7 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { ConsoleHeader, Notice } from "../../_components/Console";
 import BillingInspector from "./BillingInspector";
 export const dynamic="force-dynamic";
-export default async function TenantBillingPage({params}:{params:{id:string}}) {
+export default async function TenantBillingPage({params: paramsPromise}:{params:Promise<{id:string}>}) {
+  const params = await paramsPromise;
+
   await requirePlatformAdmin();
   const org=await prisma.organization.findFirst({where:{id:params.id,slug:{not:"_platform_internal"}},select:{id:true,name:true}});
   if(!org)notFound();

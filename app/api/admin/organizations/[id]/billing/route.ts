@@ -4,7 +4,9 @@ import { requirePlatformAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 export const dynamic="force-dynamic";
-export async function POST(request:Request,{params}:{params:{id:string}}) {
+export async function POST(request:Request,{params: paramsPromise}:{params:Promise<{id:string}>}) {
+  const params = await paramsPromise;
+
   const session=await requirePlatformAdmin();
   if(!isAdminRequestOriginAllowed(request))return NextResponse.json({error:"Cross-origin checks are not allowed."},{status:403});
   const local=await prisma.platformSubscription.findFirst({where:{organizationId:params.id,organization:{slug:{not:"_platform_internal"}}},select:{stripeSubId:true,stripeCustomerId:true,status:true}});

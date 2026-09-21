@@ -4,7 +4,9 @@ import { requirePlatformAdmin } from "@/lib/admin";
 import { directoryParams, setupProgress } from "@/lib/adminReadiness";
 import { ConsoleHeader, SearchForm, Pager, Empty, Notice, Metric } from "../_components/Console";
 export const dynamic="force-dynamic";
-export default async function OnboardingMonitorPage({searchParams}:{searchParams:Record<string,string|string[]|undefined>}) {
+export default async function OnboardingMonitorPage({searchParams: searchParamsPromise}:{searchParams:Promise<Record<string,string|string[]|undefined>>}) {
+  const searchParams = await searchParamsPromise;
+
   await requirePlatformAdmin();
   const {q,page:requested,pageSize}=directoryParams(searchParams);
   const orgs=await prisma.organization.findMany({where:{slug:{not:"_platform_internal"}},orderBy:[{createdAt:"desc"},{id:"asc"}],select:{id:true,name:true,slug:true,status:true,createdAt:true,website:{select:{publishedAt:true}},_count:{select:{items:true,orders:true}}}});

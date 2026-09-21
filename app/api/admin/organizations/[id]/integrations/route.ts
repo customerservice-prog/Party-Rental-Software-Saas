@@ -5,7 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { inspectTenantConnections } from "@/lib/adminIntegrationChecks";
 export const dynamic = "force-dynamic";
-export async function POST(request:Request,{params}:{params:{id:string}}) {
+export async function POST(request:Request,{params: paramsPromise}:{params:Promise<{id:string}>}) {
+  const params = await paramsPromise;
+
   const session = await requirePlatformAdmin();
   // Same-origin UI only. Do not let an external site trigger authenticated provider traffic.
   if (!isAdminRequestOriginAllowed(request)) return NextResponse.json({error:"Cross-origin checks are not allowed."},{status:403});

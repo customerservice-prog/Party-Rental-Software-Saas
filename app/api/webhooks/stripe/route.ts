@@ -9,7 +9,7 @@ type ExistingPayment = { id: string };
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
-  const signature = headers().get("stripe-signature");
+  const signature = (await headers()).get("stripe-signature");
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   let event: Stripe.Event;

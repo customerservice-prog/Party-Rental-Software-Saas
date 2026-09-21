@@ -16,10 +16,12 @@ function fmtDate(d: Date) {
 }
 
 export default async function PackingListPage({
-  searchParams,
+  searchParams: searchParamsPromise,
 }: {
-  searchParams: { date?: string };
+  searchParams: Promise<{ date?: string }>;
 }) {
+  const searchParams = await searchParamsPromise;
+
   const organization = await requireCurrentOrganization();
 
   const dateParam = searchParams?.date;

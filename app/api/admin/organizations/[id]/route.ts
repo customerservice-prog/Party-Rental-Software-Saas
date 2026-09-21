@@ -34,8 +34,10 @@ function safeOrganization(organization: any) {
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ) {
+  const params = await paramsPromise;
+
   await requirePlatformAdmin();
 
   const organization = await prisma.organization.findUnique({
@@ -60,8 +62,10 @@ export async function GET(
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ) {
+  const params = await paramsPromise;
+
   const session = await requirePlatformAdmin();
 
   const body = await req.json();

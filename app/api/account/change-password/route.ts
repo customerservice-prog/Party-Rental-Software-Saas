@@ -10,7 +10,7 @@ export async function POST(req:NextRequest){
   const session=await getServerSession(authOptions);
   const userId=(session?.user as any)?.id;
   if(!userId||(session?.user as any)?.revoked)return NextResponse.json({error:"You must be signed in."},{status:401});
-  if((session?.user as any)?.role === "platform_admin" && readSupportSessionDetails(cookies().get(SUPPORT_COOKIE)?.value,userId))return NextResponse.json({error:"Exit tenant view before changing your administrator password. Use the support workspace to reset a tenant password."},{status:403});
+  if((session?.user as any)?.role === "platform_admin" && readSupportSessionDetails((await cookies()).get(SUPPORT_COOKIE)?.value,userId))return NextResponse.json({error:"Exit tenant view before changing your administrator password. Use the support workspace to reset a tenant password."},{status:403});
   const body=await req.json().catch(()=>({}));
   const currentPassword=String(body.currentPassword||"");
   const newPassword=String(body.newPassword||"");
