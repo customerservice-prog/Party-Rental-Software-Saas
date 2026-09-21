@@ -51,8 +51,8 @@ jobs:
         run: node --test tests/*.test.cjs
       - name: Typecheck
         run: npx tsc --noEmit
-      - name: Initialize isolated test database
-        run: npx prisma db push && node scripts/ensure-fulfillment-schema.js && node scripts/ensure-platform-admin.js && node scripts/ensure-operations-schema.cjs
+      - name: Initialize isolated test database with additive preparation
+        run: node scripts/prepare-production.cjs
       - name: Database-backed webhook and recurring revenue checks
         run: node scripts/operations-ledger-qa.cjs
       - name: Production build
@@ -75,6 +75,10 @@ jobs:
         run: node scripts/catalog-visual-qa.cjs
       - name: Operational permissions and reconciliation checks
         run: node scripts/operations-browser-qa.cjs
+      - name: Photo-backed catalog and actual tenant feature observation
+        run: node scripts/observability-browser-qa.cjs
+      - name: Repeated deployment preserves current data and credentials
+        run: node scripts/redeploy-safety-qa.cjs
       - name: Disposable database backup and restore drill
         run: bash scripts/restore-drill.sh
       - name: Preserve validation evidence
