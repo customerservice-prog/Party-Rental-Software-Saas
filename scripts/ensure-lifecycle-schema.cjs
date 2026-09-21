@@ -12,6 +12,7 @@ async function ensure(db){
   `CREATE INDEX IF NOT EXISTS "AutomationDelivery_org_time" ON "AutomationDelivery" ("organizationId","attemptedAt")`,
   `CREATE INDEX IF NOT EXISTS "AutomationDelivery_recipient_time" ON "AutomationDelivery" ("organizationId","recipientHash","channel","attemptedAt")`
  ];
+ sql.push(`ALTER TABLE "AutomationSchedulePolicy" ADD COLUMN IF NOT EXISTS "scanCursor" TEXT`);
  for(const statement of sql)await db.$executeRawUnsafe(statement);
 }
 module.exports={ensure};

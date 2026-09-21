@@ -34,8 +34,12 @@ async function main(){
  await reject(execute({...confirm,confirmation:'wrong'}),'confirm_scope_and_retention');await reject(execute(confirm,async()=>{throw new erasure.ErasureError('billing_fixture_block');}),'billing_fixture_block');await reject(execute(),'recent_complete_export_required');
  pass('Deletion blocks an unfinished review, retention hold, incorrect confirmation, unresolved billing and missing recent export');
  const cross=await db.order.create({data:{organizationId:keeper.id,customerId:customer.id,orderNumber:'CROSS-FIXTURE',eventDate:new Date('2020-01-01'),status:'completed'}});await reject(erasure.exportTenant(db,target.id,user.id),'cross_tenant_or_unreviewed_reference');await db.order.delete({where:{id:cross.id}});pass('Cross-tenant foreign-key references block deletion review');
+ const rawCrossId='ci-raw-package-reference';
+ await db.$executeRawUnsafe(`INSERT INTO "PackageComponent" ("id","organizationId","packageItemId","componentItemId") VALUES ($1,$2,$3,$3)`,rawCrossId,keeper.id,item.id);
+ await reject(erasure.exportTenant(db,target.id,user.id),'cross_tenant_or_unreviewed_reference');
+ await db.$executeRawUnsafe(`DELETE FROM "PackageComponent" WHERE "id"=$1 AND "organizationId"=$2`,rawCrossId,keeper.id);pass('Non-ORM package references also block cross-tenant erasure');
  const exported=await erasure.exportTenant(db,target.id,user.id);assert.ok(!JSON.stringify(exported).includes('SYNTHETIC-PRIVATE-'));assert.equal(exported.tables.OrderItem.length,1);assert.equal(exported.tables.AuthSessionRegistry.length,1);
- await db.order.update({where:{id:order.id},data:{eventDate:new Date(Date.now()+86400000),status:'active'}});await reject(execute(),'future_orders_require_resolution');await db.order.update({where:{id:order.id},data:{status:'canceled'}});
+ await db.order.update({where:{id:order.id},data:{eventDate:new Date(Date.now()+86400000),status:'active'}});await reject(execute(),'unresolved_orders_require_resolution');await db.order.update({where:{id:order.id},data:{status:'canceled'}});
  const beforeKeeper=await db.organization.findUnique({where:{id:keeper.id}}),catalogCount=await db.catalogTemplate.count();
  const deleted=await execute();assert.equal(deleted.success,true);assert.equal(await db.organization.count({where:{id:target.id}}),0);assert.equal(await db.order.count({where:{organizationId:target.id}}),0);assert.equal(await db.user.count({where:{organizationId:target.id}}),0);assert.equal(await registry.validateRegisteredSession(db,targetSession.key,secretUser.id,0),false);assert.deepEqual(await db.organization.findUnique({where:{id:keeper.id}}),beforeKeeper);assert.equal(await db.catalogTemplate.count(),catalogCount);
  assert.equal((await db.$queryRawUnsafe(`SELECT "state","slug" FROM "TenantErasureRequest" WHERE "organizationId"=$1`,target.id))[0].slug,null);pass('Confirmed fixture erasure removes only its records and sessions; the other tenant and global catalog remain unchanged');
@@ -57,6 +61,14 @@ async function main(){
  await db.$executeRawUnsafe(`INSERT INTO "PlatformSetting" ("key","value","updatedBy","updatedAt") VALUES ('scheduled_automations_paused','true'::jsonb,'fixture',CURRENT_TIMESTAMP) ON CONFLICT ("key") DO UPDATE SET "value"='true'::jsonb`);
  await db.$executeRawUnsafe(`UPDATE "AutomationSchedulePolicy" SET "dailyLimit"=25 WHERE "organizationId"=$1`,automated.id);const summary=await tick(db,{send});assert.equal(summary.attempted,0);assert.equal(calls,2);pass('An emergency pause records a zero-send worker heartbeat without enabling other tenants');
  await db.$executeRawUnsafe(`INSERT INTO "SecurityStepUpAttempt" ("userId","attempts") VALUES ($1,1) ON CONFLICT ("userId") DO NOTHING`,user.id);
+ const fair=await org('ci-lifecycle-fairness',{autoConfirmationEnabled:true,timezone:'UTC',resendApiKey:'SYNTHETIC-NOT-A-KEY',senderEmail:'sender@example.invalid'});
+ const deny=await db.customer.create({data:{organizationId:fair.id,firstName:'Blocked',lastName:'Fixture',email:'blocked@example.invalid'}}),allow=await db.customer.create({data:{organizationId:fair.id,firstName:'Allowed',lastName:'Fixture',email:'allowed@example.invalid'}});
+ await db.doNotRentRestriction.create({data:{organizationId:fair.id,email:deny.email,reason:'Isolated fixture'}});
+ await db.$executeRawUnsafe(`INSERT INTO "AutomationSchedulePolicy" ("organizationId","enabled","enabledAt","startHour","endHour") VALUES ($1,true,CURRENT_TIMESTAMP-INTERVAL '1 minute',0,24)`,fair.id);
+ await db.order.createMany({data:Array.from({length:101},(_,i)=>({id:'ci-fair-'+String(i).padStart(4,'0'),organizationId:fair.id,customerId:i<100?deny.id:allow.id,orderNumber:'FAIR-'+i,eventDate:new Date(Date.now()+86400000),status:'confirmed',totalAmount:20}))});
+ await db.$executeRawUnsafe(`UPDATE "PlatformSetting" SET "value"='false'::jsonb WHERE "key"='scheduled_automations_paused'`);
+ const oldCalls=calls;await engine.runBookingBatch(db,fair.id,{source:'scheduled',send});assert.equal(calls,oldCalls);await engine.runBookingBatch(db,fair.id,{source:'scheduled',send});assert.equal(calls,oldCalls+1);pass('A full batch of 100 blocked orders cannot starve the next eligible booking');
+ await db.$executeRawUnsafe(`UPDATE "PlatformSetting" SET "value"='true'::jsonb WHERE "key"='scheduled_automations_paused'`);
  report.pass=true;
 }
 main().catch(e=>{report.error=e.stack;process.exitCode=1;}).finally(async()=>{fs.writeFileSync(out+'/report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await db.$disconnect();});

@@ -3,7 +3,7 @@ import {getServerSession} from 'next-auth';
 import {authOptions} from '@/lib/auth';
 import {prisma} from '@/lib/prisma';
 import {listRegisteredSessions,revokeRegisteredSession} from '@/lib/sessionRegistry.cjs';
-async function identity(){const session=await getServerSession(authOptions);const u=session?.user as {id?:string;role?:string;revoked?:boolean;authSessionId?:string}|undefined;return u?.id&&!u.revoked&&u.role!=='revoked'&&u.role!=='platform_admin'?u:null;}
+async function identity(){const session=await getServerSession(authOptions);const u=session?.user as {id?:string;role?:string;revoked?:boolean;authSessionId?:string}|undefined;return u?.id&&!u.revoked&&u.role!=='revoked'&&u.role!=='platform_admin'?{...u,id:u.id}:null;}
 export const dynamic='force-dynamic';
 export async function GET(request:Request){
  const user=await identity();if(!user)return NextResponse.json({error:'Use your own tenant login to manage your sessions.'},{status:401});

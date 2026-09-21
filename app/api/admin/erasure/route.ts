@@ -10,8 +10,9 @@ async function billingStopped(local:any){
  if(!local)return;
  if(!local.stripeSubId&&!local.stripeCustomerId){if(['active','past_due','unpaid','incomplete'].includes(local.status))throw new ErasureError('local_billing_requires_resolution');return;}
  if(!process.env.STRIPE_SECRET_KEY)throw new ErasureError('billing_provider_check_required');
- if(local.stripeSubId){const sub=await stripe.subscriptions.retrieve(local.stripeSubId,{},{timeout:8000,maxNetworkRetries:0});const customer=typeof sub.customer==='string'?sub.customer:sub.customer.id;if(local.stripeCustomerId&&customer!==local.stripeCustomerId)throw new ErasureError('billing_link_mismatch');if(!['canceled','incomplete_expired'].includes(sub.status))throw new ErasureError('cancel_platform_subscription_first');}
- if(local.stripeCustomerId){const rows=await stripe.subscriptions.list({customer:local.stripeCustomerId,status:'all',limit:100},{timeout:8000,maxNetworkRetries:0});if(rows.has_more||rows.data.some(s=>!['canceled','incomplete_expired'].includes(s.status)))throw new ErasureError('customer_has_unresolved_subscriptions');}
+ let customerId=local.stripeCustomerId;
+ if(local.stripeSubId){const sub=await stripe.subscriptions.retrieve(local.stripeSubId,{},{timeout:8000,maxNetworkRetries:0});const customer=typeof sub.customer==='string'?sub.customer:sub.customer.id;if(local.stripeCustomerId&&customer!==local.stripeCustomerId)throw new ErasureError('billing_link_mismatch');customerId=customer;if(!['canceled','incomplete_expired'].includes(sub.status))throw new ErasureError('cancel_platform_subscription_first');}
+ if(customerId){const rows=await stripe.subscriptions.list({customer:customerId,status:'all',limit:100},{timeout:8000,maxNetworkRetries:0});if(rows.has_more||rows.data.some(s=>!['canceled','incomplete_expired'].includes(s.status)))throw new ErasureError('customer_has_unresolved_subscriptions');}
 }
 export async function GET(request:Request){
  const session=await requirePlatformAdmin('data'),params=new URL(request.url).searchParams;

@@ -2,7 +2,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const {PrismaClient}=require('@prisma/client');
 if(process.env.CI!=='true'||process.env.DATABASE_URL!=='postgresql://test:test@localhost:5432/test'||process.env.STRIPE_SECRET_KEY)throw Error('Disposable CI only.');
 const db=new PrismaClient(),out='test-results/redeploy';fs.mkdirSync(out,{recursive:true});
-const tables=['Organization','User','Item','Category','CatalogTemplate','PlatformOperationRun','PlatformAdminGrant','PlatformBillingSnapshot','PlatformBillingHistory','PlatformWebhookReceipt','PlatformDomainCheck','PlatformFeatureUsage','PlatformSetting'];
+const tables=['Organization','User','Item','Category','CatalogTemplate','PlatformOperationRun','PlatformAdminGrant','PlatformBillingSnapshot','PlatformBillingHistory','PlatformWebhookReceipt','PlatformDomainCheck','PlatformFeatureUsage','PlatformSetting','AuthSessionRegistry','TenantErasureRequest','SecurityStepUpAttempt','AutomationSchedulePolicy','AutomationDelivery'];
 async function fingerprint(){const result={};for(const table of tables){const rows=await db.$queryRawUnsafe(`SELECT row_to_json(t)::text AS data FROM "${table}" t ORDER BY row_to_json(t)::text`);result[table]={count:rows.length,hash:crypto.createHash('sha256').update(rows.map(r=>r.data).join('\n')).digest('hex')};}return result;}
 async function main(){
  // Populate operational history explicitly: an empty table would not prove
@@ -19,7 +19,7 @@ async function main(){
  assert.deepEqual(await fingerprint(),before,'Repeat production preparation changed existing records');
  execFileSync(process.execPath,[path.join(__dirname,'prepare-production.cjs')],{stdio:'inherit',env:process.env,timeout:120000});
  assert.deepEqual(await fingerprint(),before,'Third production preparation changed existing records');
- fs.writeFileSync(out+'/report.json',JSON.stringify({environment:'Disposable local database only; explicitly synthetic test-mode billing and domain rows',passed:true,checks:['Two repeated additive preparations preserve all checked row contents across 13 populated tables','Administrator credentials and grants remain unchanged','Populated billing snapshots/history, recovery receipts, domain checks, usage and job history remain unchanged'],tableCounts:Object.fromEntries(Object.entries(before).map(([k,v])=>[k,v.count]))},null,2));
+ fs.writeFileSync(out+'/report.json',JSON.stringify({environment:'Disposable local database only; explicitly synthetic test-mode billing and domain rows',passed:true,checks:['Two repeated additive preparations preserve all checked row contents across 18 populated tables','Administrator credentials and grants remain unchanged','Populated billing snapshots/history, recovery receipts, domain checks, usage and job history remain unchanged'],tableCounts:Object.fromEntries(Object.entries(before).map(([k,v])=>[k,v.count]))},null,2));
  console.log('Repeat-deployment preservation checks passed across '+tables.length+' populated tables; no credential values emitted.');
 }
 main().catch(e=>{console.error(e.message);process.exitCode=1}).finally(()=>db.$disconnect());

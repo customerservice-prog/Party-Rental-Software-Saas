@@ -1,0 +1,1 @@
+Applied source-only session typing, round-robin scanning, raw-reference erasure checks, navigation and 18-table preservation coverage. Validate exact resulting commit before rollout.

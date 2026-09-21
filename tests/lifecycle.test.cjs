@@ -49,3 +49,8 @@ test('tenant exports redact private keys, tokens, passwords and driver PINs',()=
 test('complete tenant table inventory includes operational and session metadata',()=>{
  for(const table of ['AuthSessionRegistry','AutomationDelivery','AutomationSchedulePolicy','PlatformBillingHistory','CustomerPortalAccess','StoreCreditTransaction'])assert.ok(erasure.DIRECT.includes(table));assert.deepEqual(erasure.CHILD.OrderItem,['Order','orderId']);
 });
+
+test('candidate scanning uses a bounded cursor and wraps after the end',async()=>{
+ const queries=[];const db={order:{findMany:async q=>{queries.push(q);return q.where.id?[]:[{id:'new'}];}}};
+ const rows=await engine.scanOrders(db,{organizationId:'one-tenant'},'old');assert.equal(rows[0].id,'new');assert.equal(queries.length,2);assert.equal(queries[0].where.organizationId,'one-tenant');assert.equal(queries[0].take,100);assert.deepEqual(queries[0].where.id,{gt:'old'});assert.equal(queries[1].where.id,undefined);
+});
