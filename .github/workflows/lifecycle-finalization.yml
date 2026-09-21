@@ -1,0 +1,35 @@
+name: Finalize reviewed lifecycle source
+on:
+  push:
+    branches: ['admin/lifecycle-sessions-worker-20260921']
+    paths: ['scripts/lifecycle-finalize.cjs', '.github/workflows/lifecycle-finalization.yml']
+permissions:
+  contents: write
+jobs:
+  source-integration:
+    if: github.ref == 'refs/heads/admin/lifecycle-sessions-worker-20260921'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply exact source-only changes
+        run: |
+          node scripts/lifecycle-finalize.cjs
+          node --check lib/automationEngine.cjs
+          node --check lib/tenantErasure.cjs
+          node --check scripts/lifecycle-database-qa.cjs
+          node --test tests/lifecycle.test.cjs
+          git diff --check
+      - name: Save application changes to the review branch only
+        run: |
+          git add app lib scripts/automation-worker.cjs scripts/ensure-lifecycle-schema.cjs scripts/lifecycle-database-qa.cjs scripts/redeploy-safety-qa.cjs scripts/restore-drill.sh tests/lifecycle.test.cjs docs/lifecycle-finalization-applied.txt
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Finalize session filter typing, fair scheduling and conservative erasure isolation'
+          git push origin HEAD:admin/lifecycle-sessions-worker-20260921
