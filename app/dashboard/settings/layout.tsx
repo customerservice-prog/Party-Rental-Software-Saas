@@ -1,0 +1,2 @@
+import Link from 'next/link';
+export default function SettingsLayout({children}:{children:React.ReactNode}){return <div className="space-y-5"><nav aria-label="Account security links" className="flex flex-wrap gap-2"><Link href="/dashboard/settings" className="rounded-lg border bg-white px-4 py-3 text-sm font-semibold">Business settings</Link><Link href="/dashboard/sessions" className="rounded-lg border bg-white px-4 py-3 text-sm font-semibold">Your sign-in sessions</Link></nav>{children}</div>;}

@@ -12,7 +12,7 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     services:
       postgres:
         image: postgres:16
@@ -77,6 +77,14 @@ jobs:
         run: node scripts/operations-browser-qa.cjs
       - name: Photo-backed catalog and actual tenant feature observation
         run: node scripts/observability-browser-qa.cjs
+      - name: Browser session revocation, deletion guards and owner scheduling controls
+        run: node scripts/lifecycle-browser-qa.cjs
+      - name: Isolated lifecycle and fake-provider database tests
+        env:
+          LIFECYCLE_FIXTURE_TEST: enabled
+        run: node scripts/lifecycle-database-qa.cjs
+      - name: Bounded worker process exits cleanly with scheduled sending paused
+        run: timeout 30s node scripts/automation-worker.cjs
       - name: Repeated deployment preserves current data and credentials
         run: node scripts/redeploy-safety-qa.cjs
       - name: Disposable database backup and restore drill
