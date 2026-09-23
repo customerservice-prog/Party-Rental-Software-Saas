@@ -19,7 +19,11 @@ async function main(){
  try{
   const anonymous=await browser.newContext();const anon=await anonymous.newPage();
   await anon.goto('http://localhost:3000/admin');await anon.waitForURL('**/platform-login');
-  report.checks.push('Unauthenticated admin navigation redirects to platform login');await anonymous.close();
+  report.checks.push('Unauthenticated admin navigation redirects to platform login');
+  const dashboardResponse=await anon.goto('http://localhost:3000/dashboard');
+  await anon.waitForURL('**/login');
+  assert.ok(dashboardResponse.status()<500,`Anonymous dashboard returned ${dashboardResponse.status()}`);
+  report.checks.push('Unauthenticated tenant dashboard redirects to tenant login without a server error');await anonymous.close();
   for(const viewport of [{name:'desktop',width:1440,height:1000},{name:'mobile',width:390,height:844}]){
    const context=await browser.newContext({viewport:{width:viewport.width,height:viewport.height}}),page=await context.newPage();
    page.on('pageerror',error=>report.errors.push(`${viewport.name}: ${error.message}`));

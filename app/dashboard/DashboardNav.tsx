@@ -1,35 +1,131 @@
 "use client";
 import Link from "next/link";
-import FeatureUsageTracker from './FeatureUsageTracker';
+import FeatureUsageTracker from "./FeatureUsageTracker";
 import {usePathname} from "next/navigation";
 import {signOut} from "next-auth/react";
 import {useEffect,useRef,useState,type ReactNode} from "react";
 import Icon,{type IconName} from "./components/Icon";
+
 type Item={href:string;label:string;icon:IconName;owner?:boolean};
 const item=(path:string,label:string,icon:IconName,owner=false):Item=>({href:"/dashboard"+path,label,icon,owner});
-const primary:Item[]=[item("","Overview","home"),item("/scheduling","Calendar","calendar"),item("/orders","Orders","orders"),item("/customers","Customers","users"),item("/inventory","Inventory","box")];
-const groups:{label:string;items:Item[]}[]=[
- {label:"Operations",items:[item("/operations","Operations overview","truck"),item("/deliveries","Deliveries & routes","truck"),item("/dispatch","Dispatch","calendar"),item("/warehouse","Warehouse","box"),item("/returns","Returns & damage","shield"),item("/workforce","Workforce","users"),item("/tasks","Tasks","check")]},
- {label:"Business",items:[item("/reports","Reports","chart"),item("/analytics","Analytics","chart"),item("/marketing","Marketing","sparkle"),item("/automations","Automations","clock"),item("/automations/schedule","Scheduled delivery","clock",true),item("/messages","Messages","mail",true),item("/do-not-rent","Do not rent","shield"),item("/coupons","Coupons","wallet")]},
- {label:"Website",items:[item("/website","Website editor","globe"),item("/pages","Website pages","orders")]},
- {label:"Account",items:[item("/staff","Staff accounts","users",true),item("/roles","Roles & permissions","shield",true),item("/drivers","Drivers","truck",true),item("/message-templates","Message templates","mail",true),item("/activity","Activity log","clock",true),item("/settings/billing","Plan & billing","wallet",true),item("/settings","Settings","settings",true),item("/sessions","Sign-in sessions","shield")]},
+
+const mainItems:Item[]=[
+ item("","Dashboard","home"),
+ item("/scheduling","Calendar","calendar"),
+ item("/orders","Orders","orders"),
+ item("/customers","Customers","users"),
+ item("/inventory","Inventory","box"),
+ item("/deliveries","Delivery","truck"),
+ item("/reports","Reports","chart"),
+ item("/website","Website","globe"),
+ item("/marketing","Marketing","sparkle"),
 ];
+
+const moreGroups:{label:string;items:Item[]}[]=[
+ {label:"Operations",items:[
+  item("/operations","Operations overview","truck"),
+  item("/dispatch","Dispatch","calendar"),
+  item("/warehouse","Warehouse","box"),
+  item("/returns","Returns & damage","shield"),
+  item("/workforce","Workforce","users"),
+  item("/tasks","Tasks","check"),
+  item("/drivers","Drivers","truck",true),
+ ]},
+ {label:"Business",items:[
+  item("/analytics","Analytics","chart"),
+  item("/automations","Automations","clock"),
+  item("/automations/schedule","Scheduled delivery","clock",true),
+  item("/messages","Messages","mail",true),
+  item("/do-not-rent","Do Not Rent","shield"),
+  item("/coupons","Coupons","wallet"),
+ ]},
+ {label:"Account",items:[
+  item("/pages","Website pages","orders"),
+  item("/staff","Staff accounts","users",true),
+  item("/roles","Roles & permissions","shield",true),
+  item("/message-templates","Message templates","mail",true),
+  item("/activity","Activity log","clock",true),
+  item("/settings/billing","Plan & billing","wallet",true),
+  item("/settings","Settings","settings",true),
+  item("/sessions","Sign-in sessions","shield"),
+ ]},
+];
+
 export default function DashboardNav({showSettings,orgName="Your rental business",userName="Account",role="User",children,supportBanner}:{showSettings:boolean;orgName?:string;userName?:string;role?:string;children?:ReactNode;supportBanner?:ReactNode}){
- const pathname=usePathname(),[open,setOpen]=useState(false),[navQuery,setNavQuery]=useState("");
+ const pathname=usePathname(),[open,setOpen]=useState(false);
  const drawer=useRef<HTMLDialogElement>(null),trigger=useRef<HTMLButtonElement>(null);
- const permitted=[...primary,...groups.flatMap(g=>g.items)].filter(i=>!i.owner||showSettings);
- const current=permitted.filter(i=>pathname===i.href||(i.href!=="/dashboard"&&pathname.startsWith(i.href+"/"))).sort((a,b)=>b.href.length-a.href.length)[0];
+ const all=[...mainItems,...moreGroups.flatMap(g=>g.items)].filter(i=>!i.owner||showSettings);
+ const current=all.filter(i=>pathname===i.href||(i.href!=="/dashboard"&&pathname.startsWith(i.href+"/"))).sort((a,b)=>b.href.length-a.href.length)[0];
  const active=(i:Item)=>current?.href===i.href;
- useEffect(()=>{setOpen(false);setNavQuery("");},[pathname]);
+ useEffect(()=>{setOpen(false);},[pathname]);
  useEffect(()=>{const dialog=drawer.current;if(open&&!dialog?.open)dialog?.showModal();if(!open&&dialog?.open)dialog.close();if(open){const before=document.body.style.overflow;document.body.style.overflow="hidden";return()=>{document.body.style.overflow=before;};}},[open]);
- const navLink=(i:Item)=><Link key={i.href} href={i.href} onClick={()=>setOpen(false)} aria-current={active(i)?"page":undefined} className={"tenant-nav-link "+(active(i)?"is-active":"")}><Icon name={i.icon} className="h-[18px] w-[18px] shrink-0"/><span>{i.label}</span>{active(i)&&<span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-300"/>}</Link>;
- const navigation=<><Link href="/dashboard" className="mb-7 flex min-w-0 items-center gap-3 px-2" onClick={()=>setOpen(false)}><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-400 text-emerald-950"><Icon name="box" className="h-6 w-6"/></span><span className="min-w-0"><span className="block truncate text-sm font-semibold text-white">{orgName}</span><span className="mt-1 block text-[10px] font-medium uppercase tracking-[.16em] text-slate-400">Rental workspace</span></span></Link>
- <label className="mb-5 flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-slate-400"><Icon name="search" className="h-4 w-4"/><input aria-label="Find a tool" value={navQuery} onChange={e=>setNavQuery(e.target.value)} placeholder="Find a tool…" className="min-w-0 w-full bg-transparent text-xs text-white outline-none placeholder:text-slate-400"/></label>
- <nav aria-label="Tenant navigation" className="flex-1 space-y-5">{navQuery.trim()?<div className="space-y-1">{permitted.filter(i=>i.label.toLowerCase().includes(navQuery.toLowerCase())).map(navLink)}{!permitted.some(i=>i.label.toLowerCase().includes(navQuery.toLowerCase()))&&<p className="px-3 text-sm text-slate-400">No matching tools.</p>}</div>:<><div className="space-y-1">{primary.map(navLink)}</div>{groups.map(g=>{const entries=g.items.filter(i=>!i.owner||showSettings);if(!entries.length)return null;return <details key={g.label+pathname} open={g.label==="Operations"||entries.some(active)} className="tenant-nav-group"><summary className="mb-2 flex cursor-pointer list-none items-center justify-between px-3 py-1 text-[10px] font-semibold uppercase tracking-[.14em] text-slate-400">{g.label}<Icon name="down" className="h-3 w-3"/></summary><div className="space-y-1">{entries.map(navLink)}</div></details>})}</>}</nav>
- <div className="mt-6 border-t border-white/10 pt-4"><div className="flex items-center gap-3 px-2"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white">{userName.split(" ").map(n=>n[0]).slice(0,2).join("")}</span><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-slate-100">{userName}</p><p className="mt-1 text-[11px] capitalize text-slate-400">{role}</p></div><button title="Sign out" aria-label="Sign out" onClick={()=>signOut({callbackUrl:"/login"})} className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white"><Icon name="exit" className="h-4 w-4"/></button></div></div></>;
- return <div className="tenant-app"><FeatureUsageTracker path={pathname} enabled={!supportBanner}/><a href="#tenant-main" className="tenant-skip">Skip to content</a><aside className="tenant-sidebar hidden lg:flex">{navigation}</aside>
- <dialog ref={drawer} className="tenant-drawer" onCancel={()=>setOpen(false)} onClose={()=>{setOpen(false);trigger.current?.focus();}} aria-label="Workspace navigation"><button onClick={()=>setOpen(false)} className="mb-4 ml-auto block rounded-lg p-2 text-white" aria-label="Close navigation"><Icon name="close"/></button>{navigation}</dialog>
- <div className="min-w-0 flex-1"><div className="sticky top-0 z-40">{supportBanner}<header className="tenant-topbar"><div className="flex min-w-0 items-center gap-3"><button ref={trigger} type="button" onClick={()=>setOpen(true)} className="rounded-lg border border-slate-200 p-2 lg:hidden" aria-label="Open navigation" aria-expanded={open} aria-haspopup="dialog"><Icon name="menu"/></button><span className="hidden text-xs text-slate-400 sm:inline">Workspace</span><span className="hidden text-slate-300 sm:inline">/</span><span className="truncate text-sm font-semibold text-slate-800">{current?.label||"Workspace"}</span></div><form action="/dashboard/orders" className="hidden w-64 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 md:flex"><Icon name="search" className="h-4 w-4 text-slate-400"/><input name="q" aria-label="Search orders or customers" placeholder="Search orders or customers" className="w-full min-w-0 bg-transparent text-xs outline-none"/></form><Link href="/dashboard/orders/new" className="tenant-button tenant-button-primary !px-3 !py-2 text-xs"><Icon name="plus" className="h-4 w-4"/><span>New order</span></Link></header></div>
- <main id="tenant-main" tabIndex={-1} className="tenant-content">{children}</main>
- <nav className="tenant-mobile-nav lg:hidden" aria-label="Quick navigation">{primary.slice(0,3).map(i=><Link key={i.href} href={i.href} aria-current={active(i)?"page":undefined} className={active(i)?"text-emerald-700":"text-slate-500"}><Icon name={i.icon}/><span>{i.label}</span></Link>)}<button onClick={()=>setOpen(true)} className="text-slate-500" aria-label="Open all tools"><Icon name="menu"/><span>All tools</span></button></nav></div></div>;
+
+ const desktopLink=(i:Item)=><Link key={i.href} href={i.href} title={i.label} aria-current={active(i)?"page":undefined} className={"tenant-top-link "+(active(i)?"is-active":"")}><Icon name={i.icon} className="h-4 w-4"/><span>{i.label}</span></Link>;
+ const mobileLink=(i:Item)=><Link key={i.href} href={i.href} onClick={()=>setOpen(false)} aria-current={active(i)?"page":undefined} className={"tenant-mobile-link "+(active(i)?"is-active":"")}><Icon name={i.icon} className="h-5 w-5"/><span>{i.label}</span></Link>;
+
+ return <div className="tenant-app">
+  <FeatureUsageTracker path={pathname} enabled={!supportBanner}/>
+  <a href="#tenant-main" className="tenant-skip">Skip to content</a>
+  <div className="sticky top-0 z-50">
+   {supportBanner}
+   <header className="tenant-greenbar">
+    <div className="tenant-brand">
+     <Link href="/dashboard" className="flex min-w-0 items-center gap-3">
+      <span className="tenant-brand-mark"><Icon name="box" className="h-5 w-5"/></span>
+      <span className="min-w-0">
+       <span className="block max-w-[180px] truncate text-sm font-bold text-white">{orgName}</span>
+       <span className="block text-[9px] font-semibold uppercase tracking-[.16em] text-green-100">Rental Admin</span>
+      </span>
+     </Link>
+    </div>
+
+    <nav className="tenant-desktop-nav hidden xl:flex" aria-label="Tenant navigation">
+     {mainItems.filter(i=>!i.owner||showSettings).map(desktopLink)}
+     <details className="tenant-more-menu">
+      <summary className={"tenant-top-link "+(moreGroups.some(g=>g.items.some(active))?"is-active":"")}><Icon name="menu" className="h-4 w-4"/><span>More</span><Icon name="down" className="h-3 w-3"/></summary>
+      <div className="tenant-more-panel">
+       {moreGroups.map(group=>{
+        const entries=group.items.filter(i=>!i.owner||showSettings);
+        if(!entries.length)return null;
+        return <div key={group.label} className="tenant-more-group"><p>{group.label}</p>{entries.map(i=><Link key={i.href} href={i.href} className={active(i)?"is-active":""}><Icon name={i.icon} className="h-4 w-4"/><span>{i.label}</span></Link>)}</div>;
+       })}
+      </div>
+     </details>
+    </nav>
+
+    <div className="hidden items-center gap-3 xl:flex">
+     <Link href="/dashboard/orders/new" className="tenant-new-order"><Icon name="plus" className="h-4 w-4"/>New Order</Link>
+     <div className="tenant-user-summary"><span>Signed in as</span><strong>{userName}</strong><small>{role}</small></div>
+     <button title="Sign out" aria-label="Sign out" onClick={()=>signOut({callbackUrl:"/login"})} className="tenant-logout">Logout</button>
+    </div>
+
+    <div className="ml-auto flex items-center gap-2 xl:hidden">
+     <Link href="/dashboard/orders/new" className="tenant-new-order"><Icon name="plus" className="h-4 w-4"/><span className="hidden sm:inline">New Order</span></Link>
+     <button ref={trigger} type="button" onClick={()=>setOpen(true)} className="tenant-menu-button" aria-label="Open navigation" aria-expanded={open} aria-haspopup="dialog"><Icon name="menu"/></button>
+    </div>
+   </header>
+  </div>
+
+  <dialog ref={drawer} className="tenant-drawer" onCancel={()=>setOpen(false)} onClose={()=>{setOpen(false);trigger.current?.focus();}} aria-label="Workspace navigation">
+   <div className="mb-4 flex items-center justify-between">
+    <div><p className="text-sm font-bold text-slate-900">{orgName}</p><p className="text-xs text-slate-500">{userName} · {role}</p></div>
+    <button onClick={()=>setOpen(false)} className="rounded-lg p-2 text-slate-700" aria-label="Close navigation"><Icon name="close"/></button>
+   </div>
+   <nav className="space-y-1">{mainItems.filter(i=>!i.owner||showSettings).map(mobileLink)}</nav>
+   {moreGroups.map(group=>{
+    const entries=group.items.filter(i=>!i.owner||showSettings);
+    if(!entries.length)return null;
+    return <div key={group.label} className="mt-5"><p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">{group.label}</p><div className="space-y-1">{entries.map(mobileLink)}</div></div>;
+   })}
+   <button onClick={()=>signOut({callbackUrl:"/login"})} className="mt-6 w-full rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700">Logout</button>
+  </dialog>
+
+  <main id="tenant-main" tabIndex={-1} className="tenant-content">
+   <div className="tenant-breadcrumb-row">
+    <div><span className="text-xs text-slate-400">Admin</span><span className="mx-2 text-slate-300">/</span><strong className="text-xs text-slate-700">{current?.label||"Dashboard"}</strong></div>
+    <form action="/dashboard/orders" className="tenant-global-search"><Icon name="search" className="h-4 w-4 text-slate-400"/><input name="q" aria-label="Search orders or customers" placeholder="Search orders, customers..."/></form>
+   </div>
+   {children}
+  </main>
+ </div>;
 }
