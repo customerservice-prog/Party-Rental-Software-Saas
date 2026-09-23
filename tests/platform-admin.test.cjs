@@ -414,3 +414,24 @@ test('malformed signup requests return validation errors without creating an acc
  const response=await api.POST(new Request('http://localhost/api/signup',{method:'POST',body:'invalid json'}));
  assert.equal(response.status,400);assert.equal(writes,0);
 });
+
+
+test('dashboard home redirects platform admins without an active tenant viewer',async()=>{
+  let redirected='';
+  const dashboard=load('app/dashboard/page.tsx',{
+    '@/lib/tenant':{getCurrentOrganization:async()=>null},
+    '@/lib/prisma':{prisma:{}},
+    '@/lib/dashboardDates':{dashboardDates:()=>{throw Error('dashboard queries must not run without tenant context');}},
+    '@/lib/auth':{authOptions:{}},
+    'next-auth':{getServerSession:async()=>adminSession},
+    'next/navigation':{redirect:path=>{redirected=path;const error=Error('NEXT_REDIRECT');error.path=path;throw error;}},
+    'next/link':()=>null,
+    './HomeCalendar':()=>null,
+    './HomeTasks':()=>null,
+    './BestSellersChart':()=>null,
+    './components/Icon':()=>null,
+    './components/TenantUI':{},
+  });
+  await assert.rejects(()=>dashboard.default({searchParams:Promise.resolve({})}),error=>error.path==='/admin/organizations');
+  assert.equal(redirected,'/admin/organizations');
+});
