@@ -1,4 +1,4 @@
-import { getCurrentOrganization } from "@/lib/tenant";
+import { requireCurrentOrganization } from "@/lib/tenant";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { dashboardDates } from "@/lib/dashboardDates";
@@ -11,8 +11,12 @@ import {PageHeading,MetricCard,StatusBadge,EmptyState,SectionHeading,money,event
 export default async function DashboardHomePage({searchParams: searchParamsPromise}:{searchParams:Promise<{year?:string;month?:string}>}){
   const searchParams = await searchParamsPromise;
 
- const org=await getCurrentOrganization();
- if(!org) redirect("/login");
+ let org;
+ try{org=await requireCurrentOrganization();}
+ catch(error){
+  if(error instanceof Error&&error.message==="No tenant could be resolved for this request") redirect("/login");
+  throw error;
+ }
  const now=new Date();
  const dates=dashboardDates(now,org.timezone,searchParams),active={in:["active","confirmed"]};
  const [itemCount,monthOrders,todayOrders,upcoming,weekCount,quoteCount,pendingCount,paymentGroups,balances,recentItems]=await Promise.all([
