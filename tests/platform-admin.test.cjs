@@ -358,9 +358,10 @@ test('overview reports all recorded payments less refunds and all eligible balan
   const queries=[];const capture=(kind,value)=>async args=>{queries.push({kind,...args});return value;};
   const totalField={name:'totalAmount'};
   const page=load('app/dashboard/page.tsx',{
-    '@/lib/tenant':{requireCurrentOrganization:async()=>({id:'tenant-1',timezone:'America/New_York'})},
-    '@/lib/prisma':{prisma:{item:{count:capture('items',8)},order:{fields:{totalAmount:totalField},findMany:capture('orders',[]),count:capture('count',4),aggregate:capture('balances',{_sum:{totalAmount:2000,amountPaid:1250}})},payment:{groupBy:capture('payments',[{type:'payment',_sum:{amount:1200}},{type:'refund',_sum:{amount:150}}])},orderItem:{findMany:capture('popular',[])}}},
-    './HomeCalendar':{__esModule:true,default:()=>null},'./HomeTasks':{__esModule:true,default:()=>null},'./BestSellersChart':{__esModule:true,default:()=>null},
+    '@/lib/tenant':{requireCurrentOrganization:async()=>({id:'tenant-1',timezone:'America/New_York',contactEmail:null,address:null,city:null,state:null,zip:null})},
+    '@/lib/weather':{getOrganizationWeather:async()=>null},
+    '@/lib/prisma':{prisma:{item:{count:capture('items',8)},order:{fields:{totalAmount:totalField},findMany:capture('orders',[]),count:capture('count',4),aggregate:capture('balances',{_sum:{totalAmount:2000,amountPaid:1250}})},payment:{groupBy:capture('payments',[{type:'payment',_sum:{amount:1200}},{type:'refund',_sum:{amount:150}}]),findMany:capture('paymentHistory',[])},orderItem:{findMany:capture('popular',[])}}},
+    './HomeCalendar':{__esModule:true,default:()=>null},'./HomeTasks':{__esModule:true,default:()=>null},'./HomeWeather':{__esModule:true,default:()=>null},'./HomeScreen':{__esModule:true,default:()=>null},'./HomeMeetings':{__esModule:true,default:()=>null},'./BestSellersChart':{__esModule:true,default:()=>null},'./MonthlyPaymentsChart':{__esModule:true,default:()=>null},
   });
   const html=require('react-dom/server').renderToStaticMarkup(await page.default({searchParams:{}}));
   assert.ok(html.includes('$1,050.00'));assert.ok(html.includes('$750.00'));
