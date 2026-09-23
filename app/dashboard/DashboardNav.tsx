@@ -120,11 +120,11 @@ export default function DashboardNav({showSettings,orgName="Your rental business
    <button onClick={()=>signOut({callbackUrl:"/login"})} className="mt-6 w-full rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700">Logout</button>
   </dialog>
 
-  <main id="tenant-main" tabIndex={-1} className="tenant-content">
-   <div className="tenant-breadcrumb-row">
+  <main id="tenant-main" tabIndex={-1} className={"tenant-content "+(pathname==="/dashboard"?"tenant-content-home":"")}>
+   {pathname!=="/dashboard"&&<div className="tenant-breadcrumb-row">
     <div><span className="text-xs text-slate-400">Admin</span><span className="mx-2 text-slate-300">/</span><strong className="text-xs text-slate-700">{current?.label||"Dashboard"}</strong></div>
     <form action="/dashboard/orders" className="tenant-global-search"><Icon name="search" className="h-4 w-4 text-slate-400"/><input name="q" aria-label="Search orders or customers" placeholder="Search orders, customers..."/></form>
-   </div>
+   </div>}
    {children}
   </main>
  </div>;
