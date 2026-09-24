@@ -13,17 +13,17 @@ export default async function OrderReturnPage({params: paramsPromise}:{params:Pr
     include:{customer:true},
   });
   if(!order)notFound();
-  return <div className="space-y-5 pb-10">
+  return <div className="friendly-admin-page is-wide">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <Link href="/dashboard/returns" className="text-xs font-bold text-blue-600">← Returns & Damage</Link>
-        <div className="mt-2 text-xs font-black uppercase tracking-[.16em] text-blue-600">Return · Order #{order.orderNumber}</div>
-        <h1 className="mt-1 text-3xl font-black tracking-tight">Reconcile returned equipment</h1>
+        <Link href="/dashboard/returns" className="text-xs font-semibold text-[#1a6fd4]">← Returns & Damage</Link>
+        <div className="mt-2 text-xs font-semibold text-[#1a6fd4]">Return · Order #{order.orderNumber}</div>
+        <h1 className="mt-1 text-2xl font-bold text-dark">Reconcile returned equipment</h1>
         <p className="mt-1 text-sm text-slate-500">{order.customer.firstName} {order.customer.lastName} · {new Date(order.eventDate).toLocaleDateString()}</p>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Link href={`/dashboard/warehouse/orders/${order.id}`} className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white">Scan serialized assets</Link>
-        <Link href={`/dashboard/orders/${order.id}/fulfillment`} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-black">Fulfillment</Link>
+        <Link href={`/dashboard/warehouse/orders/${order.id}`} className="friendly-admin-primary">Scan serialized assets</Link>
+        <Link href={`/dashboard/orders/${order.id}/fulfillment`} className="friendly-admin-secondary">Fulfillment</Link>
       </div>
     </div>
     <ReturnReconciliation orderId={order.id} orderNumber={order.orderNumber}/>
