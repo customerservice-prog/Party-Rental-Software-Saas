@@ -110,15 +110,24 @@ export default function InventoryPage() {
   const [expandedUnitsItemId, setExpandedUnitsItemId] = useState<string | null>(null);
   const [addonForms, setAddonForms] = useState<Record<string, AddonFormState>>({});
 
-  async function load() {
-    setLoading(true); setLoadError("");
+  async function load(showLoading = true) {
+    if (showLoading) {
+      setLoading(true);
+      setLoadError("");
+    }
     try {
       const responses=await Promise.all([fetch("/api/categories"),fetch("/api/items"),fetch("/api/addons")]);
       if(responses.some(response=>!response.ok))throw new Error("Inventory could not be loaded. Check your access or try again.");
       const [cats,stock,extras]=await Promise.all(responses.map(response=>response.json()));
       setCategories(cats.categories); setItems(stock.items); setAddons(extras.addons);
-    } catch(e) { setLoadError(e instanceof Error?e.message:"Inventory could not be loaded."); }
-    finally {setLoading(false);}
+      setLoadError("");
+    } catch(e) {
+      const reason=e instanceof Error?e.message:"Inventory could not be loaded.";
+      if(showLoading)setLoadError(reason);
+      else setMessage("Changes were saved, but the inventory refresh failed. "+reason);
+    } finally {
+      if(showLoading)setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -250,13 +259,17 @@ export default function InventoryPage() {
         restrictionMessage: editForm.restrictionMessage,
       }),
     });
+    const data=await res.json().catch(()=>({}));
     if (res.ok) {
+      if(data.item){
+        setItems(current=>current.map(item=>item.id===id?{...item,...data.item}:item));
+      }
       setEditingItemId(null);
       setEditForm(null);
       setMessage("Item updated.");
-      load();
+      void load(false);
     } else {
-      setMessage("Could not update item.");
+      setMessage(data.error || "Could not update item.");
     }
   }
 
