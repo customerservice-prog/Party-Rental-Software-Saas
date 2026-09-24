@@ -164,3 +164,76 @@
 .phase2-text-action{font-size:9px;font-weight:800;color:#2a6a3c}.phase2-meeting-form{display:grid;gap:8px;margin:10px;border:1px solid #e1e6e3;border-radius:8px;background:#fafcfb;padding:10px}
 .phase2-meeting-list{margin:0 12px}.phase2-meeting-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid #edf0ee;padding:9px 0}.phase2-meeting-row:first-child{border-top:0}.phase2-meeting-title{font-size:10px;font-weight:800;color:#26322b}.phase2-meeting-time{margin-top:2px;font-size:9px;color:#7f8a84}.phase2-remove-action{font-size:9px;font-weight:700;color:#b55252}.phase2-meeting-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:10px 12px 0}
 @media(max-width:760px){.phase2-weather-days{grid-template-columns:repeat(5,minmax(56px,1fr));overflow-x:auto}.phase2-weather-days>div{padding:7px 4px}}
+
+
+/* Phase 3: one-row tenant command bar + calendar-first admin */
+.tenant-phase3-bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:stretch;gap:12px;min-height:68px;padding:0 14px;background:#286a2f;border-bottom:3px solid #4f9a47;box-shadow:0 1px 4px rgba(0,0,0,.09);color:#fff}
+.tenant-phase3-brand{display:flex;align-items:center;gap:8px;min-width:0;padding:8px 0;text-decoration:none}
+.tenant-phase3-brand-mark,.tenant-phase3-brand-logo{display:flex;height:40px;width:40px;flex:0 0 auto;align-items:center;justify-content:center;border-radius:4px;background:#fff;color:#286a2f;overflow:hidden}
+.tenant-phase3-brand-logo img{display:block;height:100%;width:100%;object-fit:contain}
+.tenant-phase3-brand-copy{min-width:0;max-width:150px}.tenant-phase3-brand-copy strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:#fff}.tenant-phase3-brand-copy small{display:block;margin-top:2px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#cfe5d1}
+.tenant-phase3-nav{display:flex;align-items:stretch;justify-content:center;min-width:0;overflow-x:auto;overflow-y:visible;scrollbar-width:none}.tenant-phase3-nav::-webkit-scrollbar{display:none}
+.tenant-phase3-link{display:flex;min-width:58px;flex:0 0 auto;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-bottom:3px solid transparent;padding:7px 7px 6px;color:#f1f7f2;font-size:9px;font-weight:600;line-height:1.05;text-align:center;white-space:nowrap}
+.tenant-phase3-link:hover{background:rgba(0,0,0,.08)}.tenant-phase3-link.is-active{border-bottom-color:#f0cc4d;color:#f7de63}
+.tenant-phase3-more{position:relative;flex:0 0 auto}.tenant-phase3-more>summary{height:100%;list-style:none;cursor:pointer}.tenant-phase3-more>summary::-webkit-details-marker{display:none}
+.tenant-phase3-more .tenant-more-panel{top:calc(100% + 2px);right:0}
+.tenant-phase3-account{display:flex;align-items:center;gap:8px;min-width:0;padding:8px 0}
+.tenant-phase3-new{display:inline-flex;align-items:center;gap:5px;border-radius:5px;background:#fff;padding:8px 10px;color:#286a2f;font-size:9px;font-weight:800;white-space:nowrap}
+.tenant-phase3-user{display:flex;max-width:140px;min-width:0;flex-direction:column;line-height:1.05}.tenant-phase3-user b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;color:#fff}.tenant-phase3-user small{margin-top:3px;font-size:8px;text-transform:capitalize;color:#d8ead9}
+.tenant-phase3-logout{border:1px solid rgba(255,255,255,.35);border-radius:5px;padding:8px 10px;color:#fff;font-size:9px;font-weight:700;white-space:nowrap}
+.tenant-content-home{max-width:1900px;padding-top:8px}
+
+.phase3-dashboard{min-width:0;padding-bottom:22px}
+.phase3-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px}.phase3-toolbar-actions{display:flex;gap:7px;flex-wrap:wrap}
+.phase3-onboarding{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;border:1px solid #cfe4d2;border-radius:7px;background:#f5fbf5;padding:10px 12px}.phase3-onboarding b{display:block;font-size:11px}.phase3-onboarding span{display:block;margin-top:2px;font-size:9px;color:#68776e}
+.phase3-main{display:grid;grid-template-columns:minmax(0,2.05fr) minmax(290px,.95fr);gap:12px;align-items:start}
+.phase3-primary-column{display:grid;gap:10px;min-width:0}
+.phase3-calendar{min-width:0}
+.phase3-rail{display:grid;gap:10px;min-width:0}
+.phase3-kpi{display:block;border:1px solid #dce3df;border-left:5px solid #286a2f;border-radius:7px;background:#fff;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.07)}.phase3-kpi-blue{border-left-color:#1f70d1}.phase3-kpi-green{border-left-color:#286a2f}
+.phase3-kpi span{display:block;font-size:10px;font-weight:700;color:#68756e}.phase3-kpi strong{display:block;margin-top:5px;font-size:25px;line-height:1;color:#17231c}.phase3-kpi small{display:block;margin-top:5px;font-size:9px;color:#88928d}
+.phase3-best{min-width:0;padding:8px 10px}.phase3-empty{padding:22px 8px;text-align:center;font-size:10px;color:#8c9690}
+.phase3-followups>div{display:grid;gap:1px;background:#edf1ee}.phase3-followups>div>a{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff;padding:9px 11px;font-size:10px;color:#55625a}.phase3-followups>div>a:hover{background:#fafcfb}.phase3-followups b{font-size:10px;color:#26312b}
+.phase3-report-link{display:block;border:1px solid #dce3df;border-radius:7px;background:#fff;padding:10px 12px;font-size:10px;font-weight:700;color:#2c6c3d;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.phase3-payments{margin-top:10px}.phase3-payments-chart{min-width:0;padding:10px 12px}
+.phase3-primary-column>.phase2-office-tool,.phase3-primary-column>.phase2-meetings{margin:0}
+.phase3-primary-column>.phase2-office-tool .phase2-video-stage{aspect-ratio:auto;min-height:260px;background:#f2f3f2;color:#6f7b74}
+.phase3-primary-column>.phase2-office-tool .phase2-video-stage.has-video{aspect-ratio:16/9;background:#111a15;color:#fff}
+.phase3-primary-column>.phase2-office-tool .phase2-video-stage>div>span{background:#286a2f;color:#fff}
+.phase3-primary-column>.phase2-office-tool .phase2-video-stage b{color:#6c7771}.phase3-primary-column>.phase2-office-tool .phase2-video-stage small{color:#9aa29e}
+.phase3-primary-column>.phase2-meetings .phase2-widget-empty{min-height:80px}
+.phase3-primary-column>.phase2-meetings .phase2-meeting-actions{padding-bottom:10px}
+
+.phase3-dashboard .tenant-panel{border-radius:7px}
+.phase3-dashboard .phase2-right-rail{display:contents}
+.phase3-dashboard .phase2-widget-head{padding:10px 11px}
+.phase3-dashboard .phase2-weather-days>div{padding:7px 4px}
+.phase3-dashboard .recharts-wrapper text{font-size:9px}
+
+@media(max-width:1180px){
+ .tenant-phase3-brand-copy{display:none}
+ .tenant-phase3-link{min-width:54px;padding-left:6px;padding-right:6px}
+ .tenant-phase3-new span{display:none}
+ .tenant-phase3-user{display:none}
+}
+@media(max-width:900px){
+ .tenant-phase3-bar{grid-template-columns:auto minmax(0,1fr) auto;gap:6px;padding:0 8px}
+ .tenant-phase3-brand-mark,.tenant-phase3-brand-logo{height:34px;width:34px}
+ .tenant-phase3-account{gap:5px}
+ .tenant-phase3-logout{padding:7px 8px}
+ .tenant-phase3-new{padding:7px 8px}
+ .tenant-phase3-nav{justify-content:flex-start}
+ .phase3-main{grid-template-columns:1fr}
+ .phase3-rail{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .phase3-rail>*{min-width:0}
+}
+@media(max-width:640px){
+ .tenant-phase3-bar{min-height:58px}
+ .tenant-phase3-link{min-width:52px;padding:6px 5px 5px;font-size:8px}
+ .tenant-phase3-account{display:none}
+ .tenant-phase3-more .tenant-more-panel{position:fixed;left:8px;right:8px;top:60px;width:auto;max-height:72vh;grid-template-columns:1fr;overflow-y:auto}
+ .tenant-content{padding:10px 9px 60px}
+ .phase3-toolbar{align-items:flex-start;flex-direction:column}.phase3-toolbar-actions{width:100%}
+ .phase3-rail{grid-template-columns:1fr}
+ .phase3-primary-column>.phase2-office-tool .phase2-video-stage{min-height:180px}
+}
