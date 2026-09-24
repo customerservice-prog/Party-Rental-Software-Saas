@@ -240,7 +240,7 @@ export default function ItemUnitsPanel({
         />
         <button
           onClick={addUnit}
-          className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-700"
+          className="friendly-admin-primary !min-h-0 !px-3 !py-1"
           type="button"
         >
           Add Unit
@@ -254,7 +254,7 @@ export default function ItemUnitsPanel({
         />
         <button
           onClick={generateUnits}
-          className="rounded-md bg-white border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+          className="friendly-admin-secondary !min-h-0 !px-3 !py-1"
           type="button"
         >
           Auto-generate units
