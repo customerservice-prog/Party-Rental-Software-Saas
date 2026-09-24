@@ -542,7 +542,7 @@ export default function InventoryPage() {
                           <td className="py-1">
                             <StatusBadge status={item.status||"available"}/>
                           </td>
-                          <td className="py-1 space-x-2">
+                          <td data-label="Actions" className="py-1 space-x-2">
                             <button onClick={() => startEdit(item)} className="text-indigo-600 hover:underline">
                               Edit
                             </button>
