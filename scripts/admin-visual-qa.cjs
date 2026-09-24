@@ -52,7 +52,7 @@ async function main(){
    const itemHref=await itemLink.getAttribute('href');
    assert.ok(itemHref&&itemHref.startsWith('/dashboard/inventory/'),'Dedicated item workspace link is missing');
    await inspect(itemHref,'tenant-item-workspace');
-   report.checks.push(\`\${viewport.name}: Phase 4 tenant category, item and print routes rendered\`);
+   report.checks.push(viewport.name+': Phase 4 tenant category, item and print routes rendered');
    await page.getByRole('region',{name:'Tenant impersonation'}).waitFor();await page.getByRole('button',{name:'Exit tenant view'}).click();await page.waitForURL('**/support');
    report.checks.push(`${viewport.name}: tenant workspace, core directories and support exit`);
    await context.close();
