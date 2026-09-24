@@ -70,6 +70,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <DashboardNav
         showSettings={role === "owner"}
         orgName={organization.name}
+        logoUrl={organization.logoUrl}
         userName={userName}
         role={role}
         supportBanner={supportBanner}
