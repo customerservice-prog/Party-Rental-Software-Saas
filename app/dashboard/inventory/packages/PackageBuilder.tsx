@@ -49,11 +49,11 @@ export default function PackageBuilder({items,initialPackageIds}:{items:Item[];i
   }
 
   return <div className="grid gap-5 xl:grid-cols-[.85fr_1.15fr]">
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="font-black">Choose the package item</h2>
+    <section className="friendly-admin-card !mb-0">
+      <h2 className="font-bold">Choose the package item</h2>
       <p className="mt-1 text-xs leading-5 text-slate-500">A package is still a normal inventory item with its own storefront price and quantity. Adding components makes its availability consume those physical items too.</p>
       <label className="mt-4 block text-xs font-black uppercase tracking-wide text-slate-500">Package</label>
-      <select value={packageId} onChange={e=>setPackageId(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm">
+      <select value={packageId} onChange={e=>setPackageId(e.target.value)} className="friendly-admin-field mt-2 w-full">
         {items.map(item=><option key={item.id} value={item.id}>{item.name}{packageIds.has(item.id)?" · Package":""}</option>)}
       </select>
       {packageItem&&<div className="mt-4 rounded-xl bg-slate-50 p-4">
@@ -61,24 +61,24 @@ export default function PackageBuilder({items,initialPackageIds}:{items:Item[];i
       </div>}
       <div className="mt-5 border-t border-slate-100 pt-5">
         <h3 className="text-sm font-black">Add a physical component</h3>
-        <select value={componentId} onChange={e=>setComponentId(e.target.value)} className="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+        <select value={componentId} onChange={e=>setComponentId(e.target.value)} className="friendly-admin-field mt-3 w-full">
           <option value="">Select inventory item…</option>
           {componentOptions.map(item=><option key={item.id} value={item.id}>{item.name} · {item.quantity} owned</option>)}
         </select>
         <label className="mt-3 block text-xs font-bold text-slate-500">Quantity used per package</label>
-        <input type="number" min={1} max={10000} value={quantity} onChange={e=>setQuantity(Math.max(1,Math.floor(Number(e.target.value)||1)))} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"/>
-        <button disabled={busy||!componentId} onClick={add} className="mt-3 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-black text-white disabled:opacity-40">{busy?"Saving…":"Add / update component"}</button>
+        <input type="number" min={1} max={10000} value={quantity} onChange={e=>setQuantity(Math.max(1,Math.floor(Number(e.target.value)||1)))} className="friendly-admin-field mt-1 w-full"/>
+        <button disabled={busy||!componentId} onClick={add} className="friendly-admin-primary mt-3 w-full disabled:opacity-40">{busy?"Saving…":"Add / update component"}</button>
       </div>
       {message&&<div className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">{message}</div>}
     </section>
 
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section className="friendly-admin-card !mb-0 !p-0 overflow-hidden">
       <div className="border-b border-slate-100 px-5 py-4">
-        <h2 className="font-black">Package contents</h2>
+        <h2 className="font-bold">Package contents</h2>
         <p className="text-xs text-slate-500">{packageItem?packageItem.name:"Select a package"} · one-level bundles only</p>
       </div>
       {loading?<div className="p-8 text-sm text-slate-400">Loading components…</div>:components.length?<div className="divide-y divide-slate-100">{components.map(row=><div key={row.id} className="flex items-center justify-between gap-4 px-5 py-4"><div className="flex min-w-0 items-center gap-3">{row.item?.picture?<img src={row.item.picture} alt="" className="h-11 w-11 rounded-lg object-cover"/>:<div className="h-11 w-11 rounded-lg bg-slate-100"/>}<div className="min-w-0"><b className="block truncate text-sm">{row.item?.name||"Missing item"}</b><p className="text-xs text-slate-500">{row.quantity} used per package · {row.item?.quantity??0} owned · <span className="capitalize">{row.item?.status?.replaceAll("_"," ")}</span></p></div></div><button disabled={busy} onClick={()=>remove(row.id)} className="shrink-0 text-xs font-black text-rose-600">Remove</button></div>)}</div>:<div className="p-10 text-center"><b className="text-sm">No components yet</b><p className="mt-1 text-xs text-slate-400">Add the tents, tables, chairs, games or other physical items consumed by one package booking.</p></div>}
-      {components.length>0&&<div className="border-t border-blue-100 bg-blue-50 px-5 py-4 text-xs leading-5 text-blue-800"><b>Availability protection is active.</b> Direct rentals and package bookings now share the same component inventory, so a package cannot sell equipment already committed elsewhere.</div>}
+      {components.length>0&&<div className="border-t border-blue-100 bg-blue-50 px-5 py-4 text-xs leading-5 text-[#315d8e]"><b>Availability protection is active.</b> Direct rentals and package bookings now share the same component inventory, so a package cannot sell equipment already committed elsewhere.</div>}
     </section>
   </div>
 }
