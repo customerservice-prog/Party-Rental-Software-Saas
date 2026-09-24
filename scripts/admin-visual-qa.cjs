@@ -39,7 +39,7 @@ async function main(){
    await page.getByRole('searchbox',{name:'Search platform tools'}).fill('billing');
    await page.getByRole('navigation',{name:'Tool search results'}).getByRole('link',{name:/Billing & revenue/}).click();
    await page.waitForURL('**/admin/billing');assert.equal(await page.getByRole('dialog',{name:'Find a platform tool'}).count(),0);
-   await page.keyboard.press('Control+k');await page.getByRole('dialog',{name:'Find a platform tool'}).waitFor();await page.keyboard.press('Escape');
+   await page.getByRole('button',{name:'Find a tool',exact:false}).waitFor();await page.waitForTimeout(150);await page.keyboard.press('Control+k');await page.getByRole('dialog',{name:'Find a platform tool'}).waitFor();await page.keyboard.press('Escape');
    assert.equal(await page.getByRole('dialog',{name:'Find a platform tool'}).count(),0);
    report.checks.push(`${viewport.name}: tool search navigates; Ctrl+K and Escape work`);
    await page.goto('http://localhost:3000/admin/organizations');
