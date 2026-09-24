@@ -12,11 +12,13 @@ export default async function DeliveriesPage(){
  const active=orders.filter(o=>o.status!=="cancelled"&&o.status!=="canceled");
  const deliveryCount=active.filter(o=>o.deliveryType!=="pickup").length,pickupCount=active.filter(o=>o.deliveryType==="pickup").length;
  return <div className="friendly-admin-page">
-  <div className="friendly-admin-head"><div><h1>Delivery Schedule</h1><p>{deliveryCount} delivery{deliveryCount===1?"":"s"} · {pickupCount} pickup{pickupCount===1?"":"s"} · {orders.length} total</p></div><div className="friendly-admin-actions"><Link href="/dashboard/dispatch" className="friendly-admin-secondary">Dispatch</Link><Link href="/dashboard/deliveries/packing-list" className="friendly-admin-primary">Print Packing List</Link></div></div>
+  <div className="friendly-admin-head"><div><h1>Delivery Schedule</h1><p>{deliveryCount} delivery{deliveryCount===1?"":"s"} · {pickupCount} pickup{pickupCount===1?"":"s"} · {orders.length} total</p></div><div className="friendly-admin-actions"><Link href="/dashboard/dispatch" className="friendly-admin-secondary">Dispatch</Link><Link href="/dashboard/deliveries/print-invoices" className="friendly-admin-secondary">Invoices</Link><Link href="/dashboard/deliveries/packing-list" className="friendly-admin-primary">Print Packing List</Link></div></div>
 
   <div className="flex flex-wrap gap-2 mb-4">
    <Link href="/dashboard/dispatch" className="friendly-admin-secondary">Assign Drivers</Link>
    <Link href="/dashboard/deliveries/packing-list" className="friendly-admin-secondary">Packing List</Link>
+   <Link href="/dashboard/deliveries/print-invoices" className="friendly-admin-secondary">Print Invoices</Link>
+   <Link href="/dashboard/deliveries/print-contracts" className="friendly-admin-secondary">Print Contracts</Link>
    <Link href="/dashboard/warehouse" className="friendly-admin-secondary">Warehouse</Link>
    <Link href="/dashboard/returns" className="friendly-admin-secondary">Returns & Damage</Link>
    <Link href="/dashboard/drivers" className="friendly-admin-secondary">Manage Drivers</Link>
