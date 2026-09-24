@@ -407,3 +407,20 @@
 .friendly-admin-info{border:1px solid #cfe1f8;border-radius:6px;background:#f2f7fd;padding:9px 10px;font-size:10px;color:#315d8e}
 @media(max-width:900px){.friendly-admin-settings-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.friendly-admin-detail-grid{grid-template-columns:1fr}.friendly-admin-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.friendly-admin-page{padding-bottom:18px}.friendly-admin-head{align-items:stretch;flex-direction:column;margin-bottom:14px}.friendly-admin-head h1{font-size:21px!important}.friendly-admin-actions{justify-content:flex-start}.friendly-admin-card{padding:13px}.friendly-admin-settings-grid{grid-template-columns:1fr}.friendly-admin-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.friendly-admin-table{font-size:10px}}
+
+/* Friendly adapter for legacy tenant pages that still use raw utility classes */
+.friendly-legacy-page{width:100%;max-width:1152px;margin:0 auto;padding:4px 0 28px}
+.friendly-legacy-page.is-wide{max-width:1500px}
+.friendly-legacy-page>h1,.friendly-legacy-page>div>h1{font-size:24px!important;font-weight:800!important;color:#1a1a1a!important}
+.friendly-legacy-page :where(.bg-white.shadow.rounded-lg,.bg-white.shadow.rounded-xl){border:1px solid #e2e5e3!important;border-radius:8px!important;box-shadow:0 2px 7px rgba(0,0,0,.07)!important}
+.friendly-legacy-page :where(.bg-indigo-600,.bg-violet-600){background:#2d6a2d!important}
+.friendly-legacy-page :where(.text-indigo-600,.text-violet-600){color:#1a6fd4!important}
+.friendly-legacy-page :where(.hover\:bg-indigo-700:hover,.hover\:bg-violet-700:hover){background:#245824!important}
+.friendly-legacy-page table{font-size:11px!important}
+.friendly-legacy-page table thead tr{background:#f8f9f8!important;border-color:#dedede!important}
+.friendly-legacy-page table th{font-size:10px!important;font-weight:800!important;color:#242424!important;text-transform:none!important;letter-spacing:0!important;padding:10px 12px!important}
+.friendly-legacy-page table td{font-size:11px!important;color:#565656!important;padding:10px 12px!important;border-color:#ededed!important}
+.friendly-legacy-page table tbody tr:nth-child(even){background:#fbfbfb}
+.friendly-legacy-page table tbody tr:hover{background:#f4f8ff!important}
+.friendly-legacy-page input,.friendly-legacy-page select,.friendly-legacy-page textarea{border-color:#d1d5db!important;border-radius:6px!important;font-size:11px!important}
+.friendly-legacy-page input:focus,.friendly-legacy-page select:focus,.friendly-legacy-page textarea:focus{border-color:#1a6fd4!important;box-shadow:0 0 0 3px rgba(26,111,212,.12)!important}
