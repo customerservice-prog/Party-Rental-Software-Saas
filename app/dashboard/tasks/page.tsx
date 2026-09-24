@@ -107,7 +107,7 @@ export default function TasksManager() {
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="friendly-legacy-page">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Tasks</h1>
       <p className="text-gray-500 mb-6">
         Follow-ups and to-dos for your team. {overdueCount > 0 && (
@@ -125,7 +125,7 @@ export default function TasksManager() {
 
       <form
         onSubmit={handleCreate}
-        className="bg-white shadow rounded-lg p-6 mb-8 grid grid-cols-1 md:grid-cols-4 gap-3 items-end"
+        className="friendly-admin-card accent-blue grid grid-cols-1 md:grid-cols-4 gap-3 items-end"
       >
         <label className="text-sm text-gray-600 md:col-span-2">
           Task
@@ -186,7 +186,7 @@ export default function TasksManager() {
         Show completed tasks
       </label>
 
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="friendly-admin-card !p-0 overflow-hidden">
         <ul className="divide-y divide-gray-200">
           {visibleTasks.map((task) => {
             const overdue =
