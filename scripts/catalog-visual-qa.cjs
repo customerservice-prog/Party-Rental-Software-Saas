@@ -14,7 +14,7 @@ async function main(){
    page.on('response',r=>{if(r.url().startsWith('http://localhost:3000')&&r.status()>=500)report.errors.push(`HTTP ${r.status()} ${r.url()}`)});
    await page.goto('http://localhost:3000/platform-login');await page.getByPlaceholder('Platform admin username').fill(process.env.PLATFORM_ADMIN_USERNAME);await page.locator('input[type=password]').fill(process.env.PLATFORM_ADMIN_PASSWORD);await page.getByRole('button',{name:'Enter Platform Control Center'}).click();await page.waitForURL('**/admin');
    await page.goto(`http://localhost:3000/admin/organizations/${org.id}`);await page.getByRole('button',{name:'View as tenant',exact:true}).click();await page.waitForURL('**/dashboard');
-   await page.goto('http://localhost:3000/dashboard/inventory');await page.getByRole('button',{name:'Add from catalog',exact:true}).click();
+   await page.goto('http://localhost:3000/dashboard/inventory');await page.getByRole('button',{name:/Add from catalog/i,exact:true}).click();
    const modal=page.getByRole('dialog',{name:'Find your first rentals. Or your next ones.'});await modal.waitFor();
    await modal.getByRole('searchbox').fill('CI Catalog');
    await modal.getByLabel('Rental category',{exact:true}).selectOption('chairs');
@@ -54,7 +54,7 @@ async function main(){
    await page.getByRole('img',{name:'CI Catalog Chair Edited',exact:true}).waitFor();
    const saved=await db.item.findUniqueOrThrow({where:{id:copied[0].id}});assert.equal(saved.name,'CI Catalog Chair Edited');assert.equal(saved.picture,'/logo.png');assert.equal(saved.displayToCustomer,false);
    await table.getByRole('button',{name:'Edit',exact:true}).click();await page.getByPlaceholder('Name',{exact:true}).waitFor();await page.getByRole('button',{name:'Cancel',exact:true}).click();
-   await page.getByRole('button',{name:'Add from catalog',exact:true}).click();await page.getByRole('dialog',{name:'Find your first rentals. Or your next ones.'}).waitFor();await page.keyboard.press('Escape');
+   await page.getByRole('button',{name:/Add from catalog/i,exact:true}).click();await page.getByRole('dialog',{name:'Find your first rentals. Or your next ones.'}).waitFor();await page.keyboard.press('Escape');
    assert.equal(await page.getByRole('dialog',{name:'Find your first rentals. Or your next ones.'}).count(),0);
    await page.getByRole('button',{name:'Exit tenant view'}).click();await page.waitForURL('**/support');
    report.checks.push(`${viewport.width}px: photo/fallback, cross-category selection, native dialog, explicit price/stock, photo/description copy, private items, populated inventory, visible Save target, persisted edit, cancel, Escape and support exit passed`);
