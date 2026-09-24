@@ -54,13 +54,13 @@ export default function ActivityPage() {
 
   return React.createElement(
     "div",
-    { className: "max-w-4xl mx-auto px-4 py-6" },
+    { className: "friendly-admin-page" },
     React.createElement(
       "div",
       { className: "mb-6" },
       React.createElement(
         "h1",
-        { className: "text-2xl font-semibold text-gray-900" },
+        { className: "text-2xl font-bold text-dark" },
         "Activity Log"
       ),
       React.createElement(
@@ -85,7 +85,7 @@ export default function ActivityPage() {
         )
       : React.createElement(
           "div",
-          { className: "divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white" },
+          { className: "friendly-admin-card !p-0 divide-y divide-gray-100" },
           entries.map((e) =>
             React.createElement(
               "div",
