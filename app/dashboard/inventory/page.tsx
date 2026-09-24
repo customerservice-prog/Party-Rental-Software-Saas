@@ -312,7 +312,7 @@ export default function InventoryPage() {
   }
 
   if (loading) return <div role="status" aria-label="Loading inventory" className="space-y-5"><div className="h-16 animate-pulse rounded-xl bg-slate-200/60"/><div className="grid grid-cols-2 gap-4 lg:grid-cols-4">{[1,2,3,4].map(n=><div key={n} className="h-28 animate-pulse rounded-xl bg-slate-200/60"/>)}</div><div className="h-64 animate-pulse rounded-2xl bg-slate-200/60"/></div>;
-  if(loadError)return <div className="tenant-panel p-8" role="alert"><h1>Inventory unavailable</h1><p className="my-4 text-sm text-slate-500">{loadError}</p><button className="tenant-button" onClick={load}>Try again</button></div>;
+  if(loadError)return <div className="tenant-panel p-8" role="alert"><h1>Inventory unavailable</h1><p className="my-4 text-sm text-slate-500">{loadError}</p><button className="tenant-button" onClick={()=>load()}>Try again</button></div>;
   const matches=(item:Item)=>item.name.toLowerCase().includes(query.toLowerCase())&&(condition==="all"||(condition==="attention"?!!item.status&&item.status!=="available":item.displayToCustomer));
   const visibleCategories=categories.filter(category=>!query&&condition==="all"||items.some(item=>item.categoryId===category.id&&matches(item)));
   return (
