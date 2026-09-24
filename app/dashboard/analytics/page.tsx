@@ -182,21 +182,37 @@ return (
     {topItemsRaw.map((t) => {
     const item = itemMap.get(t.itemId);
     return (
-      <tr key={t.itemId}>
-      <td className="px-6 py-2">{item ? item.name : "Unknown item"}</td>
-      <td className="px-6 py-2">{t._sum.quantity || 0}</td>
-      <td className="px-6 py-2">${(t._sum.price || 0).toFixed(2)}</td>
-      </tr>
-      );
-  })}
-    {topItemsRaw.length === 0 && (
-    <tr>
-    <td colSpan={3} className="px-6 py-4 text-gray-500">No bookings yet.</td>
-    </tr>
-  )}
-  </tbody>
-  </table>
+  <div className="friendly-admin-page is-wide">
+   <div className="friendly-admin-head"><div><h1>Analytics</h1><p>Business performance and booking insights.</p></div></div>
+
+   <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6 mb-5">
+    <div className="friendly-admin-kpi"><small>Revenue (30d)</small><strong>{revenue30.toLocaleString("en-US",{style:"currency",currency:"USD"})}</strong>{revenueChange!==null&&<span className={"mt-1 block text-[9px] "+(revenueChange>=0?"text-green-600":"text-red-600")}>{revenueChange>=0?"↑":"↓"} {Math.abs(revenueChange).toFixed(0)}% vs prior</span>}</div>
+    <div className="friendly-admin-kpi"><small>Collected (30d)</small><strong>{collected30.toLocaleString("en-US",{style:"currency",currency:"USD"})}</strong></div>
+    <div className="friendly-admin-kpi"><small>Outstanding (30d)</small><strong className={outstanding30>0?"!text-orange-600":""}>{outstanding30.toLocaleString("en-US",{style:"currency",currency:"USD"})}</strong></div>
+    <div className="friendly-admin-kpi"><small>Orders (30d)</small><strong>{orders30}</strong></div>
+    <div className="friendly-admin-kpi"><small>Average Order</small><strong>{avgOrder30.toLocaleString("en-US",{style:"currency",currency:"USD"})}</strong>{avgOrderChange!==null&&<span className={"mt-1 block text-[9px] "+(avgOrderChange>=0?"text-green-600":"text-red-600")}>{avgOrderChange>=0?"↑":"↓"} {Math.abs(avgOrderChange).toFixed(0)}%</span>}</div>
+    <div className="friendly-admin-kpi"><small>Customers</small><strong>{allCustomers}</strong></div>
+   </div>
+
+   <div className="friendly-admin-card">
+    <div className="friendly-admin-card-title">Revenue Trend (6 months)</div>
+    <div className="flex h-36 items-end gap-3">
+     {trend.map((t,idx)=><div key={idx} className="flex flex-1 flex-col items-center"><div className="mb-1 text-[9px] text-gray-500">{t.amount.toLocaleString("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0})}</div><div className="w-full max-w-[38px] rounded bg-[#1a6fd4]" style={{height:Math.max(4,(t.amount/maxTrend)*100)}}/><div className="mt-1.5 text-[9px] text-gray-500">{t.label}</div></div>)}
+    </div>
+   </div>
+
+   <div className="friendly-admin-card">
+    <div className="friendly-admin-card-title">Orders by Status</div>
+    <div className="flex flex-wrap gap-2">{statusGroups.length===0?<span className="text-xs text-gray-500">No orders yet.</span>:statusGroups.map(s=><div key={s.status} className="rounded border border-gray-200 bg-gray-50 px-3 py-2"><div className="text-[9px] capitalize text-gray-500">{s.status}</div><div className="text-lg font-bold text-gray-900">{s._count._all}</div></div>)}</div>
+   </div>
+
+   <div className="friendly-admin-card flush">
+    <div className="friendly-admin-subhead"><div><h2>Top Rentals by Revenue</h2><p>Highest-grossing rental items</p></div></div>
+    <div className="friendly-admin-table-wrap"><table className="friendly-admin-table"><thead><tr><th>Item</th><th className="numeric">Units Booked</th><th className="numeric">Revenue</th></tr></thead><tbody>
+     {topItemsRaw.map(t=>{const item=itemMap.get(t.itemId);return <tr key={t.itemId}><td>{item?item.name:"Unknown item"}</td><td className="numeric">{t._sum.quantity||0}</td><td className="numeric">{(t._sum.price||0).toLocaleString("en-US",{style:"currency",currency:"USD"})}</td></tr>})}
+     {topItemsRaw.length===0&&<tr><td colSpan={3} className="friendly-admin-empty">No bookings yet.</td></tr>}
+    </tbody></table></div>
+   </div>
   </div>
-  </div>
-    );
-    }
+ );
+}
