@@ -304,9 +304,9 @@ export default function InventoryPage() {
   const visibleCategories=categories.filter(category=>!query&&condition==="all"||items.some(item=>item.categoryId===category.id&&matches(item)));
   return (
     <div className="tenant-inventory space-y-6">
-      <PageHeading eyebrow="Rental catalog" title="Inventory" description="Everything you rent, organized and ready for the next event." actions={<><a href="/dashboard/inventory/packages" className="tenant-button">Packages</a><button onClick={()=>setShowImport(true)} className="tenant-button">Import CSV</button><a href="/api/items/export" className="tenant-button">Export CSV</a><button onClick={()=>setShowCatalog(true)} className="tenant-button tenant-button-primary"><Icon name="plus" className="h-4 w-4"/>Add from catalog</button></>}/>
-      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Inventory summary"><MetricCard label="Rental items" value={items.length} detail="Across your entire catalog" icon="box"/><MetricCard label="Categories" value={categories.length} detail="Organized for easy browsing" icon="orders"/><MetricCard label="On your website" value={items.filter(item=>item.displayToCustomer).length} detail="Items marked visible to customers" icon="globe"/><MetricCard label="Need attention" value={items.filter(item=>item.status&&item.status!=="available").length} detail="Items not marked available" icon="shield"/></section>
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4"><label className="relative min-w-[150px] flex-1"><span className="sr-only">Search inventory</span><Icon name="search" className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search your rental items…" className="w-full !pl-9"/></label><select aria-label="Filter inventory" value={condition} onChange={e=>setCondition(e.target.value)}><option value="all">All items</option><option value="attention">Needs attention</option><option value="visible">Visible on website</option></select><span className="text-xs text-slate-500">{items.filter(matches).length} items</span></div>
+      <div className="friendly-admin-head"><div><h1>Items</h1><p>{items.length} rental item{items.length===1?"":"s"}</p></div><div className="friendly-admin-actions"><button onClick={()=>setShowImport(true)} className="friendly-admin-secondary">Import CSV</button><a href="/api/items/export" className="friendly-admin-secondary">Export CSV</a><button onClick={()=>setShowCatalog(true)} className="friendly-admin-primary"><Icon name="plus" className="h-4 w-4"/>Add New</button></div></div>
+      <div className="friendly-admin-tabs"><span className="friendly-admin-tab is-active">Browse Mode</span><a href="/dashboard/inventory/packages" className="friendly-admin-tab">Packages</a><button type="button" onClick={()=>setShowImport(true)} className="friendly-admin-tab">Import & Export Mode</button></div>
+      <div className="friendly-admin-card accent-blue"><div className="friendly-admin-filters"><label className="relative min-w-[150px] flex-1"><span className="sr-only">Search inventory</span><Icon name="search" className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search your rental items…" className="w-full !pl-9"/></label><select aria-label="Filter inventory" value={condition} onChange={e=>setCondition(e.target.value)}><option value="all">All items</option><option value="attention">Needs attention</option><option value="visible">Visible on website</option></select><span className="text-xs text-slate-500">{items.filter(matches).length} items</span></div></div>
       {showCatalog && (
         <CatalogBrowser
           onClose={() => setShowCatalog(false)}
@@ -336,7 +336,7 @@ export default function InventoryPage() {
       )}
       {message && <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{message}</p>}
 
-      <details className="tenant-panel p-5" open={categories.length===0}>
+      <details className="friendly-admin-card" open={categories.length===0}>
         <summary className="cursor-pointer text-sm font-semibold text-slate-800">Add a rental category</summary>
         <form onSubmit={addCategory} className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
           <input
@@ -363,7 +363,7 @@ export default function InventoryPage() {
             className="text-xs"
             onChange={(e) => readImageFile(e.target.files && e.target.files[0], (dataUrl) => setNewCategory({ ...newCategory, picture: dataUrl }))}
           />
-          <button className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700" type="submit">
+          <button className="friendly-admin-primary" type="submit">
             Add Category
           </button>
         </form>
@@ -382,7 +382,7 @@ export default function InventoryPage() {
           const categoryItems = items.filter((i) => i.categoryId === category.id&&matches(i));
           const form = itemFormFor(category.id);
           return (
-            <div key={category.id} className="tenant-panel p-5">
+            <div key={category.id} className="friendly-admin-card">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <div><h2 className="font-semibold text-base text-slate-800">{category.name} <span className="ml-2 rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-500">{categoryItems.length}</span></h2>{category.description&&<p className="mt-1 text-xs text-slate-500">{category.description}</p>}</div>
                 <button
@@ -393,7 +393,7 @@ export default function InventoryPage() {
                 </button>
               </div>
 
-              <div className="overflow-x-auto"><table className="w-full text-sm text-left mb-4">
+              <div className="friendly-admin-table-wrap"><table className="friendly-admin-table mb-4">
                 <thead>
                   <tr className="text-gray-500 border-b">
                     <th className="py-1">Photo</th>
