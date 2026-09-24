@@ -66,42 +66,42 @@ export default function HomeMeetings({ contactEmail }: { contactEmail: string | 
 
   return (
     <div className="bg-white rounded-lg shadow p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-semibold text-gray-900">Upcoming Meetings</h2>
+      <div className="phase2-widget-head">
+        <div><h2>Upcoming meetings</h2><p>Internal calls and office commitments</p></div>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="text-sm text-green-700 hover:underline font-medium"
+          className="phase2-text-action"
         >
           + Add meeting
         </button>
       </div>
 
       {showForm && (
-        <div className="mb-3 border rounded p-3 space-y-2">
+        <div className="phase2-meeting-form">
           {error && <p className="text-xs text-red-600">{error}</p>}
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Meeting title"
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="w-full"
           />
           <input
             type="datetime-local"
             value={scheduledAt}
             onChange={(e) => setScheduledAt(e.target.value)}
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="w-full"
           />
           <div className="flex gap-2">
             <button
               onClick={handleAdd}
               disabled={saving}
-              className="bg-green-700 text-white text-sm px-3 py-1.5 rounded hover:bg-green-800 disabled:opacity-50"
+              className="tenant-button tenant-button-primary disabled:opacity-50"
             >
               Save
             </button>
             <button
               onClick={() => setShowForm(false)}
-              className="text-sm text-gray-500 px-3 py-1.5"
+              className="tenant-button"
             >
               Cancel
             </button>
@@ -110,22 +110,22 @@ export default function HomeMeetings({ contactEmail }: { contactEmail: string | 
       )}
 
       {loading ? (
-        <p className="text-sm text-gray-400">Loading...</p>
+        <p className="phase2-widget-empty">Loading meetings…</p>
       ) : upcoming.length === 0 ? (
-        <p className="text-sm text-gray-400 mb-3">No upcoming meetings scheduled</p>
+        <p className="phase2-widget-empty">No upcoming meetings scheduled.</p>
       ) : (
-        <ul className="divide-y mb-3">
+        <ul className="phase2-meeting-list">
           {upcoming.map((m) => (
-            <li key={m.id} className="flex items-center justify-between py-2 text-sm">
+            <li key={m.id} className="phase2-meeting-row">
               <div>
-                <div className="text-gray-900">{m.title}</div>
-                <div className="text-xs text-gray-500">
+                <div className="phase2-meeting-title">{m.title}</div>
+                <div className="phase2-meeting-time">
                   {new Date(m.scheduledAt).toLocaleString()}
                 </div>
               </div>
               <button
                 onClick={() => handleDelete(m.id)}
-                className="text-xs text-red-600 hover:underline"
+                className="phase2-remove-action"
               >
                 Remove
               </button>
@@ -134,10 +134,10 @@ export default function HomeMeetings({ contactEmail }: { contactEmail: string | 
         </ul>
       )}
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="phase2-meeting-actions">
         <a
           href={contactEmail ? "mailto:" + contactEmail : "mailto:"}
-          className="text-center border rounded px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          className="tenant-button"
         >
           Open Email
         </a>
@@ -145,7 +145,7 @@ export default function HomeMeetings({ contactEmail }: { contactEmail: string | 
           href="https://zoom.us/start"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-center border rounded px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          className="tenant-button"
         >
           Start Zoom Call
         </a>
