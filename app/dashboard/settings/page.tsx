@@ -451,7 +451,7 @@ export default function SettingsPage() {
   const labelClass = "block mb-4";
   const labelTextClass = "block text-xs font-semibold text-gray-700 mb-1";
   const buttonClass =
-    "bg-indigo-600 text-white rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50 hover:bg-indigo-700";
+    "friendly-admin-primary disabled:opacity-50";
   const sectionClass = "friendly-admin-card";
   const sectionTitleClass = "friendly-admin-card-title";
 
@@ -568,7 +568,7 @@ export default function SettingsPage() {
             href={orgSlug ? "/t/" + orgSlug + "/book" : "/book"}
             target="_blank"
             rel="noreferrer"
-            className="text-sm text-indigo-600 hover:underline"
+            className="text-xs font-semibold text-[#1a6fd4] hover:underline"
           >
             View live site &rarr;
           </a>
