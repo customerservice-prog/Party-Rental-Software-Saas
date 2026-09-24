@@ -227,7 +227,7 @@ export default function DispatchPage() {
                   <button
                     onClick={() => optimize(run.id)}
                     disabled={busy === run.id}
-                    className="text-xs text-indigo-600 hover:underline"
+                    className="text-xs font-semibold text-[#1a6fd4] hover:underline"
                   >
                     Optimize route
                   </button>
