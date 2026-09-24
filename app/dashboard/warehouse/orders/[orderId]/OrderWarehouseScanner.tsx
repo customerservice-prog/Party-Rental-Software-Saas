@@ -71,7 +71,7 @@ export default function OrderWarehouseScanner({orderId,orderNumber}:{orderId:str
         ["Returned OK",totals.returned,"bg-emerald-50 text-emerald-700"],
         ["Damaged",totals.damaged,"bg-amber-50 text-amber-700"],
         ["Missing",totals.missing,"bg-rose-50 text-rose-700"],
-      ].map(([label,value,cls])=><div key={String(label)} className="friendly-admin-kpi"><div className={`inline-flex rounded-lg px-2 py-1 text-[9px] font-black uppercase ${cls}`}>{label}</div><div className="mt-2 text-3xl font-black">{value}</div></div>)}
+      ].map(([label,value,cls])=><div key={String(label)} className="friendly-admin-kpi"><div className={`inline-flex rounded-lg px-2 py-1 text-[9px] font-bold uppercase ${cls}`}>{label}</div><div className="mt-2 text-3xl font-bold">{value}</div></div>)}
     </section>
 
     <section className="grid gap-5 xl:grid-cols-[.7fr_1.3fr]">
@@ -83,7 +83,7 @@ export default function OrderWarehouseScanner({orderId,orderNumber}:{orderId:str
           <div className="mt-4 grid grid-cols-2 gap-2">
             {ACTIONS.map(a=><button key={a.value} onClick={()=>{setAction(a.value);setTimeout(()=>inputRef.current?.focus(),20)}} className={`rounded-lg border p-3 text-left transition ${action===a.value?"border-[#2d6a2d] bg-[#2d6a2d] text-white":"border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}><b className="block text-xs">{a.label}</b><span className={`mt-1 block text-[10px] ${action===a.value?"text-blue-100":"text-slate-400"}`}>{a.help}</span></button>)}
           </div>
-          <label className="mt-4 block text-[10px] font-black uppercase tracking-wide text-slate-500">Asset tag / barcode</label>
+          <label className="mt-4 block text-[10px] font-bold uppercase tracking-wide text-slate-500">Asset tag / barcode</label>
           <input ref={inputRef} autoFocus value={identifier} onChange={e=>setIdentifier(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();scan()}}} placeholder="Scan tag and press Enter…" className="friendly-admin-field mt-2 w-full !px-4 !py-3 !text-base !font-bold"/>
           <input value={notes} onChange={e=>setNotes(e.target.value)} placeholder={action==="damaged"||action==="missing"?"Condition / exception note…":"Optional scan note…"} className="friendly-admin-field mt-2 w-full"/>
           <button disabled={busy||!identifier.trim()} onClick={scan} className="friendly-admin-primary mt-3 w-full disabled:opacity-40">{busy?"Saving scan…":`${ACTIONS.find(a=>a.value===action)?.label} scanned asset`}</button>
@@ -92,7 +92,7 @@ export default function OrderWarehouseScanner({orderId,orderNumber}:{orderId:str
         </div>
 
         <div className="friendly-admin-card !mb-0">
-          <h3 className="font-black">Order reconciliation</h3>
+          <h3 className="font-bold">Order reconciliation</h3>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full bg-emerald-500 transition-all" style={{width:`${totals.expected?Math.min(100,(reconciled/totals.expected)*100):0}%`}}/></div>
           <div className="mt-2 flex justify-between text-xs text-slate-500"><span>{reconciled} reconciled</span><span>{Math.max(0,totals.expected-reconciled)} still expected back</span></div>
           <p className="mt-3 text-[11px] leading-5 text-slate-500">Only serialized units need scanning here. Quantity-only equipment can still be reconciled from the order fulfillment screen.</p>
@@ -101,15 +101,15 @@ export default function OrderWarehouseScanner({orderId,orderNumber}:{orderId:str
 
       <div className="space-y-4">
         <section className="friendly-admin-card !mb-0 !p-0 overflow-hidden">
-          <div className="border-b border-slate-100 px-5 py-4"><h2 className="font-black">Physical load plan</h2><p className="text-xs text-slate-500">Actual equipment required after package expansion.</p></div>
+          <div className="border-b border-slate-100 px-5 py-4"><h2 className="font-bold">Physical load plan</h2><p className="text-xs text-slate-500">Actual equipment required after package expansion.</p></div>
           <div className="divide-y divide-slate-100">
-            {state.resources.map(r=>{const terminal=r.returnedQty+r.damagedQty+r.missingQty;return <div key={r.itemId} className="p-4"><div className="flex items-start justify-between gap-4"><div className="flex min-w-0 gap-3">{r.item?.picture?<img src={r.item.picture} alt="" className="h-12 w-12 rounded-lg object-cover"/>:<div className="h-12 w-12 rounded-lg bg-slate-100"/>}<div className="min-w-0"><b className="block truncate text-sm">{r.item?.name||"Inventory item"}</b><p className="text-[10px] uppercase text-slate-400">{r.item?.status?.replaceAll("_"," ")||"unknown status"}</p></div></div><div className="text-right"><b className="text-lg">{r.expectedQty}</b><p className="text-[9px] font-black uppercase text-slate-400">Expected</p></div></div><div className="mt-3 grid grid-cols-4 gap-2 text-center">{[["Out",r.loadedQty,"text-blue-700"],["OK",r.returnedQty,"text-emerald-700"],["Damaged",r.damagedQty,"text-amber-700"],["Missing",r.missingQty,"text-rose-700"]].map(([a,b,c])=><div key={String(a)} className="rounded-lg bg-slate-50 px-2 py-2"><b className={`block text-sm ${c}`}>{b}</b><span className="text-[9px] text-slate-400">{a}</span></div>)}</div>{terminal>r.expectedQty&&<p className="mt-2 text-xs font-bold text-rose-600">Reconciliation exceeds expected quantity — review this item.</p>}</div>})}
+            {state.resources.map(r=>{const terminal=r.returnedQty+r.damagedQty+r.missingQty;return <div key={r.itemId} className="p-4"><div className="flex items-start justify-between gap-4"><div className="flex min-w-0 gap-3">{r.item?.picture?<img src={r.item.picture} alt="" className="h-12 w-12 rounded-lg object-cover"/>:<div className="h-12 w-12 rounded-lg bg-slate-100"/>}<div className="min-w-0"><b className="block truncate text-sm">{r.item?.name||"Inventory item"}</b><p className="text-[10px] uppercase text-slate-400">{r.item?.status?.replaceAll("_"," ")||"unknown status"}</p></div></div><div className="text-right"><b className="text-lg">{r.expectedQty}</b><p className="text-[9px] font-bold uppercase text-slate-400">Expected</p></div></div><div className="mt-3 grid grid-cols-4 gap-2 text-center">{[["Out",r.loadedQty,"text-blue-700"],["OK",r.returnedQty,"text-emerald-700"],["Damaged",r.damagedQty,"text-amber-700"],["Missing",r.missingQty,"text-rose-700"]].map(([a,b,c])=><div key={String(a)} className="rounded-lg bg-slate-50 px-2 py-2"><b className={`block text-sm ${c}`}>{b}</b><span className="text-[9px] text-slate-400">{a}</span></div>)}</div>{terminal>r.expectedQty&&<p className="mt-2 text-xs font-bold text-rose-600">Reconciliation exceeds expected quantity — review this item.</p>}</div>})}
           </div>
         </section>
 
         <section className="friendly-admin-card !mb-0 !p-0 overflow-hidden">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 className="font-black">Scanned assets</h2><p className="text-xs text-slate-500">Order-specific serialized asset history</p></div><span className="text-xs font-black text-slate-400">{state.assets.length}</span></div>
-          {state.assets.length?<div className="max-h-[500px] divide-y divide-slate-100 overflow-auto">{state.assets.map(a=><div key={a.id} className="px-5 py-4"><div className="flex items-start justify-between gap-3"><div><b className="text-sm">{a.identifier}</b><p className="text-xs text-slate-500">{a.itemName}</p>{a.notes&&<p className="mt-1 text-[10px] text-slate-500">{a.notes}</p>}</div><span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${a.status==="returned"?"bg-emerald-50 text-emerald-700":a.status==="damaged"?"bg-amber-50 text-amber-700":a.status==="missing"?"bg-rose-50 text-rose-700":"bg-blue-50 text-blue-700"}`}>{a.status.replaceAll("_"," ")}</span></div></div>)}</div>:<div className="p-8 text-center text-sm text-slate-400">No serialized assets scanned for this order yet.</div>}
+          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 className="font-bold">Scanned assets</h2><p className="text-xs text-slate-500">Order-specific serialized asset history</p></div><span className="text-xs font-bold text-slate-400">{state.assets.length}</span></div>
+          {state.assets.length?<div className="max-h-[500px] divide-y divide-slate-100 overflow-auto">{state.assets.map(a=><div key={a.id} className="px-5 py-4"><div className="flex items-start justify-between gap-3"><div><b className="text-sm">{a.identifier}</b><p className="text-xs text-slate-500">{a.itemName}</p>{a.notes&&<p className="mt-1 text-[10px] text-slate-500">{a.notes}</p>}</div><span className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase ${a.status==="returned"?"bg-emerald-50 text-emerald-700":a.status==="damaged"?"bg-amber-50 text-amber-700":a.status==="missing"?"bg-rose-50 text-rose-700":"bg-blue-50 text-blue-700"}`}>{a.status.replaceAll("_"," ")}</span></div></div>)}</div>:<div className="p-8 text-center text-sm text-slate-400">No serialized assets scanned for this order yet.</div>}
         </section>
       </div>
     </section>
