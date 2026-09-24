@@ -45,14 +45,14 @@ export default function NewCustomerPage() {
   }
 
   return (
-        <div className="p-8 max-w-xl">
-              <h1 className="text-2xl font-bold text-gray-900 mb-6">Add Customer</h1>
+        <div className="friendly-admin-page !max-w-xl">
+              <div className="friendly-admin-head"><div><h1>Add Customer</h1><p>Create a customer record for quotes and orders.</p></div></div>
         
           {error && (
                   <div className="mb-4 rounded-md bg-red-50 p-4 text-sm text-red-700">{error}</div>
               )}
         
-              <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-4">
+              <form onSubmit={handleSubmit} className="friendly-admin-card space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                                 <div>
                                             <label className="block text-sm font-medium text-gray-700">First name</label>
@@ -117,7 +117,7 @@ export default function NewCustomerPage() {
                       <button
                                   type="submit"
                                   disabled={loading}
-                                  className="w-full bg-indigo-600 text-white py-2 rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+                                  className="friendly-admin-primary w-full disabled:opacity-50"
                                 >
                         {loading ? "Saving..." : "Save Customer"}
                       </button>
