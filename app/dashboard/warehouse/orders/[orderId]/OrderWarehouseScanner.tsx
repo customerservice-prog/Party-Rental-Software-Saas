@@ -59,8 +59,8 @@ export default function OrderWarehouseScanner({orderId,orderNumber}:{orderId:str
     finally{setBusy(false);setTimeout(()=>inputRef.current?.focus(),40)}
   }
 
-  if(loading)return <div className="rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-400">Preparing order scanner…</div>;
-  if(error&&!state)return <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-bold text-rose-700">{error}</div>;
+  if(loading)return <div className="friendly-admin-card p-8 text-sm text-slate-400">Preparing order scanner…</div>;
+  if(error&&!state)return <div className="friendly-admin-card !border-rose-200 !bg-rose-50 p-6 text-sm font-bold text-rose-700">{error}</div>;
   if(!state)return null;
 
   return <div className="space-y-5">
@@ -71,7 +71,7 @@ export default function OrderWarehouseScanner({orderId,orderNumber}:{orderId:str
         ["Returned OK",totals.returned,"bg-emerald-50 text-emerald-700"],
         ["Damaged",totals.damaged,"bg-amber-50 text-amber-700"],
         ["Missing",totals.missing,"bg-rose-50 text-rose-700"],
-      ].map(([label,value,cls])=><div key={String(label)} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className={`inline-flex rounded-lg px-2 py-1 text-[9px] font-black uppercase ${cls}`}>{label}</div><div className="mt-2 text-3xl font-black">{value}</div></div>)}
+      ].map(([label,value,cls])=><div key={String(label)} className="friendly-admin-kpi"><div className={`inline-flex rounded-lg px-2 py-1 text-[9px] font-black uppercase ${cls}`}>{label}</div><div className="mt-2 text-3xl font-black">{value}</div></div>)}
     </section>
 
     <section className="grid gap-5 xl:grid-cols-[.7fr_1.3fr]">
