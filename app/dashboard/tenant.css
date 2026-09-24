@@ -39,3 +39,14 @@
 .fpr-home .recharts-wrapper text{font-size:10px}
 @media(max-width:1279px){.fpr-home-grid{grid-template-columns:1fr}.fpr-home aside{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.fpr-home aside>*{margin-top:0!important}.fpr-home aside .tenant-metric{min-height:108px}}
 @media(max-width:767px){.tenant-content-home{padding-top:10px}.fpr-home aside{grid-template-columns:1fr}.fpr-home :where(.bg-gray-100.rounded.aspect-video){min-height:220px}}
+
+.fpr-home{min-width:0;overflow-x:hidden}
+.fpr-home>*{min-width:0}
+.fpr-home aside>*{min-width:0;max-width:100%}
+@media(max-width:767px){
+ .fpr-home aside .grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+ .fpr-home aside .grid-cols-5>div{min-width:0;overflow:hidden;padding:4px!important;font-size:9px}
+ .fpr-home aside .grid-cols-5>div *{min-width:0;overflow:hidden;text-overflow:ellipsis}
+ .fpr-home .recharts-responsive-container{max-width:100%!important;min-width:0!important}
+ .fpr-home :where(input,select,textarea){min-width:0!important;max-width:100%!important}
+}
