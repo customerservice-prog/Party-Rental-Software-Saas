@@ -54,3 +54,11 @@ test('Phase 4 pages remain tenant scoped and permission grounded', () => {
     assert.match(source, /requirePermission\(organization\.id,"orders\.view"\)/);
   }
 });
+
+
+test('inventory add-on changes require inventory manage permission', () => {
+  const source = read('app/api/addons/route.ts');
+  assert.doesNotMatch(source, /requireStaffSession/);
+  assert.match(source, /requirePermission\(organization\.id, "inventory\.view"\)/);
+  assert.equal((source.match(/requirePermission\(organization\.id, "inventory\.manage"\)/g) || []).length, 3);
+});
