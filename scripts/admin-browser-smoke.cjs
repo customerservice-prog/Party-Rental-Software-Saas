@@ -14,10 +14,10 @@ async function main(){
  for(let n=1;n<=27;n++){
   const org=await db.organization.create({data:{name:`CI DEMO Rental ${String(n).padStart(2,'0')}`,slug:`ci-demo-${n}`,status:'active',planTier:'growth',autoConfirmationEnabled:false,autoReminderEnabled:false,autoBalanceReminderEnabled:false,users:{create:{username:`ci-owner-${n}`,name:`CI Demo Owner ${n}`,role:'owner',password}},subscription:{create:{planTier:'growth',status:n===1?'active':'trialing',billingInterval:'monthly'}}}});
   if(n===1)tenant=org;
-  const phase4Category=await db.category.create({data:{organizationId:org.id,name:'CI Phase 4 Inventory',slug:'ci-phase-4-inventory',description:'Browser QA fixture for dedicated inventory workspaces'}});
-  await db.item.create({data:{organizationId:org.id,categoryId:phase4Category.id,name:'CI Phase 4 Tent',slug:'ci-phase-4-tent',description:'Browser QA fixture',cost:250,quantity:4,displayToCustomer:true}});
  }
- report.checks.push('Created isolated Phase 4 category and item browser fixtures for every demo tenant');
+ const phase4Category=await db.category.create({data:{organizationId:tenant.id,name:'CI Phase 4 Inventory',slug:'ci-phase-4-inventory',description:'Browser QA fixture for dedicated inventory workspaces'}});
+ await db.item.create({data:{organizationId:tenant.id,categoryId:phase4Category.id,name:'CI Phase 4 Tent',slug:'ci-phase-4-tent',description:'Browser QA fixture',cost:250,quantity:4,displayToCustomer:true}});
+ report.checks.push('Created isolated Phase 4 category and item browser fixture only for CI Demo Rental 01');
  const browser=await chromium.launch({headless:true});
  try{
   const anonymous=await browser.newContext();const anon=await anonymous.newPage();
