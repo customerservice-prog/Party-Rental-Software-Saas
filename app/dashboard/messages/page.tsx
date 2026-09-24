@@ -173,7 +173,7 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="friendly-legacy-page">
       <h1 className="text-2xl font-bold mb-1">Messages</h1>
       <p className="text-sm text-gray-500 mb-6">
         Send email or SMS and review inbound customer texts in one place. Connected providers deliver immediately; otherwise outbound messages remain queued honestly.
@@ -190,7 +190,7 @@ export default function MessagesPage() {
         </div>
       )}
 
-      <form onSubmit={onSend} className="bg-white shadow rounded-lg p-5 mb-8 space-y-4">
+      <form onSubmit={onSend} className="friendly-admin-card space-y-4">
         <div className="flex gap-4">
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -294,7 +294,7 @@ export default function MessagesPage() {
         <button
           type="submit"
           disabled={sending}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          className="friendly-admin-primary disabled:opacity-50"
         >
           {sending ? "Queuing..." : "Queue message"}
         </button>
@@ -304,7 +304,7 @@ export default function MessagesPage() {
       {history.length === 0 ? (
         <p className="text-sm text-gray-500">No messages yet.</p>
       ) : (
-        <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className="friendly-admin-card flush">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-left">
               <tr>
@@ -342,7 +342,7 @@ export default function MessagesPage() {
                     </span>
                   </td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
-                    {(m.direction || "outbound") === "inbound" && <button onClick={() => replyToMessage(m)} className="mr-3 text-indigo-600 hover:underline text-xs">Reply</button>}
+                    {(m.direction || "outbound") === "inbound" && <button onClick={() => replyToMessage(m)} className="mr-3 text-[#1a6fd4] hover:underline text-xs">Reply</button>}
                     <button onClick={() => onDelete(m.id)} className="text-red-600 hover:underline text-xs">Delete</button>
                   </td>
                 </tr>
