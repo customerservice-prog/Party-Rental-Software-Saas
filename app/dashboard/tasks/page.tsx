@@ -171,7 +171,7 @@ export default function TasksManager() {
         </label>
         <button
           type="submit"
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 h-fit"
+          className="friendly-admin-primary h-fit"
         >
           Add Task
         </button>
