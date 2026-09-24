@@ -51,7 +51,7 @@ const moreGroups:{label:string;items:Item[]}[]=[
  ]},
 ];
 
-export default function DashboardNav({showSettings,orgName="Your rental business",userName="Account",role="User",children,supportBanner}:{showSettings:boolean;orgName?:string;userName?:string;role?:string;children?:ReactNode;supportBanner?:ReactNode}){
+export default function DashboardNav({showSettings,orgName="Your rental business",logoUrl,userName="Account",role="User",children,supportBanner}:{showSettings:boolean;orgName?:string;logoUrl?:string|null;userName?:string;role?:string;children?:ReactNode;supportBanner?:ReactNode}){
  const pathname=usePathname();
  const all=[...primary,...moreGroups.flatMap(g=>g.items)].filter(i=>!i.owner||showSettings);
  const current=all.filter(i=>pathname===i.href||(i.href!=="/dashboard"&&pathname.startsWith(i.href+"/"))).sort((a,b)=>b.href.length-a.href.length)[0];
@@ -65,7 +65,7 @@ export default function DashboardNav({showSettings,orgName="Your rental business
    {supportBanner}
    <header className="tenant-phase3-bar">
     <Link href="/dashboard" className="tenant-phase3-brand" aria-label="Tenant home">
-     <span className="tenant-phase3-brand-mark"><Icon name="box" className="h-5 w-5"/></span>
+     {logoUrl?<span className="tenant-phase3-brand-logo"><img src={logoUrl} alt=""/></span>:<span className="tenant-phase3-brand-mark"><Icon name="box" className="h-5 w-5"/></span>}
      <span className="tenant-phase3-brand-copy"><strong>{orgName}</strong><small>Rental admin</small></span>
     </Link>
 
