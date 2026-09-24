@@ -44,7 +44,8 @@ async function main(){
    report.checks.push(`${viewport.name}: tool search navigates; Ctrl+K and Escape work`);
    await page.goto('http://localhost:3000/admin/organizations');
    if(viewport.width<640){assert.equal(await page.locator('table').first().getAttribute('data-admin-cards'),'true');assert.ok(await page.locator('td[data-label="Organization"]').count()>0);report.checks.push(`${viewport.name}: organization table has labeled mobile cards`);}
-   await page.getByRole('button',{name:'View as tenant',exact:true}).first().click();await page.waitForURL('**/dashboard');
+   const phase4TenantRow=page.locator('tbody tr').filter({hasText:'CI DEMO Rental 01'}).first();
+   await phase4TenantRow.getByRole('button',{name:'View as tenant',exact:true}).click();await page.waitForURL('**/dashboard');
    for(const [route,label] of [['/dashboard','workspace'],['/dashboard/orders','orders'],['/dashboard/customers','customers'],['/dashboard/inventory','inventory'],['/dashboard/categories','categories'],['/dashboard/inventory/new','new-item'],['/dashboard/deliveries','delivery'],['/dashboard/deliveries/print-invoices','print-invoices'],['/dashboard/deliveries/print-contracts','print-contracts']])await inspect(route,'tenant-'+label);
    await page.goto('http://localhost:3000/dashboard/inventory');
    const itemLink=page.getByRole('link',{name:'CI Phase 4 Tent',exact:true});
