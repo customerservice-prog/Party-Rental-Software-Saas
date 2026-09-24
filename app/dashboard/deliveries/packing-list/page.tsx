@@ -107,7 +107,7 @@ export default async function PackingListPage({
 
   return h(
     "div",
-    { className: "p-8 print:p-0" },
+    { className: "friendly-admin-page is-wide print:p-0" },
     h(
       "div",
       { className: "flex items-center justify-between mb-6 print:hidden" },
@@ -139,7 +139,7 @@ export default async function PackingListPage({
             {
               type: "submit",
               className:
-                "bg-gray-100 hover:bg-gray-200 text-gray-700 rounded px-3 py-1.5 text-sm font-medium",
+                "friendly-admin-secondary !min-h-0 !px-3 !py-1.5",
             },
             "Filter"
           )

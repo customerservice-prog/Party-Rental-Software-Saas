@@ -330,7 +330,7 @@ export default function WebsiteEditorPage() {
   }
 
   return (
-    <div className="-m-6 flex h-[calc(100vh-4rem)] flex-col">
+    <div className="-m-6 flex h-[calc(100vh-4rem)] flex-col friendly-legacy-page !max-w-none !p-0">
       <input
         ref={fileInputRef}
         type="file"
@@ -389,7 +389,7 @@ export default function WebsiteEditorPage() {
                 onClick={() => setDevice(d)}
                 className={
                   "px-2 py-1 text-xs capitalize " +
-                  (device === d ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-50")
+                  (device === d ? "bg-[#2d6a2d] text-white" : "text-gray-600 hover:bg-gray-50")
                 }
               >
                 {d}
@@ -420,7 +420,7 @@ export default function WebsiteEditorPage() {
             type="button"
             onClick={handlePublish}
             disabled={publishing || !hasUnpublishedChanges}
-            className="rounded bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-40"
+            className="rounded bg-[#2d6a2d] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#245824] disabled:opacity-40"
           >
             {publishing ? "Publishing..." : "Publish"}
           </button>
@@ -429,8 +429,8 @@ export default function WebsiteEditorPage() {
 
       {/* Section toolbar - only shown once a section is selected */}
       {selectedSection && (
-        <div className="flex flex-wrap items-center gap-2 border-b bg-indigo-50 px-4 py-2 text-xs">
-          <span className="font-medium text-indigo-900">
+        <div className="flex flex-wrap items-center gap-2 border-b bg-green-50 px-4 py-2 text-xs">
+          <span className="font-medium text-green-900">
             Editing: {SECTION_LABELS[selectedSection.type]} section
           </span>
           <button onClick={() => moveSection(selectedSection.id, -1)} className="rounded border bg-white px-2 py-1 hover:bg-gray-50">

@@ -245,19 +245,19 @@ return (
 <div className="flex flex-wrap gap-2">
 <a
 href={`/api/accounting/export?kind=sales&from=${encodeURIComponent(fromParam)}&to=${encodeURIComponent(toParam)}`}
-className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+className="friendly-admin-secondary"
 >
 Sales CSV
 </a>
 <a
 href={`/api/accounting/export?kind=payments&from=${encodeURIComponent(fromParam)}&to=${encodeURIComponent(toParam)}`}
-className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+className="friendly-admin-secondary"
 >
 Payments CSV
 </a>
 <a
 href={`/api/reports/export${(fromParam || toParam) ? `?from=${encodeURIComponent(fromParam)}&to=${encodeURIComponent(toParam)}` : ""}`}
-className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+className="friendly-admin-secondary"
 >
 Summary CSV
 </a>
@@ -279,7 +279,7 @@ className={
 ))}
 </div>
 
-<form method="get" className="flex gap-3 items-end mb-6 bg-white shadow rounded-lg p-4">
+<form method="get" className="friendly-admin-card accent-blue friendly-admin-filters">
 <input type="hidden" name="tab" value={activeTab} />
 <div>
 <div className="text-xs text-gray-500 mb-1">From</div>
@@ -289,7 +289,7 @@ className={
 <div className="text-xs text-gray-500 mb-1">To</div>
 <input type="date" name="to" defaultValue={toParam} className="border border-gray-300 rounded-md px-3 py-1.5 text-sm" />
 </div>
-<button type="submit" className="bg-indigo-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-indigo-700">
+<button type="submit" className="friendly-admin-primary">
 Apply
 </button>
 {hasDateFilter && (

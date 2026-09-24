@@ -129,13 +129,13 @@ export default function AutomationsPage() {
   const sectionStyle = "border border-gray-200 rounded-lg p-5 bg-white mb-5";
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="friendly-legacy-page">
       <h1 className="text-2xl font-bold mb-1">Marketing</h1>
       <p className="text-sm text-gray-500 mb-4">
         Automations - booking confirmations, event reminders, and balance-due reminders by connected email/SMS providers.
       </p>
 
-      <div className="flex gap-6 border-b border-gray-200 mb-5">
+      <div className="friendly-admin-tabs">
         {TABS.map((tab) => (
           <Link
             key={tab.label}

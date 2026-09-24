@@ -119,7 +119,7 @@ export default function StaffPage() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="friendly-legacy-page">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Staff Accounts</h1>
@@ -131,13 +131,13 @@ export default function StaffPage() {
         <div className="flex items-center gap-2 shrink-0">
           <Link
             href="/dashboard/roles"
-            className="rounded-md border px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="friendly-admin-secondary"
           >
             Manage Roles
           </Link>
           <button
             onClick={() => setShowForm((v) => !v)}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            className="friendly-admin-primary"
           >
             {showForm ? "Cancel" : "Add Staff Account"}
           </button>
@@ -151,7 +151,7 @@ export default function StaffPage() {
       )}
 
       {showForm && (
-        <form onSubmit={handleCreate} className="mb-6 rounded-lg shadow bg-white p-4 space-y-3">
+        <form onSubmit={handleCreate} className="friendly-admin-card space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Full name</label>

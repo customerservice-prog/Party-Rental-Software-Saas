@@ -132,149 +132,67 @@ export default async function MarketingPage() {
   const valueStyle = { fontSize: 24, fontWeight: 700 } as const;
 
   return (
-    <div style={{ padding: 20, maxWidth: 1000 }}>
-      <h1 style={{ fontSize: 26, fontWeight: 800, marginBottom: 4 }}>Marketing</h1>
-      <p style={{ color: "#666", marginBottom: 16 }}>
-        {organization.name}'s marketing operating system - campaigns, audiences, and automations in one place.
-      </p>
-
-      <div style={{ display: "flex", gap: 24, borderBottom: "1px solid #e2e2e2", marginBottom: 20 }}>
-        {TABS.map((tab) => (
-          <Link
-            key={tab.label}
-            href={tab.href}
-            style={{
-              paddingBottom: 10,
-              fontWeight: 600,
-              fontSize: 14,
-              color: tab.active ? "#4f46e5" : "#555",
-              borderBottom: tab.active ? "2px solid #4f46e5" : "2px solid transparent",
-              textDecoration: "none",
-            }}
-          >
-            {tab.label}
-          </Link>
-        ))}
-      </div>
-
-      <div style={{ border: organization.resendApiKey ? "1px solid #c7ebd6" : "1px solid #cfe0fb", background: organization.resendApiKey ? "#eefbf3" : "#eef4ff", borderRadius: 8, padding: 16, marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+    <div className="friendly-admin-page">
+      <div className="friendly-admin-head">
         <div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: organization.resendApiKey ? "#1f8a53" : "#3454b4", letterSpacing: 0.5, marginBottom: 6 }}>
-            {organization.resendApiKey ? "AUTOMATION MODE: LIVE" : "AUTOMATION MODE: DRAFT ONLY"}
-          </div>
-          <div style={{ color: "#444", fontSize: 14 }}>
-            {organization.resendApiKey
-              ? "Outbound email is connected. Messages sent from Messages and Campaigns will be delivered to real customers."
-              : "Outbound marketing is disabled while messaging is not yet connected. No customer will receive an email or text from this page."}
-          </div>
+          <h1>Marketing</h1>
+          <p>{organization.name}&apos;s campaigns, audiences, and automations in one place.</p>
         </div>
-        <Link href="/dashboard/settings" style={{ fontSize: 13, color: "#4f46e5", whiteSpace: "nowrap" }}>
-          Settings
-        </Link>
+        <div className="friendly-admin-actions">
+          <Link href="/dashboard/message-templates" className="friendly-admin-primary">Campaigns</Link>
+          <Link href="/dashboard/settings" className="friendly-admin-secondary">Settings</Link>
+        </div>
       </div>
 
-      <div style={sectionStyle}>
-        <div style={sectionLabelStyle}>Next Best Action</div>
-        <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Grow {monthName} Bookings</div>
-        <p style={{ color: "#555", fontSize: 14, marginBottom: 10 }}>
-          Reach eligible customers who don't have an upcoming event booked yet.
-        </p>
-        <ul style={{ margin: 0, paddingLeft: 18, color: "#555", fontSize: 14 }}>
+      <div className="friendly-admin-tabs">
+        {TABS.map(tab=><Link key={tab.label} href={tab.href} className={"friendly-admin-tab "+(tab.active?"is-active":"")}>{tab.label}</Link>)}
+      </div>
+
+      <div className={"friendly-admin-card "+(organization.resendApiKey?"accent-green":"accent-blue")}>
+        <div className="friendly-admin-card-title">{organization.resendApiKey?"Automation Mode: Live":"Automation Mode: Draft Only"}</div>
+        <p className="text-xs leading-5 text-gray-600">{organization.resendApiKey?"Outbound email is connected. Messages sent from Messages and Campaigns can be delivered to real customers.":"Outbound marketing is disabled while messaging is not connected. No customer will receive an email or text from this page."}</p>
+      </div>
+
+      <div className="friendly-admin-card">
+        <div className="friendly-admin-card-title">Next Best Action</div>
+        <h2 className="text-base font-bold text-gray-900">Grow {monthName} Bookings</h2>
+        <p className="mt-1 text-xs text-gray-600">Reach eligible customers who do not have an upcoming event booked yet.</p>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-gray-600">
           <li>{eligible} contacts are currently eligible to receive marketing.</li>
-          <li>{dormant12Plus} contacts haven't booked in 12+ months.</li>
+          <li>{dormant12Plus} contacts have not booked in 12+ months.</li>
           <li>{annualRebookingWindow} contacts are in their annual rebooking window.</li>
         </ul>
       </div>
 
-      <div style={sectionStyle}>
-        <div style={sectionLabelStyle}>Needs Attention</div>
-        <ul style={{ margin: 0, paddingLeft: 18, color: "#555", fontSize: 14, display: "flex", flexDirection: "column", gap: 6 }}>
-          <li>Outbound sending is currently disabled while messaging is being connected - this is expected.</li>
-          <li>{totalExcluded} contacts are currently excluded from marketing (restricted or invalid email).</li>
-          <li>{upcomingEventCustomers} customers have an upcoming event and are automatically deprioritized for winback-style messaging.</li>
+      <div className="friendly-admin-card">
+        <div className="friendly-admin-card-title">Needs Attention</div>
+        <ul className="list-disc space-y-1 pl-5 text-xs text-gray-600">
+          <li>{totalExcluded} contacts are excluded from marketing because of restrictions or invalid email.</li>
+          <li>{upcomingEventCustomers} customers already have an upcoming event and are deprioritized for winback messaging.</li>
+          <li>{queuedMessageCount} message{queuedMessageCount===1?" is":"s are"} currently queued.</li>
         </ul>
       </div>
 
-      <div style={sectionStyle}>
-        <div style={sectionLabelStyle}>What Marketing Has Produced</div>
-        <p style={{ color: "#555", fontSize: 14, margin: 0 }}>
-          {automatedMessageCount > 0
-            ? `${automatedMessageCount} automated booking confirmation/reminder email(s) have been sent so far. See the Automations tab for details.`
-            : "No marketing campaigns have been sent yet. Once outbound sending is enabled and campaigns go out, bookings and revenue attributed to them will appear here."}
-        </p>
+      <div className="friendly-admin-kpis">
+        <div className="friendly-admin-kpi"><small>Eligible Contacts</small><strong>{eligible}</strong></div>
+        <div className="friendly-admin-kpi"><small>Dormant 12+ Months</small><strong>{dormant12Plus}</strong></div>
+        <div className="friendly-admin-kpi"><small>Rebooking Window</small><strong>{annualRebookingWindow}</strong></div>
+        <div className="friendly-admin-kpi"><small>Active Templates</small><strong>{activeTemplateCount}</strong></div>
       </div>
 
-      <div style={sectionStyle}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <div style={sectionLabelStyle}>Current Numbers</div>
-          <Link href="/dashboard/customers" style={{ fontSize: 13, color: "#4f46e5" }}>
-            View Customers &rarr;
-          </Link>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="friendly-admin-card !mb-0">
+          <div className="friendly-admin-card-title">What Marketing Has Produced</div>
+          <p className="text-xs leading-5 text-gray-600">{automatedMessageCount>0?automatedMessageCount+" automated booking confirmation/reminder message(s) have been sent so far.":"No marketing campaigns have been sent yet."}</p>
+          <Link href="/dashboard/automations" className="mt-3 inline-block text-xs font-semibold text-[#1a6fd4]">Open automations →</Link>
         </div>
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-          <div>
-            <div style={valueStyle}>{eligible}</div>
-            <div style={labelStyle}>Eligible Contacts</div>
-          </div>
-          <div>
-            <div style={valueStyle}>{dormant12Plus}</div>
-            <div style={labelStyle}>Dormant 12+ Months</div>
-          </div>
-          <div>
-            <div style={valueStyle}>{annualRebookingWindow}</div>
-            <div style={labelStyle}>Annual Rebooking Window</div>
-          </div>
-          <div>
-            <div style={valueStyle}>{activeTemplateCount}</div>
-            <div style={labelStyle}>Active Message Templates</div>
-          </div>
-          <div>
-            <div style={valueStyle}>{automatedMessageCount}</div>
-            <div style={labelStyle}>Automated Messages Sent</div>
-          </div>
+        <div className="friendly-admin-card !mb-0">
+          <div className="friendly-admin-card-title">Why Contacts Are Excluded</div>
+          <div className="grid grid-cols-2 gap-3"><div><small className="text-[9px] uppercase text-gray-500">Restricted</small><strong className="mt-1 block text-xl text-gray-900">{excludedRestricted}</strong></div><div><small className="text-[9px] uppercase text-gray-500">Invalid Email</small><strong className="mt-1 block text-xl text-gray-900">{excludedInvalidEmail}</strong></div></div>
         </div>
       </div>
 
-      <div style={sectionStyle}>
-        <div style={sectionLabelStyle}>Why Contacts Are Excluded</div>
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-          <div style={cardStyle}>
-            <div style={labelStyle}>Do Not Rent / Restricted</div>
-            <div style={valueStyle}>{excludedRestricted}</div>
-          </div>
-          <div style={cardStyle}>
-            <div style={labelStyle}>Missing or Invalid Email</div>
-            <div style={valueStyle}>{excludedInvalidEmail}</div>
-          </div>
-        </div>
-      </div>
-
-      <div style={sectionStyle}>
-        <div style={sectionLabelStyle}>Campaign Drafts</div>
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-          <div style={cardStyle}>
-            <div style={labelStyle}>Active Message Templates</div>
-            <div style={valueStyle}>{activeTemplateCount}</div>
-            <Link href="/dashboard/message-templates" style={{ fontSize: 12, color: "#4f46e5" }}>
-              Manage templates &rarr;
-            </Link>
-          </div>
-          <div style={cardStyle}>
-            <div style={labelStyle}>Queued Messages</div>
-            <div style={valueStyle}>{queuedMessageCount}</div>
-            <Link href="/dashboard/messages" style={{ fontSize: 12, color: "#4f46e5" }}>
-              View messages &rarr;
-            </Link>
-          </div>
-        </div>
-        <p style={{ fontSize: 12, color: "#999", marginTop: 12 }}>
-          Outbound sending is not yet enabled. Messages are saved as drafts and queued until an email/SMS provider is connected.
-        </p>
-      </div>
-
-      <p style={{ fontSize: 12, color: "#999" }}>
-        Total customers: {totalCustomers}. Two customer records with the same email are not deduplicated in these counts.
-      </p>
+      <p className="mt-4 text-[10px] text-gray-400">Total customers: {totalCustomers}. Duplicate email addresses are not deduplicated in these counts.</p>
     </div>
   );
 }

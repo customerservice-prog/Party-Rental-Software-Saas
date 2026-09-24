@@ -80,7 +80,7 @@ export default function CouponsManager() {
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="friendly-legacy-page">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Coupons</h1>
       <p className="text-gray-500 mb-6">
         Create discount codes customers can apply at checkout.
@@ -94,7 +94,7 @@ export default function CouponsManager() {
 
       <form
         onSubmit={handleCreate}
-        className="bg-white shadow rounded-lg p-6 mb-8 grid grid-cols-1 md:grid-cols-5 gap-3 items-end"
+        className="friendly-admin-card accent-blue grid grid-cols-1 md:grid-cols-5 gap-3 items-end"
       >
         <label className="text-sm text-gray-600">
           Code
@@ -137,13 +137,13 @@ export default function CouponsManager() {
         </label>
         <button
           type="submit"
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 h-fit"
+          className="friendly-admin-primary h-fit"
         >
           Add Coupon
         </button>
       </form>
 
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="friendly-admin-card flush">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>

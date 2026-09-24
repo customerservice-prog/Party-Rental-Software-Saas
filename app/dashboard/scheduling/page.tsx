@@ -66,12 +66,16 @@ export default async function SchedulingPage({
   ]);
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Scheduling</h1>
-        <Link href="/dashboard/orders" className="text-sm text-indigo-600 hover:underline">
-          View all orders
-        </Link>
+    <div className="friendly-admin-page is-wide">
+      <div className="friendly-admin-head">
+        <div>
+          <h1>Scheduling</h1>
+          <p>Calendar view of event dates, deliveries, pickups, and closed days.</p>
+        </div>
+        <div className="friendly-admin-actions">
+          <Link href="/dashboard/orders" className="friendly-admin-secondary">View all orders</Link>
+          <Link href="/dashboard/orders/new" className="friendly-admin-primary">+ New Order</Link>
+        </div>
       </div>
 
       <SchedulingCalendar

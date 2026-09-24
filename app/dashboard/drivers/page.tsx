@@ -122,7 +122,7 @@ export default function DriversPage() {
                   { className: "flex items-center gap-3" },
                           e(
                                       "button",
-                            { onClick: () => handleToggleActive(d), className: "text-sm text-indigo-600 hover:underline" },
+                            { onClick: () => handleToggleActive(d), className: "text-xs font-semibold text-[#1a6fd4] hover:underline" },
                                       d.isActive ? "Deactivate" : "Reactivate"
                                     ),
                           e(
@@ -188,7 +188,7 @@ export default function DriversPage() {
 
   return e(
         "div",
-    { className: "max-w-3xl" },
+    { className: "friendly-legacy-page" },
         e(
                 "div",
           { className: "flex items-center justify-between mb-6" },
@@ -206,7 +206,7 @@ export default function DriversPage() {
                           "button",
                   {
                               onClick: () => setShowForm(!showForm),
-                              className: "rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700",
+                              className: "friendly-admin-primary",
                   },
                           showForm ? "Cancel" : "Add Driver"
                         )
@@ -217,7 +217,7 @@ export default function DriversPage() {
         showForm
           ? e(
                       "form",
-            { onSubmit: handleCreate, className: "mb-6 rounded-lg border bg-white p-4 space-y-3" },
+            { onSubmit: handleCreate, className: "friendly-admin-card space-y-3" },
                       formFields,
                       e(
                                     "button",
@@ -225,7 +225,7 @@ export default function DriversPage() {
                                         type: "submit",
                                         disabled: saving,
                                         className:
-                                                          "rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50",
+                                                          "friendly-admin-primary disabled:opacity-50",
                         },
                                     saving ? "Adding..." : "Add Driver"
                                   )
@@ -235,7 +235,7 @@ export default function DriversPage() {
           ? e("p", { className: "text-sm text-gray-500" }, "Loading...")
           : e(
                       "div",
-            { className: "rounded-lg border bg-white divide-y" },
+            { className: "friendly-admin-card !p-0 divide-y" },
                       drivers.length === 0 ? e("p", { className: "p-4 text-sm text-gray-500" }, "No drivers yet.") : null,
                       drivers.map(driverRow)
                     )

@@ -186,8 +186,8 @@ export default function PagesManager() {
   }
 
   return (
-    <div className="max-w-5xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Website Pages</h1>
+    <div className="friendly-legacy-page">
+      <div className="friendly-admin-head"><div><h1>Website Pages</h1><p>Build extra pages for your public site and control which ones appear in navigation.</p></div><div className="friendly-admin-actions"><a href="/dashboard/website" className="friendly-admin-secondary">Visual Editor</a></div></div>
       <p className="text-gray-500 mb-6">
         Build extra pages for your public site (About Us, FAQ, Policies, etc.) and
         control which ones appear in your site navigation.
@@ -199,7 +199,7 @@ export default function PagesManager() {
         </div>
       )}
 
-      <div className="bg-white shadow rounded-lg overflow-hidden mb-8">
+      <div className="friendly-admin-card !p-0 overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -220,7 +220,7 @@ export default function PagesManager() {
                 <td className="px-4 py-2 text-sm space-x-3">
                   <button
                     onClick={() => startEdit(page)}
-                    className="text-indigo-600 hover:underline"
+                    className="text-[#1a6fd4] hover:underline"
                   >
                     Edit
                   </button>
@@ -245,7 +245,7 @@ export default function PagesManager() {
       </div>
 
       {!editingId && (
-        <form onSubmit={handleCreate} className="bg-white shadow rounded-lg p-6 mb-8 space-y-3">
+        <form onSubmit={handleCreate} className="friendly-admin-card space-y-3">
           <h2 className="font-semibold text-gray-900">Add a new page</h2>
           <div className="flex gap-3">
             <input
@@ -262,7 +262,7 @@ export default function PagesManager() {
             />
             <button
               type="submit"
-              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 whitespace-nowrap"
+              className="friendly-admin-primary whitespace-nowrap"
             >
               Create Page
             </button>
@@ -271,7 +271,7 @@ export default function PagesManager() {
       )}
 
       {editingId && (
-        <div className="bg-white shadow rounded-lg p-6 space-y-6">
+        <div className="friendly-admin-card space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-gray-900">Edit page</h2>
             <div className="space-x-3">
@@ -281,7 +281,7 @@ export default function PagesManager() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                className="friendly-admin-primary disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save Page"}
               </button>

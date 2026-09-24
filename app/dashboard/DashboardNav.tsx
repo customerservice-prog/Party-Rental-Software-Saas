@@ -91,7 +91,7 @@ export default function DashboardNav({showSettings,orgName="Your rental business
    </header>
   </div>
 
-  <main id="tenant-main" tabIndex={-1} className={"tenant-content "+(pathname==="/dashboard"?"tenant-content-home":"")}>
+  <main id="tenant-main" tabIndex={-1} className={"tenant-content "+(pathname==="/dashboard"?"tenant-content-home":"tenant-friendly-surface")}>
    {pathname!=="/dashboard"&&<div className="tenant-breadcrumb-row"><div><span className="text-xs text-slate-400">Workspace</span><span className="mx-2 text-slate-300">/</span><strong className="text-xs text-slate-700">{current?.label||"Home"}</strong></div></div>}
    {children}
   </main>

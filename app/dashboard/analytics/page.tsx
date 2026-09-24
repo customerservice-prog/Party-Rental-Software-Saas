@@ -100,103 +100,37 @@ export default async function AnalyticsPage() {
   const maxTrend = Math.max(1, ...trend.map((t) => t.amount));
 
 return (
-  <div>
-  <h1 className="text-2xl font-bold text-gray-900 mb-1">Analytics</h1>
-  <p className="text-gray-500 mb-6">Business performance and booking insights.</p>
-  
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
-  <div className="bg-white shadow rounded-lg p-4 border-l-4 border-indigo-600">
-  <div className="text-sm text-gray-500">Revenue (30d)</div>
-  <div className="text-2xl font-bold text-gray-900">${revenue30.toFixed(2)}</div>
-    {revenueChange !== null && (
-    <div className={"text-xs mt-1 " + (revenueChange >= 0 ? "text-green-600" : "text-red-600")}>
-      {revenueChange >= 0 ? "↑" : "↓"} {Math.abs(revenueChange).toFixed(0)}% vs prior 30d
+  <div className="friendly-admin-page is-wide">
+   <div className="friendly-admin-head"><div><h1>Analytics</h1><p>Business performance and booking insights.</p></div></div>
+
+   <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6 mb-5">
+    <div className="friendly-admin-kpi"><small>Revenue (30d)</small><strong>{revenue30.toLocaleString("en-US",{style:"currency",currency:"USD"})}</strong>{revenueChange!==null&&<span className={"mt-1 block text-[9px] "+(revenueChange>=0?"text-green-600":"text-red-600")}>{revenueChange>=0?"↑":"↓"} {Math.abs(revenueChange).toFixed(0)}% vs prior</span>}</div>
+    <div className="friendly-admin-kpi"><small>Collected (30d)</small><strong>{collected30.toLocaleString("en-US",{style:"currency",currency:"USD"})}</strong></div>
+    <div className="friendly-admin-kpi"><small>Outstanding (30d)</small><strong className={outstanding30>0?"!text-orange-600":""}>{outstanding30.toLocaleString("en-US",{style:"currency",currency:"USD"})}</strong></div>
+    <div className="friendly-admin-kpi"><small>Orders (30d)</small><strong>{orders30}</strong></div>
+    <div className="friendly-admin-kpi"><small>Average Order</small><strong>{avgOrder30.toLocaleString("en-US",{style:"currency",currency:"USD"})}</strong>{avgOrderChange!==null&&<span className={"mt-1 block text-[9px] "+(avgOrderChange>=0?"text-green-600":"text-red-600")}>{avgOrderChange>=0?"↑":"↓"} {Math.abs(avgOrderChange).toFixed(0)}%</span>}</div>
+    <div className="friendly-admin-kpi"><small>Customers</small><strong>{allCustomers}</strong></div>
+   </div>
+
+   <div className="friendly-admin-card">
+    <div className="friendly-admin-card-title">Revenue Trend (6 months)</div>
+    <div className="flex h-36 items-end gap-3">
+     {trend.map((t,idx)=><div key={idx} className="flex flex-1 flex-col items-center"><div className="mb-1 text-[9px] text-gray-500">{t.amount.toLocaleString("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0})}</div><div className="w-full max-w-[38px] rounded bg-[#1a6fd4]" style={{height:Math.max(4,(t.amount/maxTrend)*100)}}/><div className="mt-1.5 text-[9px] text-gray-500">{t.label}</div></div>)}
     </div>
-  )}
+   </div>
+
+   <div className="friendly-admin-card">
+    <div className="friendly-admin-card-title">Orders by Status</div>
+    <div className="flex flex-wrap gap-2">{statusGroups.length===0?<span className="text-xs text-gray-500">No orders yet.</span>:statusGroups.map(s=><div key={s.status} className="rounded border border-gray-200 bg-gray-50 px-3 py-2"><div className="text-[9px] capitalize text-gray-500">{s.status}</div><div className="text-lg font-bold text-gray-900">{s._count._all}</div></div>)}</div>
+   </div>
+
+   <div className="friendly-admin-card flush">
+    <div className="friendly-admin-subhead"><div><h2>Top Rentals by Revenue</h2><p>Highest-grossing rental items</p></div></div>
+    <div className="friendly-admin-table-wrap"><table className="friendly-admin-table"><thead><tr><th>Item</th><th className="numeric">Units Booked</th><th className="numeric">Revenue</th></tr></thead><tbody>
+     {topItemsRaw.map(t=>{const item=itemMap.get(t.itemId);return <tr key={t.itemId}><td>{item?item.name:"Unknown item"}</td><td className="numeric">{t._sum.quantity||0}</td><td className="numeric">{(t._sum.price||0).toLocaleString("en-US",{style:"currency",currency:"USD"})}</td></tr>})}
+     {topItemsRaw.length===0&&<tr><td colSpan={3} className="friendly-admin-empty">No bookings yet.</td></tr>}
+    </tbody></table></div>
+   </div>
   </div>
-  <div className="bg-white shadow rounded-lg p-4 border-l-4 border-green-600">
-  <div className="text-sm text-gray-500">Collected (30d)</div>
-  <div className="text-2xl font-bold text-gray-900">${collected30.toFixed(2)}</div>
-  </div>
-  <div className={"bg-white shadow rounded-lg p-4 border-l-4 " + (outstanding30 > 0 ? "border-orange-500" : "border-gray-300")}>
-  <div className="text-sm text-gray-500">Outstanding (30d)</div>
-  <div className={"text-2xl font-bold " + (outstanding30 > 0 ? "text-orange-600" : "text-gray-900")}>${outstanding30.toFixed(2)}</div>
-  </div>
-  <div className="bg-white shadow rounded-lg p-4 border-l-4 border-blue-600">
-  <div className="text-sm text-gray-500">Orders (30d)</div>
-  <div className="text-2xl font-bold text-gray-900">{orders30}</div>
-  </div>
-  <div className="bg-white shadow rounded-lg p-4 border-l-4 border-purple-600">
-  <div className="text-sm text-gray-500">Average Order</div>
-  <div className="text-2xl font-bold text-gray-900">${avgOrder30.toFixed(2)}</div>
-    {avgOrderChange !== null && (
-    <div className={"text-xs mt-1 " + (avgOrderChange >= 0 ? "text-green-600" : "text-red-600")}>
-      {avgOrderChange >= 0 ? "↑" : "↓"} {Math.abs(avgOrderChange).toFixed(0)}% vs prior 30d
-    </div>
-  )}
-  </div>
-  <div className="bg-white shadow rounded-lg p-4 border-l-4 border-teal-600">
-  <div className="text-sm text-gray-500">Customers</div>
-  <div className="text-2xl font-bold text-gray-900">{allCustomers}</div>
-  </div>
-  </div>
-  
-  <h2 className="text-lg font-semibold text-gray-900 mb-3">Revenue Trend (6 months)</h2>
-  <div className="bg-white shadow rounded-lg p-4 mb-8">
-  <div className="flex items-end gap-3 h-36">
-    {trend.map((t, idx) => (
-    <div key={idx} className="flex flex-col items-center flex-1">
-    <div className="text-xs text-gray-500 mb-1">${Math.round(t.amount)}</div>
-    <div className="w-full max-w-[36px] bg-indigo-600 rounded" style={{ height: Math.max(4, (t.amount / maxTrend) * 100) }} />
-    <div className="text-xs text-gray-500 mt-1.5">{t.label}</div>
-    </div>
-    ))}
-  </div>
-  </div>
-  
-  <h2 className="text-lg font-semibold text-gray-900 mb-3">Orders by Status</h2>
-  <div className="flex gap-3 flex-wrap mb-8">
-    {statusGroups.length === 0 ? (
-    <div className="text-sm text-gray-500">No orders yet.</div>
-    ) : (
-    statusGroups.map((s) => (
-      <div key={s.status} className="bg-white shadow rounded-lg px-4 py-2 min-w-[90px]">
-      <div className="text-xs text-gray-500 capitalize">{s.status}</div>
-      <div className="text-xl font-bold text-gray-900">{s._count._all}</div>
-      </div>
-      ))
-    )}
-  </div>
-  
-  <h2 className="text-lg font-semibold text-gray-900 mb-3">Top Rentals by Revenue</h2>
-  <div className="bg-white shadow rounded-lg overflow-hidden">
-  <table className="w-full text-sm">
-  <thead>
-  <tr className="text-left text-gray-500 border-b border-gray-200">
-  <th className="px-6 py-2 font-medium">Item</th>
-  <th className="px-6 py-2 font-medium">Units Booked</th>
-  <th className="px-6 py-2 font-medium">Revenue</th>
-  </tr>
-  </thead>
-  <tbody className="divide-y divide-gray-100">
-    {topItemsRaw.map((t) => {
-    const item = itemMap.get(t.itemId);
-    return (
-      <tr key={t.itemId}>
-      <td className="px-6 py-2">{item ? item.name : "Unknown item"}</td>
-      <td className="px-6 py-2">{t._sum.quantity || 0}</td>
-      <td className="px-6 py-2">${(t._sum.price || 0).toFixed(2)}</td>
-      </tr>
-      );
-  })}
-    {topItemsRaw.length === 0 && (
-    <tr>
-    <td colSpan={3} className="px-6 py-4 text-gray-500">No bookings yet.</td>
-    </tr>
-  )}
-  </tbody>
-  </table>
-  </div>
-  </div>
-    );
-    }
+ );
+}
