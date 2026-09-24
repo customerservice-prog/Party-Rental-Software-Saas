@@ -192,8 +192,8 @@ const sectionClass = "bg-white border rounded-lg p-6 mb-8";
 
 return h(
   "div",
-  { className: "max-w-3xl p-6" },
-  h("h1", { className: "text-2xl font-bold mb-6" }, "Plan & Billing"),
+  { className: "friendly-admin-page !max-w-3xl" },
+  h("h1", { className: "text-2xl font-bold text-dark mb-6" }, "Plan & Billing"),
 
   billing.message
   ? h(
@@ -261,7 +261,7 @@ return h(
     h(
       "div",
       { className: "mt-4 flex items-center gap-3" },
-      h(Link, { href: "/pricing", className: "text-indigo-600 font-medium hover:underline text-sm" }, "View full plan comparison ->"),
+      h(Link, { href: "/pricing", className: "text-[#1a6fd4] font-semibold hover:underline text-xs" }, "View full plan comparison ->"),
       subscription && subscription.status && subscription.status !== "canceled"
       ? h(
         "button",
@@ -313,7 +313,7 @@ return h(
       "p",
       { className: "text-xs text-gray-500 mt-3" },
       "Enterprise plans are custom. ",
-      h(Link, { href: "/contact", className: "text-indigo-600 hover:underline" }, "Contact us"),
+      h(Link, { href: "/contact", className: "text-[#1a6fd4] hover:underline" }, "Contact us"),
       " to discuss your needs."
       )
     ),
@@ -343,7 +343,7 @@ return h(
       { className: "text-sm text-gray-600 mb-3" },
       "Use \"Manage billing\" above to update your payment method, view invoices, or cancel your subscription. For anything else, we're happy to help."
       ),
-    h(Link, { href: "/contact", className: "text-indigo-600 font-medium hover:underline text-sm" }, "Contact us ->")
+    h(Link, { href: "/contact", className: "text-[#1a6fd4] font-semibold hover:underline text-xs" }, "Contact us ->")
     )
   );
 }
