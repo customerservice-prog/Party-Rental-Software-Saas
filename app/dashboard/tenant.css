@@ -149,3 +149,18 @@
  .tenant-brand-name{max-width:120px}
  .tenant-more-panel{grid-template-columns:1fr;top:92px}
 }
+
+.phase2-widget-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid #edf0ee;padding:11px 12px}
+.phase2-widget-head h2{font-size:12px;font-weight:800;color:#253029}.phase2-widget-head p{margin-top:2px;font-size:9px;color:#808b85}.phase2-widget-head>strong{font-size:24px;line-height:1;color:#203329}
+.phase2-widget-empty{padding:20px 12px;text-align:center;font-size:10px;color:#89938e}
+.phase2-weather-now{padding:11px 12px}.phase2-weather-now b{display:block;font-size:11px;color:#2a352f}.phase2-weather-now span{display:block;margin-top:3px;font-size:9px;color:#7d8882}
+.phase2-weather-days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid #edf0ee}
+.phase2-weather-days>div{min-width:0;border-left:1px solid #edf0ee;padding:8px 5px;text-align:center}.phase2-weather-days>div:first-child{border-left:0}
+.phase2-weather-days b{display:block;font-size:9px;color:#55635b}.phase2-weather-days span{display:block;margin-top:3px;font-size:9px;color:#26322b}.phase2-weather-days small{display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8px;color:#77907f}
+.phase2-office-tool{padding-bottom:12px}
+.phase2-video-stage{display:flex;aspect-ratio:16/9;min-height:0;align-items:center;justify-content:center;background:#111a15;color:#fff}
+.phase2-video-stage iframe{height:100%;width:100%;border:0}.phase2-video-stage>div{text-align:center}.phase2-video-stage>div>span{display:flex;height:34px;width:34px;margin:0 auto 8px;align-items:center;justify-content:center;border-radius:999px;background:#fff;color:#235f31}.phase2-video-stage b{display:block;font-size:11px}.phase2-video-stage small{display:block;margin-top:4px;font-size:9px;color:#afbbb4}
+.phase2-inline-control{display:flex;gap:6px;padding:10px 10px 0}.phase2-inline-control input{min-width:0;flex:1}.phase2-inline-control button{border-radius:6px;background:#235f31;padding:7px 12px;color:#fff;font-size:10px;font-weight:800}
+.phase2-text-action{font-size:9px;font-weight:800;color:#2a6a3c}.phase2-meeting-form{display:grid;gap:8px;margin:10px;border:1px solid #e1e6e3;border-radius:8px;background:#fafcfb;padding:10px}
+.phase2-meeting-list{margin:0 12px}.phase2-meeting-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid #edf0ee;padding:9px 0}.phase2-meeting-row:first-child{border-top:0}.phase2-meeting-title{font-size:10px;font-weight:800;color:#26322b}.phase2-meeting-time{margin-top:2px;font-size:9px;color:#7f8a84}.phase2-remove-action{font-size:9px;font-weight:700;color:#b55252}.phase2-meeting-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:10px 12px 0}
+@media(max-width:760px){.phase2-weather-days{grid-template-columns:repeat(5,minmax(56px,1fr));overflow-x:auto}.phase2-weather-days>div{padding:7px 4px}}
