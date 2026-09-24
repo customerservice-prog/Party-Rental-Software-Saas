@@ -129,7 +129,7 @@ export default function DispatchPage() {
   const drivers = data?.drivers || [];
 
   return (
-    <div className="max-w-6xl">
+    <div className="friendly-admin-page is-wide">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dispatch</h1>
@@ -140,7 +140,7 @@ export default function DispatchPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setDate(addDays(date, -1))}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
+            className="friendly-admin-secondary"
           >
             &larr; Prev
           </button>
@@ -152,7 +152,7 @@ export default function DispatchPage() {
           />
           <button
             onClick={() => setDate(addDays(date, 1))}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
+            className="friendly-admin-secondary"
           >
             Next &rarr;
           </button>
@@ -169,7 +169,7 @@ export default function DispatchPage() {
         <p className="text-sm text-gray-500">No data.</p>
       ) : (
         <div className="space-y-8">
-          <div className="rounded-lg border bg-white p-4">
+          <div className="friendly-admin-card">
             <h2 className="text-sm font-semibold text-gray-900 mb-3">
               Unassigned orders ({data.unassigned.length})
             </h2>
@@ -210,7 +210,7 @@ export default function DispatchPage() {
             <p className="text-sm text-gray-500">No driver runs created for this date yet.</p>
           ) : (
             data.runs.map((run) => (
-              <div key={run.id} className="rounded-lg border bg-white p-4">
+              <div key={run.id} className="friendly-admin-card">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <h2 className="text-sm font-semibold text-gray-900">{run.driver.name}</h2>
@@ -254,7 +254,7 @@ export default function DispatchPage() {
                               <button
                                 onClick={() => patchStop(stop.id, { status: advance })}
                                 disabled={busy === stop.id}
-                                className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"
+                                className="friendly-admin-primary !min-h-0 !px-3 !py-1.5"
                               >
                                 Mark {STOP_STATUS_LABELS[advance]}
                               </button>
