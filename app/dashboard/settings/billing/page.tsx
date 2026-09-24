@@ -84,7 +84,7 @@ function seatBar(label: string, current: number, limit: number | null) {
     : h(
       "div",
       { className: "w-full h-2 bg-gray-100 rounded-full overflow-hidden" },
-      h("div", { className: "h-full bg-indigo-600", style: { width: pct + "%" } })
+      h("div", { className: "h-full bg-[#2d6a2d]", style: { width: pct + "%" } })
       )
     );
 }
@@ -93,7 +93,7 @@ function summaryItem(text: string) {
   return h(
     "li",
     { key: text, className: "flex items-start gap-2 text-sm text-gray-700" },
-    h("span", { className: "text-indigo-600" }, "\u2713"),
+    h("span", { className: "text-[#1a6fd4]" }, "\u2713"),
     h("span", null, text)
     );
 }
@@ -164,7 +164,7 @@ async function openBillingPortal() {
         onClick: () => startCheckout(p.code),
         className:
           "flex-1 min-w-[150px] rounded-lg border-2 px-4 py-4 text-left transition " +
-          (isCurrent ? "border-indigo-600 bg-indigo-50 cursor-default" : "border-gray-200 hover:border-indigo-400"),
+          (isCurrent ? "border-[#2d6a2d] bg-green-50 cursor-default" : "border-gray-200 hover:border-green-500"),
       },
       h("div", { className: "font-semibold text-gray-900" }, p.name),
       h("div", { className: "text-sm text-gray-600" }, price == null ? "Custom" : "$" + price + "/mo"),
