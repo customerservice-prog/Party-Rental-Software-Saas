@@ -447,3 +447,76 @@
 .tenant-friendly-surface :where(table tbody tr:hover){background:#f4f8ff}
 .tenant-friendly-surface :where(button,a){-webkit-tap-highlight-color:transparent}
 @media(max-width:640px){.tenant-friendly-surface{padding-left:0;padding-right:0}}
+
+
+/* Inventory cards on narrow screens — preserve catalog editing without horizontal overflow */
+@media(max-width:639px){
+  table[data-inventory-cards]{
+    display:block;
+    width:100%;
+    max-width:100%;
+  }
+  table[data-inventory-cards] thead{display:none}
+  table[data-inventory-cards] tbody{display:block;width:100%}
+  table[data-inventory-cards] tbody>tr:not(.inventory-edit-row){
+    display:grid;
+    grid-template-columns:56px minmax(0,1fr);
+    gap:4px 10px;
+    width:100%;
+    padding:10px;
+    border-bottom:1px solid #e5e7eb;
+    background:#fff!important;
+  }
+  table[data-inventory-cards] tbody>tr:not(.inventory-edit-row)>td{
+    display:flex;
+    min-width:0;
+    align-items:center;
+    gap:8px;
+    grid-column:2;
+    border:0!important;
+    padding:3px 0!important;
+    white-space:normal!important;
+  }
+  table[data-inventory-cards] tbody>tr:not(.inventory-edit-row)>td::before{
+    content:attr(data-label);
+    flex:0 0 62px;
+    font-size:8px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:#8a918d;
+  }
+  table[data-inventory-cards] tbody>tr:not(.inventory-edit-row)>td[data-label="Photo"]{
+    grid-column:1;
+    grid-row:1 / span 7;
+    align-self:start;
+    display:block;
+    padding-top:2px!important;
+  }
+  table[data-inventory-cards] tbody>tr:not(.inventory-edit-row)>td[data-label="Photo"]::before{display:none}
+  table[data-inventory-cards] tbody>tr:not(.inventory-edit-row)>td[data-label="Photo"] img{
+    width:52px;
+    height:52px;
+    border-radius:6px;
+  }
+  table[data-inventory-cards] tbody>tr:not(.inventory-edit-row)>td[data-label="Actions"]{
+    flex-wrap:wrap;
+    padding-top:6px!important;
+  }
+  table[data-inventory-cards] tbody>tr.inventory-edit-row{
+    display:block;
+    width:100%;
+  }
+  table[data-inventory-cards] tbody>tr.inventory-edit-row>td{
+    display:block;
+    width:100%;
+    max-width:100%;
+    padding:10px!important;
+  }
+  table[data-inventory-cards] tbody>tr.inventory-edit-row input,
+  table[data-inventory-cards] tbody>tr.inventory-edit-row select{
+    min-width:0!important;
+    max-width:100%!important;
+    width:100%;
+  }
+}
