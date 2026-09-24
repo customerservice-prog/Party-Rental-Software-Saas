@@ -393,7 +393,7 @@ export default function InventoryPage() {
                 </button>
               </div>
 
-              <div className="friendly-admin-table-wrap"><table className="friendly-admin-table mb-4">
+              <div className="friendly-admin-table-wrap"><table data-inventory-cards className="friendly-admin-table mb-4">
                 <thead>
                   <tr className="text-gray-500 border-b">
                     <th className="py-1">Photo</th>
@@ -523,14 +523,14 @@ export default function InventoryPage() {
                               <span className="text-gray-400 text-xs">No image</span>
                             )}
                           </td>
-                          <td className="py-1">{item.name}</td>
+                          <td data-label="Item" className="py-1">{item.name}</td>
                           <td className="py-1">
                             ${item.cost.toFixed(2)}
                             {item.acquisitionCost != null && (
                               <div className="text-xs text-gray-400">Cost: ${item.acquisitionCost.toFixed(2)}</div>
                             )}
                           </td>
-                          <td className="py-1">{item.quantity}</td>
+                          <td data-label="Quantity" className="py-1">{item.quantity}</td>
                           <td className="py-1">
                             <input
                               type="checkbox"
