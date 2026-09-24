@@ -30,6 +30,7 @@ const moreGroups:{label:string;items:Item[]}[]=[
   item("/warehouse","Warehouse","box"),
   item("/returns","Returns & damage","shield"),
   item("/inventory","Inventory","box"),
+  item("/categories","Categories","box"),
   item("/tasks","Tasks","check"),
   item("/workforce","Workforce","users"),
   item("/drivers","Drivers","truck",true),
