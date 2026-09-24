@@ -40,7 +40,7 @@ export default function PortalLinkButton({ orderId }: { orderId: string }) {
     setMessage("Customer portal link copied.");
   }
 
-  return <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+  return <section className="friendly-admin-card">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <h2 className="font-black text-slate-900">Customer portal</h2>
@@ -52,7 +52,7 @@ export default function PortalLinkButton({ orderId }: { orderId: string }) {
         {status?.hasActiveLink && <button onClick={revoke} disabled={busy} className="rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-black text-rose-600 disabled:opacity-50">Revoke</button>}
       </div>
     </div>
-    {url && <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3"><div className="break-all text-xs font-semibold text-blue-900">{url}</div><div className="mt-2 flex gap-2"><button onClick={copy} className="rounded-lg bg-white px-3 py-2 text-xs font-black text-blue-700 shadow-sm">Copy link</button><a href={url} target="_blank" rel="noreferrer" className="rounded-lg bg-white px-3 py-2 text-xs font-black text-slate-700 shadow-sm">Preview ↗</a></div><p className="mt-2 text-[10px] text-blue-700">For security, the raw link is shown only when generated. Create a new one if you lose it.</p></div>}
+    {url && <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3"><div className="break-all text-xs font-semibold text-blue-900">{url}</div><div className="mt-2 flex gap-2"><button onClick={copy} className="friendly-admin-secondary !min-h-0 !px-3 !py-2 text-[#1a6fd4]">Copy link</button><a href={url} target="_blank" rel="noreferrer" className="friendly-admin-secondary !min-h-0 !px-3 !py-2">Preview ↗</a></div><p className="mt-2 text-[10px] text-blue-700">For security, the raw link is shown only when generated. Create a new one if you lose it.</p></div>}
     {message && <p className="mt-3 text-xs font-bold text-slate-600">{message}</p>}
   </section>;
 }

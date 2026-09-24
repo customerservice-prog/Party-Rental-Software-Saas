@@ -49,11 +49,11 @@ export default function PackageBuilder({items,initialPackageIds}:{items:Item[];i
   }
 
   return <div className="grid gap-5 xl:grid-cols-[.85fr_1.15fr]">
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="friendly-admin-card">
       <h2 className="font-black">Choose the package item</h2>
       <p className="mt-1 text-xs leading-5 text-slate-500">A package is still a normal inventory item with its own storefront price and quantity. Adding components makes its availability consume those physical items too.</p>
       <label className="mt-4 block text-xs font-black uppercase tracking-wide text-slate-500">Package</label>
-      <select value={packageId} onChange={e=>setPackageId(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm">
+      <select value={packageId} onChange={e=>setPackageId(e.target.value)} className="friendly-admin-field mt-2 w-full">
         {items.map(item=><option key={item.id} value={item.id}>{item.name}{packageIds.has(item.id)?" · Package":""}</option>)}
       </select>
       {packageItem&&<div className="mt-4 rounded-xl bg-slate-50 p-4">
@@ -72,7 +72,7 @@ export default function PackageBuilder({items,initialPackageIds}:{items:Item[];i
       {message&&<div className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">{message}</div>}
     </section>
 
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section className="friendly-admin-card !p-0 overflow-hidden">
       <div className="border-b border-slate-100 px-5 py-4">
         <h2 className="font-black">Package contents</h2>
         <p className="text-xs text-slate-500">{packageItem?packageItem.name:"Select a package"} · one-level bundles only</p>

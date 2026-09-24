@@ -135,7 +135,7 @@ export default function RolesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Staff Roles</h1>
           <p className="text-sm text-gray-500 mt-1">
             Build custom permission sets and assign them to staff logins on the
-            <Link href="/dashboard/staff" className="text-indigo-600 hover:underline"> Staff Accounts</Link> page.
+            <Link href="/dashboard/staff" className="text-[#1a6fd4] hover:underline"> Staff Accounts</Link> page.
           </p>
         </div>
         <button
@@ -227,7 +227,7 @@ export default function RolesPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => saveEdit(role.id)}
-                      className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"
+                      className="friendly-admin-primary !min-h-0 !px-3 !py-1.5"
                     >
                       Save
                     </button>

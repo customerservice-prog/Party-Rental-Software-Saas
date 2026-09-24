@@ -513,7 +513,7 @@ function InsertBar({ onAdd }: { onAdd: (type: SectionType) => void }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="z-10 mx-2 rounded-full border border-dashed border-gray-300 px-2 py-0.5 text-xs text-gray-400 opacity-0 hover:border-indigo-400 hover:text-indigo-600 group-hover:opacity-100"
+        className="z-10 mx-2 rounded-full border border-dashed border-gray-300 px-2 py-0.5 text-xs text-gray-400 opacity-0 hover:border-green-500 hover:text-green-700 group-hover:opacity-100"
       >
         + Add section
       </button>
@@ -529,7 +529,7 @@ function InsertBar({ onAdd }: { onAdd: (type: SectionType) => void }) {
                 onAdd(type);
                 setOpen(false);
               }}
-              className="rounded border px-2 py-1 text-xs text-gray-700 hover:bg-indigo-50"
+              className="rounded border px-2 py-1 text-xs text-gray-700 hover:bg-green-50"
             >
               {SECTION_LABELS[type]}
             </button>

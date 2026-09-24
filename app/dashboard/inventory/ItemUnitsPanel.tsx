@@ -176,7 +176,7 @@ export default function ItemUnitsPanel({
               />
               <button
                 onClick={saveEdit}
-                className="text-indigo-600 hover:underline text-xs"
+                className="text-[#1a6fd4] hover:underline text-xs"
                 type="button"
               >
                 Save
@@ -214,7 +214,7 @@ export default function ItemUnitsPanel({
               <span className="space-x-2">
                 <button
                   onClick={() => startEdit(unit)}
-                  className="text-indigo-600 hover:underline text-xs"
+                  className="text-[#1a6fd4] hover:underline text-xs"
                   type="button"
                 >
                   Edit
