@@ -117,11 +117,11 @@ export default function MessageTemplatesPage() {
 
   return ce(
     "div",
-    { className: "max-w-4xl mx-auto px-4 py-6" },
+    { className: "friendly-admin-page" },
     ce(
       "div",
       { className: "mb-6" },
-      ce("h1", { className: "text-2xl font-semibold text-gray-900" }, "Message Templates"),
+      ce("h1", { className: "text-2xl font-bold text-dark" }, "Message Templates"),
       ce(
         "p",
         { className: "text-sm text-gray-500 mt-1" },
@@ -141,7 +141,7 @@ export default function MessageTemplatesPage() {
       "form",
       {
         onSubmit: save,
-        className: "mb-8 rounded-lg shadow bg-white p-4 space-y-3",
+        className: "friendly-admin-card space-y-3",
       },
       ce(
         "div",
@@ -234,7 +234,7 @@ export default function MessageTemplatesPage() {
             type: "submit",
             disabled: saving,
             className:
-              "rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50",
+              "friendly-admin-primary disabled:opacity-50",
           },
           saving ? "Saving..." : form.id ? "Update template" : "Create template"
         ),
@@ -245,7 +245,7 @@ export default function MessageTemplatesPage() {
               type: "button",
               onClick: resetForm,
               className:
-                "rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700",
+                "friendly-admin-secondary",
             },
             "Cancel"
           )
@@ -264,7 +264,7 @@ export default function MessageTemplatesPage() {
         )
       : ce(
           "div",
-          { className: "divide-y divide-gray-100 bg-white shadow rounded-lg overflow-hidden" },
+          { className: "friendly-admin-card !p-0 divide-y divide-gray-100 overflow-hidden" },
           templates.map((t) =>
             ce(
               "div",
