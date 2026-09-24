@@ -424,3 +424,26 @@
 .friendly-legacy-page table tbody tr:hover{background:#f4f8ff!important}
 .friendly-legacy-page input,.friendly-legacy-page select,.friendly-legacy-page textarea{border-color:#d1d5db!important;border-radius:6px!important;font-size:11px!important}
 .friendly-legacy-page input:focus,.friendly-legacy-page select:focus,.friendly-legacy-page textarea:focus{border-color:#1a6fd4!important;box-shadow:0 0 0 3px rgba(26,111,212,.12)!important}
+
+
+/* Default Friendly treatment for every tenant page except dashboard home */
+.tenant-friendly-surface{max-width:1500px}
+.tenant-friendly-surface>div{min-width:0}
+.tenant-friendly-surface :where(h1){color:#1a1a1a}
+.tenant-friendly-surface :where(.rounded-2xl.bg-white,.rounded-xl.bg-white,.rounded-lg.bg-white){border:1px solid #e2e5e3!important;border-radius:8px!important;box-shadow:0 2px 7px rgba(0,0,0,.07)!important}
+.tenant-friendly-surface :where(.rounded-2xl.border.bg-white,.rounded-xl.border.bg-white,.rounded-lg.border.bg-white){border-color:#e2e5e3!important;border-radius:8px!important}
+.tenant-friendly-surface :where(.bg-blue-600,.bg-indigo-600,.bg-violet-600){background-color:#2d6a2d!important}
+.tenant-friendly-surface :where(.hover\:bg-blue-700:hover,.hover\:bg-indigo-700:hover,.hover\:bg-violet-700:hover){background-color:#245824!important}
+.tenant-friendly-surface :where(.text-blue-600,.text-indigo-600,.text-violet-600){color:#1a6fd4!important}
+.tenant-friendly-surface :where(.font-black){font-weight:700!important}
+.tenant-friendly-surface :where(.rounded-xl){border-radius:8px!important}
+.tenant-friendly-surface :where(.rounded-2xl){border-radius:8px!important}
+.tenant-friendly-surface :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),select,textarea){border-radius:6px!important;border-color:#d1d5db!important;font-size:11px!important}
+.tenant-friendly-surface :where(input,select,textarea):focus{outline:none!important;border-color:#1a6fd4!important;box-shadow:0 0 0 3px rgba(26,111,212,.12)!important}
+.tenant-friendly-surface :where(table){font-size:11px}
+.tenant-friendly-surface :where(table thead tr){background:#f8f9f8}
+.tenant-friendly-surface :where(table th){font-size:10px;font-weight:800;color:#242424;text-transform:none;letter-spacing:0}
+.tenant-friendly-surface :where(table td){font-size:11px;color:#565656}
+.tenant-friendly-surface :where(table tbody tr:hover){background:#f4f8ff}
+.tenant-friendly-surface :where(button,a){-webkit-tap-highlight-color:transparent}
+@media(max-width:640px){.tenant-friendly-surface{padding-left:0;padding-right:0}}
