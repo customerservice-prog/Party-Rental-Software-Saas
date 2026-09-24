@@ -494,7 +494,7 @@ export default function InventoryPage() {
                             <div className="flex gap-2">
                               <button
                                 onClick={() => saveEdit(item.id)}
-                                className="rounded-md bg-indigo-600 px-3 py-1 text-sm font-medium text-white hover:bg-indigo-700"
+                                className="friendly-admin-primary !min-h-0 !px-3 !py-1"
                                 type="button"
                               >
                                 Save
@@ -543,7 +543,7 @@ export default function InventoryPage() {
                             <StatusBadge status={item.status||"available"}/>
                           </td>
                           <td data-label="Actions" className="py-1 space-x-2">
-                            <button onClick={() => startEdit(item)} className="text-indigo-600 hover:underline">
+                            <button onClick={() => startEdit(item)} className="text-[#1a6fd4] hover:underline">
                               Edit
                             </button>
                             <button onClick={() => deleteItem(item.id)} className="text-red-600 hover:underline">
@@ -622,7 +622,7 @@ export default function InventoryPage() {
                                   />
                                   Required
                                 </label>
-                                <button className="rounded-md bg-indigo-600 px-3 py-1 text-sm font-medium text-white hover:bg-indigo-700" type="submit">
+                                <button className="friendly-admin-primary !min-h-0 !px-3 !py-1" type="submit">
                                   Add
                                 </button>
                               </form>
@@ -695,7 +695,7 @@ export default function InventoryPage() {
                   className="text-xs"
                   onChange={(e) => readImageFile(e.target.files && e.target.files[0], (dataUrl) => setItemFormFor(category.id, { ...form, picture: dataUrl }))}
                 />
-                <button className="rounded-md bg-indigo-600 px-3 py-1 text-sm font-medium text-white hover:bg-indigo-700" type="submit">
+                <button className="friendly-admin-primary !min-h-0 !px-3 !py-1" type="submit">
                   Add Item
                 </button>
               </form></details>
