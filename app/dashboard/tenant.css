@@ -237,3 +237,116 @@
  .phase3-rail{grid-template-columns:1fr}
  .phase3-primary-column>.phase2-office-tool .phase2-video-stage{min-height:180px}
 }
+
+
+/* Phase 3.1: increase tenant navigation scale without changing layout */
+.tenant-phase3-bar{
+  min-height:82px;
+  gap:16px;
+  padding:0 18px;
+}
+.tenant-phase3-brand{
+  gap:10px;
+  padding:10px 0;
+}
+.tenant-phase3-brand-mark,
+.tenant-phase3-brand-logo{
+  height:48px;
+  width:48px;
+  border-radius:6px;
+}
+.tenant-phase3-brand-copy{
+  max-width:175px;
+}
+.tenant-phase3-brand-copy strong{
+  font-size:12px;
+}
+.tenant-phase3-brand-copy small{
+  margin-top:3px;
+  font-size:9px;
+}
+.tenant-phase3-link{
+  min-width:70px;
+  gap:6px;
+  padding:10px 9px 8px;
+  font-size:11px;
+  font-weight:700;
+}
+.tenant-phase3-link svg{
+  width:22px;
+  height:22px;
+}
+.tenant-phase3-account{
+  gap:10px;
+  padding:10px 0;
+}
+.tenant-phase3-new{
+  gap:6px;
+  padding:10px 12px;
+  font-size:10px;
+}
+.tenant-phase3-new svg{
+  width:18px;
+  height:18px;
+}
+.tenant-phase3-user{
+  max-width:160px;
+}
+.tenant-phase3-user b{
+  font-size:10px;
+}
+.tenant-phase3-user small{
+  font-size:9px;
+}
+.tenant-phase3-logout{
+  padding:10px 12px;
+  font-size:10px;
+}
+
+@media(max-width:1180px){
+  .tenant-phase3-link{
+    min-width:64px;
+    padding-left:7px;
+    padding-right:7px;
+    font-size:10px;
+  }
+  .tenant-phase3-link svg{
+    width:20px;
+    height:20px;
+  }
+}
+@media(max-width:900px){
+  .tenant-phase3-bar{
+    min-height:72px;
+    padding:0 10px;
+  }
+  .tenant-phase3-brand-mark,
+  .tenant-phase3-brand-logo{
+    height:42px;
+    width:42px;
+  }
+  .tenant-phase3-link{
+    min-width:60px;
+    font-size:9.5px;
+  }
+}
+@media(max-width:640px){
+  .tenant-phase3-bar{
+    min-height:64px;
+  }
+  .tenant-phase3-brand-mark,
+  .tenant-phase3-brand-logo{
+    height:38px;
+    width:38px;
+  }
+  .tenant-phase3-link{
+    min-width:56px;
+    gap:4px;
+    padding:7px 6px 6px;
+    font-size:8.5px;
+  }
+  .tenant-phase3-link svg{
+    width:19px;
+    height:19px;
+  }
+}
