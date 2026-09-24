@@ -174,7 +174,7 @@ export default function SchedulingCalendar({
               className={
                 "px-3 py-1 rounded-full border " +
                 (filter === f.key
-                  ? "bg-indigo-600 text-white border-indigo-600"
+                  ? "bg-[#2d6a2d] text-white border-[#2d6a2d]"
                   : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50")
               }
             >
@@ -184,7 +184,7 @@ export default function SchedulingCalendar({
         </div>
         <Link
           href="/book"
-          className="text-sm bg-emerald-600 text-white px-4 py-2 rounded-md font-medium hover:bg-emerald-700 whitespace-nowrap"
+          className="friendly-admin-primary whitespace-nowrap"
         >
           + New Booking
         </Link>
@@ -227,7 +227,7 @@ export default function SchedulingCalendar({
               (cell.inMonth ? (cell.isWeekend ? "bg-slate-50" : "bg-white") : "bg-gray-50 text-gray-400") +
               (cell.isClosed ? " bg-red-50" : "") +
               (cell.isToday ? " ring-2 ring-blue-400 ring-inset" : "") +
-              (selectedDay === cell.key ? " ring-2 ring-indigo-500 ring-inset" : "")
+              (selectedDay === cell.key ? " ring-2 ring-[#2d6a2d] ring-inset" : "")
             }
           >
             <div className={"font-medium " + (cell.isToday ? "text-blue-600" : "")}>
@@ -273,7 +273,7 @@ export default function SchedulingCalendar({
               const balanceDue = order.totalAmount - order.amountPaid;
               return (
                 <div key={order.id} className="border rounded-md overflow-hidden">
-                  <div className="bg-indigo-600 text-white text-sm px-3 py-2 flex items-center justify-between">
+                  <div className="bg-[#2d6a2d] text-white text-sm px-3 py-2 flex items-center justify-between">
                     <span className="font-medium">Order #{order.orderNumber}</span>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-white/20">
                       {order.contractSigned ? "Signed" : "Unsigned"}
@@ -291,16 +291,16 @@ export default function SchedulingCalendar({
 
                     <div className="flex gap-3 text-xs">
                       {order.customerPhone && (
-                        <a href={"tel:" + order.customerPhone} className="text-indigo-600 hover:underline">
+                        <a href={"tel:" + order.customerPhone} className="text-[#1a6fd4] hover:underline">
                           Call
                         </a>
                       )}
                       {order.customerEmail && (
-                        <a href={"mailto:" + order.customerEmail} className="text-indigo-600 hover:underline">
+                        <a href={"mailto:" + order.customerEmail} className="text-[#1a6fd4] hover:underline">
                           Email
                         </a>
                       )}
-                      <Link href="/dashboard/orders" className="text-indigo-600 hover:underline">
+                      <Link href="/dashboard/orders" className="text-[#1a6fd4] hover:underline">
                         View order
                       </Link>
                     </div>
