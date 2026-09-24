@@ -1,27 +1,57 @@
 import Link from "next/link";
-import { requireCurrentOrganization } from "@/lib/tenant";
-import { prisma } from "@/lib/prisma";
-import { ORDER_STATUSES,orderSearchWhere } from "@/lib/orderFilters";
+import {requireCurrentOrganization} from "@/lib/tenant";
+import {prisma} from "@/lib/prisma";
+import {ORDER_STATUSES,orderSearchWhere} from "@/lib/orderFilters";
 import Icon from "../components/Icon";
-import {PageHeading,StatusBadge,EmptyState,money,eventDateLabel} from "../components/TenantUI";
-export default async function OrdersPage({searchParams: searchParamsPromise}:{searchParams:Promise<{status?:string;q?:string;page?:string;balance?:string}>}){
-  const searchParams = await searchParamsPromise;
+import {StatusBadge,money,eventDateLabel} from "../components/TenantUI";
 
+export default async function OrdersPage({searchParams:searchParamsPromise}:{searchParams:Promise<{status?:string;q?:string;page?:string;balance?:string}>}){
+ const searchParams=await searchParamsPromise;
  const org=await requireCurrentOrganization(),q=searchParams.q?.trim().slice(0,200)||"";
  const status=ORDER_STATUSES.includes(searchParams.status as any)?searchParams.status!:"";
  const unpaid=searchParams.balance==="unpaid";
  const where={organizationId:org.id,...orderSearchWhere(q),...(status?{status}:unpaid?{status:{in:["active","confirmed","completed"]}}:{}),...(unpaid?{amountPaid:{lt:prisma.order.fields.totalAmount}}:{})};
- const total=await prisma.order.count({where}),pages=Math.max(1,Math.ceil(total/25));
- const page=Math.min(pages,Math.max(1,Math.floor(Number(searchParams.page)||1)));
+ const total=await prisma.order.count({where}),pages=Math.max(1,Math.ceil(total/25)),page=Math.min(pages,Math.max(1,Math.floor(Number(searchParams.page)||1)));
  const orders=await prisma.order.findMany({where,include:{customer:true},orderBy:[{eventDate:"desc"},{id:"asc"}],take:25,skip:(page-1)*25});
- function url(patch:Record<string,string>={}){const params=new URLSearchParams({...q?{q}:{},...status?{status}:{},...unpaid?{balance:"unpaid"}:{},...patch});for(const [key,value]of Array.from(params.entries()))if(!value)params.delete(key);return "/dashboard/orders"+(params.size?"?"+params:"");}
+ function url(patch:Record<string,string>={}){const params=new URLSearchParams({...q?{q}:{},...status?{status}:{},...unpaid?{balance:"unpaid"}:{},...patch});for(const[key,value]of Array.from(params.entries()))if(!value)params.delete(key);return"/dashboard/orders"+(params.size?"?"+params:"");}
  const exportParams=new URLSearchParams({...q?{q}:{},...status?{status}:{},...unpaid?{balance:"unpaid"}:{}});
- return <div className="space-y-6"><PageHeading eyebrow="Bookings" title="Orders" description="From the first quote to the final pickup. Keep every rental moving." actions={<><a href={"/api/orders/export?"+exportParams} className="tenant-button">Export CSV</a><Link href="/dashboard/orders/new" className="tenant-button tenant-button-primary"><Icon name="plus" className="h-4 w-4"/>New order</Link></>}/>
- <section className="tenant-panel"><nav className="tenant-tabs" aria-label="Order status">{[{value:"",label:"All orders"},...ORDER_STATUSES.map(value=>({value,label:value[0].toUpperCase()+value.slice(1)}))].map(tab=><Link key={tab.value} href={url({status:tab.value,page:""})} className="tenant-tab" aria-current={status===tab.value?"page":undefined}>{tab.label}</Link>)}</nav>
- <div className="flex flex-wrap items-center justify-between gap-3 p-5"><form className="flex w-full flex-wrap items-center gap-2 sm:w-auto" method="get"><div className="relative min-w-0 flex-1 sm:w-80"><Icon name="search" className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400"/><input aria-label="Search orders" name="q" defaultValue={q} placeholder="Order number, customer, or email" className="w-full !pl-9"/></div>{status&&<input type="hidden" name="status" value={status}/>}<label className="flex items-center gap-2 px-2 text-xs text-slate-600"><input type="checkbox" name="balance" value="unpaid" defaultChecked={unpaid}/>Balance due</label><button className="tenant-button" type="submit">Apply</button>{(q||unpaid)&&<Link href={url({q:"",balance:"",page:""})} className="text-xs font-medium text-slate-500">Clear</Link>}</form><p className="text-xs text-slate-500">{total} matching {total===1?"order":"orders"}</p></div>
- {!orders.length?<EmptyState icon="orders" title={q||status||unpaid?"No orders match these filters":"Your first booking starts here"} description={q||status||unpaid?"Try another search or clear your filters to see more orders.":"Create a quote, add rental items, and keep the entire event in one place."} href={q||status||unpaid?"/dashboard/orders":"/dashboard/orders/new"} label={q||status||unpaid?"Clear filters":"Create an order"}/>:<>
- <div className="hidden overflow-x-auto md:block"><table className="tenant-table"><thead><tr><th>Order</th><th>Customer</th><th>Event date</th><th>Status</th><th className="text-right">Total</th><th className="text-right">Balance due</th><th><span className="sr-only">Open order</span></th></tr></thead><tbody>{orders.map(o=><tr key={o.id}><td><Link href={"/dashboard/orders/"+o.id} className="font-semibold hover:underline">{o.orderNumber}</Link><p className="mt-1 text-[11px] font-normal capitalize text-slate-400">{o.deliveryType==="pickup"?"Customer pickup":"Delivery"}</p></td><td><p className="font-medium text-slate-700">{o.customer.firstName} {o.customer.lastName}</p><p className="mt-1 text-xs text-slate-400">{o.customer.email}</p></td><td className="whitespace-nowrap">{eventDateLabel(o.eventDate)}</td><td><StatusBadge status={o.status}/></td><td className="text-right tabular-nums">{money(o.totalAmount)}</td><td className="text-right tabular-nums"><span className={o.totalAmount>o.amountPaid?"font-medium text-amber-700":"text-emerald-700"}>{money(Math.max(0,o.totalAmount-o.amountPaid))}</span><p className="mt-1 text-[11px] text-slate-400">{money(o.amountPaid)} paid</p></td><td><Link href={"/dashboard/orders/"+o.id} aria-label={"Open order "+o.orderNumber}><Icon name="arrow" className="h-4 w-4"/></Link></td></tr>)}</tbody></table></div>
- <div className="divide-y divide-slate-100 md:hidden">{orders.map(o=><Link href={"/dashboard/orders/"+o.id} key={o.id} className="block p-5 hover:bg-slate-50"><div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold text-slate-500">{o.orderNumber}</span><StatusBadge status={o.status}/></div><p className="mt-3 text-base font-semibold text-slate-900">{o.customer.firstName} {o.customer.lastName}</p><p className="mt-1 text-xs text-slate-500">{eventDateLabel(o.eventDate)} · {o.deliveryType==="pickup"?"Customer pickup":"Delivery"}</p><div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3"><span className="text-sm font-semibold text-slate-800">{money(o.totalAmount)}</span><span className="text-xs text-slate-500">{money(Math.max(0,o.totalAmount-o.amountPaid))} due →</span></div></Link>)}</div>
- <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-4"><p className="text-xs text-slate-500">{(page-1)*25+1}–{Math.min(page*25,total)} of {total}</p><nav aria-label="Order pages" className="flex items-center gap-3">{page>1&&<Link href={url({page:String(page-1)})} className="tenant-button">Previous</Link>}<span className="text-xs text-slate-500">Page {page} of {pages}</span>{page<pages&&<Link href={url({page:String(page+1)})} className="tenant-button">Next</Link>}</nav></div></>}
- </section></div>;
+ return <div className="friendly-admin-page">
+  <div className="friendly-admin-head">
+   <div><h1>Orders</h1><p>{total} matching {total===1?"order":"orders"}</p></div>
+   <div className="friendly-admin-actions"><a href={"/api/orders/export?"+exportParams} className="friendly-admin-secondary">Export CSV</a><Link href="/dashboard/orders/new" className="friendly-admin-primary"><Icon name="plus" className="h-4 w-4"/>New Order</Link></div>
+  </div>
+
+  <div className="friendly-admin-card accent-blue">
+   <form className="friendly-admin-filters" method="get">
+    <label><span>Status</span><select name="status" defaultValue={status}><option value="">All Statuses</option>{ORDER_STATUSES.map(value=><option key={value} value={value}>{value[0].toUpperCase()+value.slice(1)}</option>)}</select></label>
+    <label className="min-w-[220px] flex-1"><span>Search</span><input name="q" defaultValue={q} placeholder="Search by customer name or order number..." className="w-full"/></label>
+    <label className="flex items-center gap-2 pb-2"><input type="checkbox" name="balance" value="unpaid" defaultChecked={unpaid}/><span className="!mb-0">Balance due only</span></label>
+    <button className="friendly-admin-secondary" type="submit">Apply</button>
+    {(q||status||unpaid)&&<Link href="/dashboard/orders" className="friendly-admin-secondary">Clear</Link>}
+   </form>
+  </div>
+
+  <div className="friendly-admin-card flush">
+   <div className="friendly-admin-table-wrap">
+    <table className="friendly-admin-table">
+     <thead><tr><th>Order#</th><th>Customer</th><th>Event Date</th><th>Status</th><th className="numeric">Total</th><th className="numeric">Paid</th><th className="numeric">Balance</th><th>Actions</th></tr></thead>
+     <tbody>
+      {orders.map(o=><tr key={o.id}>
+       <td><Link href={"/dashboard/orders/"+o.id}>{o.orderNumber}</Link><div className="mt-1 text-[9px] capitalize text-gray-400">{o.deliveryType==="pickup"?"Customer pickup":"Delivery"}</div></td>
+       <td><div className="font-medium text-[#333]">{o.customer.firstName} {o.customer.lastName}</div><div className="mt-1 text-[9px] text-gray-400">{o.customer.email}</div></td>
+       <td>{eventDateLabel(o.eventDate)}</td>
+       <td><StatusBadge status={o.status}/></td>
+       <td className="numeric">{money(o.totalAmount)}</td>
+       <td className="numeric">{money(o.amountPaid)}</td>
+       <td className={"numeric "+(o.totalAmount>o.amountPaid?"!text-red-600 font-semibold":"!text-green-700")}>{money(Math.max(0,o.totalAmount-o.amountPaid))}</td>
+       <td><Link href={"/dashboard/orders/"+o.id} className="friendly-admin-secondary !min-h-0 !px-3 !py-1">View</Link></td>
+      </tr>)}
+      {!orders.length&&<tr><td colSpan={8} className="friendly-admin-empty">No orders found.</td></tr>}
+     </tbody>
+    </table>
+   </div>
+  </div>
+
+  <div className="friendly-admin-pager"><span>{total ? ((page-1)*25+1)+"–"+Math.min(page*25,total)+" of "+total : "0 orders"}</span><div className="flex items-center gap-2">{page>1&&<Link href={url({page:String(page-1)})} className="friendly-admin-secondary">Previous</Link>}<span>Page {page} of {pages}</span>{page<pages&&<Link href={url({page:String(page+1)})} className="friendly-admin-secondary">Next</Link>}</div></div>
+ </div>;
 }
