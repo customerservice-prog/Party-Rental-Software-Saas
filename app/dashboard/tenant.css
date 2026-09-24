@@ -520,3 +520,17 @@
     width:100%;
   }
 }
+
+
+/* Phase 4: printable delivery documents */
+@media print{
+  @page{margin:.45in}
+  body{background:#fff!important}
+  .tenant-phase3-bar,.tenant-breadcrumb-row,.tenant-skip,.print-hide{display:none!important}
+  .tenant-content,.friendly-admin-page.print-page{max-width:none!important;margin:0!important;padding:0!important;background:#fff!important}
+  .print-stack{display:block!important}
+  .print-document{break-after:page;page-break-after:always;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important}
+  .print-document:last-child{break-after:auto;page-break-after:auto}
+  .print-document .friendly-admin-table{font-size:10px!important}
+  .print-document a{color:inherit!important;text-decoration:none!important}
+}
