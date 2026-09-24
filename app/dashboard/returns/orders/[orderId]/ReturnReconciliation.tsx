@@ -60,18 +60,18 @@ export default function ReturnReconciliation({orderId,orderNumber}:{orderId:stri
     finally{setSaving(null)}
   }
 
-  if(loading)return <div className="rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-400">Loading return reconciliation…</div>;
-  if(!state)return <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-bold text-rose-700">{error||"Return could not be loaded."}</div>;
+  if(loading)return <div className="friendly-admin-card p-8 text-sm text-slate-400">Loading return reconciliation…</div>;
+  if(!state)return <div className="friendly-admin-card !border-rose-200 !bg-rose-50 p-6 text-sm font-bold text-rose-700">{error||"Return could not be loaded."}</div>;
   return <div className="space-y-5">
     <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-      {[["Expected",totals.expected,"text-slate-700"],["Returned OK",totals.returned,"text-emerald-700"],["Damaged",totals.damaged,"text-amber-700"],["Missing",totals.missing,"text-rose-700"]].map(([label,value,cls])=><div key={String(label)} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="text-[9px] font-black uppercase text-slate-400">{label}</div><div className={`mt-1 text-3xl font-black ${cls}`}>{value}</div></div>)}
+      {[["Expected",totals.expected,"text-slate-700"],["Returned OK",totals.returned,"text-emerald-700"],["Damaged",totals.damaged,"text-amber-700"],["Missing",totals.missing,"text-rose-700"]].map(([label,value,cls])=><div key={String(label)} className="friendly-admin-kpi"><div className="text-[9px] font-black uppercase text-slate-400">{label}</div><div className={`mt-1 text-3xl font-black ${cls}`}>{value}</div></div>)}
     </section>
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="friendly-admin-card">
       <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-black">Return progress</h2><p className="text-xs text-slate-500">Order #{orderNumber} · serialized scans and manual quantity counts stay synchronized.</p></div><b className={reconciled>=totals.expected&&totals.expected>0?"text-emerald-700":"text-slate-600"}>{reconciled}/{totals.expected}</b></div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full bg-emerald-500" style={{width:`${totals.expected?Math.min(100,reconciled/totals.expected*100):0}%`}}/></div>
       {notice&&<div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">{notice}</div>}{error&&<div className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{error}</div>}
     </section>
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section className="friendly-admin-card !p-0 overflow-hidden">
       <div className="border-b border-slate-100 px-5 py-4"><h2 className="font-black">Physical equipment</h2><p className="text-xs text-slate-500">Packages are already expanded into actual warehouse items. Damaged or missing quantity-only units are held out of future availability until resolved.</p></div>
       <div className="divide-y divide-slate-100">{state.resources.map(row=>{
         const draft=drafts[row.itemId]||{loadedQty:row.loadedQty,returnedQty:row.returnedQty,damagedQty:row.damagedQty,missingQty:row.missingQty,notes:row.notes||""};
