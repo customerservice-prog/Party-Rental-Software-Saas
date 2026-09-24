@@ -18,12 +18,12 @@ export default async function PackagesPage() {
       organization.id
     ).catch(() => []),
   ]);
-  return <div className="space-y-5 pb-10">
+  return <div className="friendly-admin-page is-wide">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <Link href="/dashboard/inventory" className="text-xs font-bold text-blue-600">← Inventory</Link>
-        <div className="mt-2 text-xs font-black uppercase tracking-[.16em] text-blue-600">Bundles</div>
-        <h1 className="mt-1 text-3xl font-black tracking-tight">Packages & components</h1>
+        <Link href="/dashboard/inventory" className="text-xs font-semibold text-[#1a6fd4]">← Inventory</Link>
+        
+        <h1 className="text-2xl font-bold text-dark">Packages & Components</h1>
         <p className="mt-1 max-w-2xl text-sm text-slate-500">Build customer-facing packages from physical inventory. Package availability automatically follows the lowest available component.</p>
       </div>
     </div>
