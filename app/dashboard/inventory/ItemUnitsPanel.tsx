@@ -176,7 +176,7 @@ export default function ItemUnitsPanel({
               />
               <button
                 onClick={saveEdit}
-                className="text-indigo-600 hover:underline text-xs"
+                className="text-[#1a6fd4] hover:underline text-xs font-semibold"
                 type="button"
               >
                 Save
@@ -201,7 +201,7 @@ export default function ItemUnitsPanel({
                     unit.status === "available"
                       ? "text-green-700"
                       : unit.status === "rented"
-                      ? "text-indigo-700"
+                      ? "text-[#1a6fd4]"
                       : "text-yellow-700"
                   }
                 >
@@ -214,7 +214,7 @@ export default function ItemUnitsPanel({
               <span className="space-x-2">
                 <button
                   onClick={() => startEdit(unit)}
-                  className="text-indigo-600 hover:underline text-xs"
+                  className="text-[#1a6fd4] hover:underline text-xs font-semibold"
                   type="button"
                 >
                   Edit
@@ -240,7 +240,7 @@ export default function ItemUnitsPanel({
         />
         <button
           onClick={addUnit}
-          className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-700"
+          className="friendly-admin-primary !min-h-0 !px-3 !py-1"
           type="button"
         >
           Add Unit
@@ -254,7 +254,7 @@ export default function ItemUnitsPanel({
         />
         <button
           onClick={generateUnits}
-          className="rounded-md bg-white border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+          className="friendly-admin-secondary !min-h-0 !px-3 !py-1"
           type="button"
         >
           Auto-generate units

@@ -80,7 +80,7 @@ export default function ImportCsvModal({
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center overflow-y-auto py-8">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
+      <div className="friendly-admin-card !mb-0 !p-0 w-full max-w-lg mx-4 shadow-xl">
         <div className="flex items-center justify-between border-b px-6 py-4">
           <div>
             <h2 className="text-lg font-semibold">Import inventory from a spreadsheet</h2>
@@ -100,7 +100,7 @@ export default function ImportCsvModal({
           <button
             type="button"
             onClick={downloadTemplate}
-            className="text-sm text-indigo-600 hover:underline mb-4"
+            className="text-xs font-semibold text-[#1a6fd4] hover:underline mb-4"
           >
             Download a CSV template
           </button>
@@ -124,13 +124,13 @@ export default function ImportCsvModal({
           </p>
 
           <div className="flex items-center justify-between">
-            <button onClick={onClose} className="text-sm text-gray-500 px-3 py-2">
+            <button onClick={onClose} className="friendly-admin-secondary">
               Cancel
             </button>
             <button
               disabled={!csvText || submitting}
               onClick={submit}
-              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="friendly-admin-primary disabled:opacity-50"
             >
               {submitting ? "Importing..." : "Import"}
             </button>

@@ -43,7 +43,7 @@ export default function CustomerNotes({
   return (
     <div>
       <textarea
-        className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+        className="friendly-admin-field w-full"
         rows={4}
         value={notes}
         onChange={(e) => {
@@ -56,7 +56,7 @@ export default function CustomerNotes({
         <button
           onClick={onSave}
           disabled={saving}
-          className="bg-indigo-600 text-white px-4 py-2 rounded text-sm font-medium disabled:opacity-50"
+          className="friendly-admin-primary disabled:opacity-50"
         >
           {saving ? "Saving..." : "Save notes"}
         </button>
