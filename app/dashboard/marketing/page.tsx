@@ -135,26 +135,35 @@ export default async function MarketingPage() {
   const valueStyle = { fontSize: 24, fontWeight: 700 } as const;
 
   return (
-    <div className="friendly-admin-page">
-      <div className="friendly-admin-head">
-        <div>
-          <h1>Marketing</h1>
-          <p>Bring customers back and see which campaigns and automations lead to bookings.</p>
-        </div>
-        <div className="friendly-admin-actions">
-          <Link href="/dashboard/message-templates" className="friendly-admin-primary">Campaign Library</Link>
-          <Link href="/dashboard/settings/business#email" className="friendly-admin-secondary">Settings</Link>
-        </div>
+    <div className="marketing-parity-page mx-auto max-w-7xl">
+      <div className="px-4 pb-4 pt-6 sm:px-6">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-950">Marketing</h1>
+        <p className="mt-1 text-sm text-gray-500">Bring customers back and see which campaigns lead to bookings.</p>
       </div>
 
-      <div className="friendly-admin-tabs">
-        {TABS.map(tab=><Link key={tab.label} href={tab.href} className={"friendly-admin-tab "+(tab.active?"is-active":"")}>{tab.label}</Link>)}
-      </div>
+      <nav aria-label="Marketing sections" className="marketing-parity-tabs">
+        {TABS.map(tab=><Link key={tab.label} href={tab.href} aria-current={tab.active?"page":undefined} className={tab.active?"is-active":""}>{tab.label}</Link>)}
+      </nav>
 
-      <div className={"friendly-admin-card "+(organization.resendApiKey?"accent-green":"accent-blue")}>
-        <div className="friendly-admin-card-title">{organization.resendApiKey?"Automation Mode: Live":"Automation Mode: Draft Only"}</div>
-        <p className="text-xs leading-5 text-gray-600">{organization.resendApiKey?"Outbound email is connected. Messages sent from Messages and Campaigns can be delivered to real customers.":"Outbound marketing is disabled while messaging is not connected. No customer will receive an email or text from this page."}</p>
-      </div>
+      <div className="p-4 sm:p-6">
+        <section className="marketing-parity-hero">
+          <div className="flex flex-wrap items-start justify-between gap-5">
+            <div className="max-w-2xl">
+              <span className="marketing-mode-badge"><span className={"h-2 w-2 rounded-full "+(organization.resendApiKey?"bg-green-300":"bg-amber-300")}/>{organization.resendApiKey?"Email sending connected":"Review mode · customer sending off"}</span>
+              <h2 className="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">Keep your next season booked</h2>
+              <p className="mt-3 text-sm leading-6 text-green-50">Seasonal reminders, repeat bookings and customer follow-ups using your real customer history. Review audiences and messaging before sending.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/dashboard/message-templates" className="marketing-hero-button">Campaign Library</Link>
+              <Link href="/dashboard/settings/business#email" className="marketing-hero-button secondary">Settings</Link>
+            </div>
+          </div>
+          <div className="marketing-hero-facts">
+            <div><p>Usable contacts</p><strong>{eligible.toLocaleString()}</strong></div>
+            <div><p>Queued messages</p><strong>{queuedMessageCount.toLocaleString()}</strong></div>
+            <div><p>Sending status</p><strong>{organization.resendApiKey?"Connected":"Draft only"}</strong></div>
+          </div>
+        </section>
 
       <div className="friendly-admin-card">
         <div className="friendly-admin-card-title">Next Best Action</div>
@@ -196,6 +205,7 @@ export default async function MarketingPage() {
       </div>
 
       <p className="mt-4 text-[10px] text-gray-400">Total customers: {totalCustomers}. Duplicate email addresses are not deduplicated in these counts.</p>
+      </div>
     </div>
   );
 }
