@@ -184,3 +184,23 @@ test('customer detail keeps Friendly-style contacts and credits in the main cust
   assert.match(relationships,/friendly-admin-field/);
   assert.match(relationships,/friendly-admin-primary/);
 });
+
+
+test('website builder exposes Friendly-style real management tools without leaving the editor blind',()=>{
+  const website=read('app/dashboard/website/page.tsx');
+  assert.match(website,/Website tools/);
+  for(const href of ['/dashboard/pages','/dashboard/settings/business#website','/dashboard/inventory','/dashboard/categories','/dashboard/inventory/packages','/dashboard/settings']) assert.ok(website.includes(href));
+});
+
+test('order detail exposes real Friendly-style quick actions and prefilled restriction context',()=>{
+  const page=read('app/dashboard/orders/[id]/page.tsx');
+  for(const label of ['Payment / Refund','Edit Items','Message Customer','Do Not Rent','Fulfillment']) assert.ok(page.includes(label));
+  assert.match(page,/dnrParams/);
+  assert.match(page,/customerId=/);
+});
+
+test('tenant brand behaves like Friendly admin by opening the public business website',()=>{
+  const nav=read('app/dashboard/DashboardNav.tsx');
+  assert.match(nav,/href="\/" target="_blank"/);
+  assert.match(nav,/Open .+ website/);
+});
