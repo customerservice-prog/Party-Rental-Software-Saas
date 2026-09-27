@@ -16,8 +16,10 @@ async function main(){
   if(n===1)tenant=org;
  }
  const phase4Category=await db.category.create({data:{organizationId:tenant.id,name:'CI Phase 4 Inventory',slug:'ci-phase-4-inventory',description:'Browser QA fixture for dedicated inventory workspaces'}});
- await db.item.create({data:{organizationId:tenant.id,categoryId:phase4Category.id,name:'CI Phase 4 Tent',slug:'ci-phase-4-tent',description:'Browser QA fixture',cost:250,quantity:4,displayToCustomer:true}});
- report.checks.push('Created isolated Phase 4 category and item browser fixture only for CI Demo Rental 01');
+ const phase4Item=await db.item.create({data:{organizationId:tenant.id,categoryId:phase4Category.id,name:'CI Phase 4 Tent',slug:'ci-phase-4-tent',description:'Browser QA fixture',cost:250,quantity:4,displayToCustomer:true}});
+ const visualCustomer=await db.customer.create({data:{organizationId:tenant.id,firstName:'CI Visual',lastName:'Customer',email:'ci-visual@example.invalid',phone:'3155550142',address:'123 Visual QA Way',city:'Minoa',state:'NY',zip:'13116',leadSource:'website'}});
+ const visualOrder=await db.order.create({data:{organizationId:tenant.id,orderNumber:'CI-ORDER-1001',customerId:visualCustomer.id,status:'active',source:'staff',eventDate:new Date(),deliveryType:'delivery',deliveryAddress:'123 Visual QA Way, Minoa, NY 13116',subtotal:500,deliveryFee:50,totalAmount:550,amountPaid:200,items:{create:{itemId:phase4Item.id,quantity:2,price:250}}}});
+ report.checks.push('Created isolated Phase 4 inventory, customer and order visual fixtures for CI Demo Rental 01');
  const browser=await chromium.launch({headless:true});
  try{
   const anonymous=await browser.newContext();const anon=await anonymous.newPage();
