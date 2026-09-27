@@ -67,8 +67,8 @@ export default function CategoriesPage(){
     await load();
   }
 
-  async function saveCategory(id:string){
-    const draft=drafts[id];if(!draft)return;
+  async function saveCategoryData(id:string,draft:Draft){
+    if(!draft)return;
     setMessage("");
     if(!draft.name.trim()){setMessage("Category name is required.");return;}
     const response=await fetch("/api/categories",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({
@@ -82,6 +82,11 @@ export default function CategoriesPage(){
     if(!response.ok){setMessage(data.error||"Category could not be updated.");return;}
     setMessage("Category updated.");
     await load();
+  }
+
+  async function saveCategory(id:string){
+    const draft=drafts[id];if(!draft)return;
+    return saveCategoryData(id,draft);
   }
 
   async function moveCategory(id:string,direction:-1|1){
@@ -138,7 +143,7 @@ export default function CategoriesPage(){
                   <div className="min-w-0">
                     <label className="inline-flex cursor-pointer items-center rounded border border-slate-300 bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-700 hover:bg-slate-100">
                       Upload
-                      <input type="file" accept="image/*" className="hidden" onChange={e=>readCategoryImage(e.target.files?.[0],dataUrl=>{setDrafts(current=>({...current,[category.id]:{...(current[category.id]||draft),picture:dataUrl}}));setTimeout(()=>saveCategory(category.id),0);})}/>
+                      <input type="file" accept="image/*" className="hidden" onChange={e=>readCategoryImage(e.target.files?.[0],dataUrl=>{const next={...draft,picture:dataUrl};setDrafts(current=>({...current,[category.id]:next}));void saveCategoryData(category.id,next);})}/>
                     </label>
                     <input aria-label={category.name+" image URL"} className="friendly-admin-field mt-1 w-28" value={draft.picture} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,picture:e.target.value}})} onBlur={()=>saveCategory(category.id)} placeholder="Image URL"/>
                   </div>
