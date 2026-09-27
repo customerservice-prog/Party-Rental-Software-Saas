@@ -1,7 +1,7 @@
 "use client";
 
 import {useEffect,useMemo,useState} from "react";
-import {useRouter} from "next/navigation";
+import {useRouter,useSearchParams} from "next/navigation";
 
 type Customer={id:string;firstName:string;lastName:string;email:string;phone?:string|null};
 type Item={id:string;name:string;cost:number;quantity?:number;status?:string};
@@ -11,11 +11,13 @@ type OrgSettings={flatDeliveryFee:number;taxRate:number};
 
 export default function NewOrderPage(){
  const router=useRouter();
+ const searchParams=useSearchParams();
+ const requestedCustomerId=searchParams.get("customerId")||"";
  const[customers,setCustomers]=useState<Customer[]>([]),[items,setItems]=useState<Item[]>([]),[settings,setSettings]=useState<OrgSettings>({flatDeliveryFee:0,taxRate:0});
  const[customerMode,setCustomerMode]=useState<"existing"|"new">("existing"),[customerId,setCustomerId]=useState(""),[firstName,setFirstName]=useState(""),[lastName,setLastName]=useState(""),[email,setEmail]=useState(""),[phone,setPhone]=useState("");
  const[lines,setLines]=useState<Line[]>([]),[eventDate,setEventDate]=useState(""),[eventEndDate,setEventEndDate]=useState(""),[deliveryType,setDeliveryType]=useState("delivery"),[deliveryAddress,setDeliveryAddress]=useState(""),[status,setStatus]=useState("quote"),[availability,setAvailability]=useState<Record<string,Availability|null>>({});
  const[error,setError]=useState(""),[loading,setLoading]=useState(false),[checking,setChecking]=useState(false);
- useEffect(()=>{Promise.all([fetch("/api/customers").then(r=>r.ok?r.json():[]),fetch("/api/items").then(r=>r.ok?r.json():[]),fetch("/api/organizations").then(r=>r.ok?r.json():null)]).then(([c,i,o])=>{const cs=Array.isArray(c)?c:[];setCustomers(cs);setItems(Array.isArray(i)?i:Array.isArray(i?.items)?i.items:[]);if(o?.organization)setSettings({flatDeliveryFee:Number(o.organization.flatDeliveryFee)||0,taxRate:Number(o.organization.taxRate)||0});if(!cs.length)setCustomerMode("new")}).catch(()=>setError("Could not load order data."))},[]);
+ useEffect(()=>{Promise.all([fetch("/api/customers").then(r=>r.ok?r.json():[]),fetch("/api/items").then(r=>r.ok?r.json():[]),fetch("/api/organizations").then(r=>r.ok?r.json():null)]).then(([c,i,o])=>{const cs=Array.isArray(c)?c:[];setCustomers(cs);setItems(Array.isArray(i)?i:Array.isArray(i?.items)?i.items:[]);if(o?.organization)setSettings({flatDeliveryFee:Number(o.organization.flatDeliveryFee)||0,taxRate:Number(o.organization.taxRate)||0});if(requestedCustomerId&&cs.some((customer:Customer)=>customer.id===requestedCustomerId)){setCustomerId(requestedCustomerId);setCustomerMode("existing")}else if(!cs.length)setCustomerMode("new")}).catch(()=>setError("Could not load order data."))},[requestedCustomerId]);
  const itemMap=useMemo(()=>new Map(items.map(i=>[i.id,i])),[items]);
  const subtotal=useMemo(()=>lines.reduce((s,l)=>s+(itemMap.get(l.itemId)?.cost||0)*l.quantity,0),[lines,itemMap]);
  const deliveryFee=deliveryType==="delivery"?settings.flatDeliveryFee:0,taxAmount=Math.round(subtotal*(settings.taxRate/100)*100)/100,total=subtotal+deliveryFee+taxAmount;
