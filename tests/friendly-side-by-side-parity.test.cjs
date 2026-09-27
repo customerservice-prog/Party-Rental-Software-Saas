@@ -112,13 +112,12 @@ test('driver roster supports Friendly-style inline edits without revealing saved
 });
 
 
-test('Settings hub matches Friendly behavior by linking real controls and leaving unsupported entries inert',()=>{
+test('Settings hub matches Friendly by making every visible setting navigable',()=>{
   const settings=read('app/dashboard/settings/page.tsx');
   const dynamic=read('app/dashboard/settings/[section]/page.tsx');
-  assert.doesNotMatch(settings,/settingHref\(item\)/);
-  assert.match(settings,/item\.href\?<Link/);
-  assert.match(settings,/Not available in this tenant CRM yet/);
-  for(const label of ['Google Integration','QuickBooks Online','Service Areas','General Documents','Sorting','Auto Charge','Availability Rule Sets','Gallery']) assert.ok(settings.includes(label));
+  assert.doesNotMatch(settings,/Not available in this tenant CRM yet/);
+  assert.match(settings,/section\.items\.map\(item=><Link/);
+  for(const slug of ['google-integration','quickbooks-online','service-areas','general-documents','sorting','auto-charge','availability-rule-sets','gallery']) assert.ok(settings.includes('/dashboard/settings/'+slug));
   for(const supported of ['/dashboard/settings/business#company-info','/dashboard/automations','/dashboard/categories','/dashboard/inventory','/dashboard/pages','/dashboard/website']) assert.ok(settings.includes(supported));
   assert.match(dynamic,/Not supported in this tenant CRM yet/);
 });
@@ -165,14 +164,14 @@ test('Marketing uses Friendly-style module destinations without fabricating camp
 });
 
 
-test('Friendly-style navigation keeps the main row compact but exposes tenant-only tools through More on desktop and mobile',()=>{
+test('Friendly-style navigation mirrors the ten-tab admin bar and leaves extra tools in the Home tools hub',()=>{
   const nav=read('app/dashboard/DashboardNav.tsx');
-  const css=read('app/dashboard/tenant.css');
-  assert.match(nav,/tenant-parity-more/);
-  assert.match(nav,/>More</);
-  assert.match(nav,/visibleGroups\.map\(group/);
-  for(const href of ['/orders','/inventory','/dispatch','/warehouse','/returns','/rainchecks','/messages']) assert.ok(nav.includes('item("'+href));
-  assert.match(css,/tenant-parity-mobile-group/);
+  const tools=read('app/dashboard/HomeTools.tsx');
+  assert.doesNotMatch(nav,/tenant-parity-more/);
+  assert.doesNotMatch(nav,/>More</);
+  assert.doesNotMatch(nav,/visibleGroups\.map\(group/);
+  for(const label of ['Home','Edit Website','Admin','Scheduling','Customers','Do Not Rent','Delivery','Reports','Analytics','Marketing']) assert.ok(nav.includes('label:"'+label+'"'));
+  for(const href of ['/dashboard/orders','/dashboard/inventory','/dashboard/dispatch','/dashboard/warehouse','/dashboard/returns','/dashboard/rainchecks','/dashboard/messages']) assert.ok(tools.includes(href));
 });
 
 test('customer detail keeps Friendly-style contacts and credits in the main customer workspace',()=>{
