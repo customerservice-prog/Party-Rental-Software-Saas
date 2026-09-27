@@ -27,10 +27,13 @@ export default async function CategoryPage({ params: paramsPromise }: { params: 
   const category = await prisma.category.findFirst({ where: { organizationId: organization.id, slug: params.slug, displayToCustomer: true } });
   if (!category) notFound();
 
-  const items = await prisma.item.findMany({
-    where: { organizationId: organization.id, categoryId: category.id, displayToCustomer: true },
-    orderBy: [{ name: "asc" }],
-  });
+  const [items,rentSketch] = await Promise.all([
+    prisma.item.findMany({
+      where: { organizationId: organization.id, categoryId: category.id, displayToCustomer: true },
+      orderBy: [{ name: "asc" }],
+    }),
+    prisma.tenantAppInstallation.findFirst({where:{organizationId:organization.id,appCode:"rentsketch",status:"active"},select:{id:true}}),
+  ]);
   const accent = organization.primaryColor || "#4f46e5";
 
   return (
@@ -87,7 +90,7 @@ export default async function CategoryPage({ params: paramsPromise }: { params: 
             </div>
           )}
 
-          {items.length > 0 && <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-5 sm:flex sm:items-center sm:justify-between sm:p-6"><div><h3 className="font-bold text-slate-900">Build one complete event order</h3><p className="mt-1 text-sm text-slate-600">Add tents, tables, chairs, games and other rentals to your cart, then choose one event date and checkout once.</p></div><div className="mt-4 flex gap-3 sm:mt-0"><Link href="/" className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700">All rentals</Link><Link href="/cart" className="rounded-xl px-4 py-2.5 text-sm font-bold text-white" style={{ backgroundColor: accent }}>View cart</Link></div></div>}
+          {items.length > 0 && <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-5 sm:flex sm:items-center sm:justify-between sm:p-6"><div><h3 className="font-bold text-slate-900">{rentSketch?"See how everything fits before you reserve":"Build one complete event order"}</h3><p className="mt-1 text-sm text-slate-600">{rentSketch?"Open the event designer to plan the layout, then return to your rental cart when you are ready.":"Add tents, tables, chairs, games and other rentals to your cart, then choose one event date and checkout once."}</p></div><div className="mt-4 flex flex-wrap gap-3 sm:mt-0">{rentSketch&&<Link href="/design-your-event" className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700">Design your event</Link>}<Link href="/cart" className="rounded-xl px-4 py-2.5 text-sm font-bold text-white" style={{ backgroundColor: accent }}>View cart</Link></div></div>}
         </section>
       </main>
       <StorefrontFooter organizationId={organization.id} />
