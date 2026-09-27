@@ -7,9 +7,11 @@ const read=file=>fs.readFileSync(path.join(root,file),'utf8');
 
 test('dashboard parity adds Friendly all-tools hub and independent calendar job filter',()=>{
   const home=read('app/dashboard/page.tsx');
+  const tools=read('app/dashboard/HomeTools.tsx');
   const calendar=read('app/dashboard/HomeCalendar.tsx');
-  assert.match(home,/>All tools</);
-  for(const href of ['/dashboard/orders/new','/dashboard/deliveries','/dashboard/dispatch','/dashboard/returns','/dashboard/settings']) assert.ok(home.includes(href));
+  assert.match(home,/HomeTools/);
+  assert.match(tools,/>All tools</);
+  for(const href of ['/dashboard/orders/new','/dashboard/deliveries','/dashboard/dispatch','/dashboard/returns','/dashboard/settings']) assert.ok(tools.includes(href));
   assert.match(calendar,/Calendar job type/);
   assert.match(calendar,/Delivery \/ drop-off/);
   assert.match(calendar,/Customer pickup/);
