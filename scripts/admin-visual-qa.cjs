@@ -46,14 +46,34 @@ async function main(){
    if(viewport.width<640){assert.equal(await page.locator('table').first().getAttribute('data-admin-cards'),'true');assert.ok(await page.locator('td[data-label="Organization"]').count()>0);report.checks.push(`${viewport.name}: organization table has labeled mobile cards`);}
    const phase4TenantRow=page.locator('tbody tr').filter({hasText:'CI DEMO Rental 01'}).first();
    await phase4TenantRow.getByRole('button',{name:'View as tenant',exact:true}).click();await page.waitForURL('**/dashboard');
-   for(const [route,label] of [['/dashboard','workspace'],['/dashboard/orders','orders'],['/dashboard/customers','customers'],['/dashboard/inventory','inventory'],['/dashboard/categories','categories'],['/dashboard/inventory/new','new-item'],['/dashboard/deliveries','delivery'],['/dashboard/deliveries/print-invoices','print-invoices'],['/dashboard/deliveries/print-contracts','print-contracts']])await inspect(route,'tenant-'+label);
+   for(const [route,label] of [
+    ['/dashboard','workspace'],
+    ['/dashboard/orders','orders'],
+    ['/dashboard/customers','customers'],
+    ['/dashboard/inventory','inventory'],
+    ['/dashboard/categories','categories'],
+    ['/dashboard/inventory/new','new-item'],
+    ['/dashboard/deliveries','delivery'],
+    ['/dashboard/deliveries/product-status-report','product-status'],
+    ['/dashboard/deliveries/product-attention-report','product-attention'],
+    ['/dashboard/deliveries/print-invoices','print-invoices'],
+    ['/dashboard/deliveries/print-contracts','print-contracts'],
+    ['/dashboard/scheduling','scheduling'],
+    ['/dashboard/do-not-rent','do-not-rent'],
+    ['/dashboard/reports','reports-library'],
+    ['/dashboard/reports/overview','reports-detail'],
+    ['/dashboard/analytics','analytics'],
+    ['/dashboard/marketing','marketing'],
+    ['/dashboard/settings','settings-hub'],
+    ['/dashboard/settings/business','settings-business'],
+   ])await inspect(route,'tenant-'+label);
    await page.goto('http://localhost:3000/dashboard/inventory');
    const itemLink=page.getByRole('link',{name:'CI Phase 4 Tent',exact:true});
    await itemLink.waitFor();
    const itemHref=await itemLink.getAttribute('href');
    assert.ok(itemHref&&itemHref.startsWith('/dashboard/inventory/'),'Dedicated item workspace link is missing');
    await inspect(itemHref,'tenant-item-workspace');
-   report.checks.push(viewport.name+': Phase 4 tenant category, item and print routes rendered');
+   report.checks.push(viewport.name+': Friendly parity tenant routes rendered');
    await page.getByRole('region',{name:'Tenant impersonation'}).waitFor();await page.getByRole('button',{name:'Exit tenant view'}).click();await page.waitForURL('**/support');
    report.checks.push(`${viewport.name}: tenant workspace, core directories and support exit`);
    await context.close();
