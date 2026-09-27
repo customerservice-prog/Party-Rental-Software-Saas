@@ -73,6 +73,7 @@ async function main(){
     ['/dashboard/reports','reports-library'],
     ['/dashboard/reports/overview','reports-detail'],
     ['/dashboard/analytics','analytics'],
+    ['/dashboard/apps','apps-marketplace'],
     ['/dashboard/marketing','marketing'],
     ['/dashboard/marketing/campaigns','marketing-campaigns'],
     ['/dashboard/marketing/scheduler','marketing-scheduler'],
@@ -110,19 +111,19 @@ async function main(){
    await page.goto('http://localhost:3000/dashboard');
    if(viewport.width>=1024){
      const nav=page.getByRole('navigation',{name:'Tenant navigation'});
-     for(const label of ['Home','Edit Website','Admin','Scheduling','Customers','Do Not Rent','Delivery','Reports','Analytics','Marketing']) await nav.getByRole('link',{name:label,exact:true}).waitFor();
+     for(const label of ['Home','Edit Website','Admin','Scheduling','Customers','Do Not Rent','Delivery','Reports','Analytics','Apps','Marketing']) await nav.getByRole('link',{name:label,exact:true}).waitFor();
      assert.equal(await page.locator('.tenant-parity-more').count(),0,'Desktop tenant navigation should not add a More tab that Friendly admin does not have');
    }else{
      await page.getByRole('button',{name:'Toggle menu'}).click();
      const mobileMenu=page.locator('#tenant-mobile-menu');
-     for(const label of ['Home','Edit Website','Admin','Scheduling','Customers','Do Not Rent','Delivery','Reports','Analytics','Marketing']) await mobileMenu.getByRole('link',{name:label,exact:true}).waitFor();
+     for(const label of ['Home','Edit Website','Admin','Scheduling','Customers','Do Not Rent','Delivery','Reports','Analytics','Apps','Marketing']) await mobileMenu.getByRole('link',{name:label,exact:true}).waitFor();
      await page.getByRole('button',{name:'Toggle menu'}).click();
    }
    const allTools=page.locator('details').filter({hasText:'All tools'});
    await allTools.locator('summary').click();
    await allTools.getByRole('link',{name:'Orders',exact:true}).waitFor();
    await allTools.getByRole('link',{name:'Items',exact:true}).waitFor();
-   report.checks.push(viewport.name+': Friendly-style ten-tab navigation plus Home all-tools hub rendered');
+   report.checks.push(viewport.name+': Friendly-style core navigation plus Apps and Home all-tools hub rendered');
    await page.goto('http://localhost:3000/dashboard/website');
    await page.getByText('Website tools',{exact:true}).waitFor();
    await page.getByRole('link',{name:'Inventory',exact:true}).waitFor();
