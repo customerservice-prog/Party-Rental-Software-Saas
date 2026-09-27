@@ -170,7 +170,7 @@ test('Friendly-style navigation mirrors the ten-tab admin bar and leaves extra t
   assert.doesNotMatch(nav,/tenant-parity-more/);
   assert.doesNotMatch(nav,/>More</);
   assert.doesNotMatch(nav,/visibleGroups\.map\(group/);
-  for(const label of ['Home','Edit Website','Admin','Scheduling','Customers','Do Not Rent','Delivery','Reports','Analytics','Marketing']) assert.ok(nav.includes('label:"'+label+'"'));
+  for(const label of ['Home','Edit Website','Admin','Scheduling','Customers','Do Not Rent','Delivery','Reports','Analytics','Marketing']) assert.ok(nav.includes(',"'+label+'",'),label+' should remain in the Friendly ten-tab navigation');
   for(const href of ['/dashboard/orders','/dashboard/inventory','/dashboard/dispatch','/dashboard/warehouse','/dashboard/returns','/dashboard/rainchecks','/dashboard/messages']) assert.ok(tools.includes(href));
 });
 
