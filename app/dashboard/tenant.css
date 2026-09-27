@@ -670,3 +670,10 @@
 .business-settings-focus[data-focus="#sms"]>.friendly-admin-card:not(:has(#sms)),
 .business-settings-focus[data-focus="#payments"]>.friendly-admin-card:not(:has(#payments)){display:none}
 .business-settings-focus[data-focus]:not([data-focus="all"])>.friendly-admin-card{margin-bottom:0}
+
+
+/* Friendly order workspace hierarchy */
+.order-parity-jump{display:flex;flex-wrap:wrap;gap:2px;margin:14px 0 18px;border:1px solid #e2e5e3;border-radius:7px;background:#fff;padding:5px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.order-parity-jump a{border-radius:5px;padding:7px 11px;font-size:11px;font-weight:700;color:#52605a}
+.order-parity-jump a:hover{background:#f1f6f2;color:#2d6a2d}
+@media(max-width:640px){.order-parity-jump{overflow-x:auto;flex-wrap:nowrap}.order-parity-jump a{flex:0 0 auto}}
