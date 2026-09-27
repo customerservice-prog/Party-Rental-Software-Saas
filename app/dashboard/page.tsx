@@ -29,7 +29,7 @@ export default async function DashboardHomePage({searchParams:searchParamsPromis
   itemCount,monthOrders,quoteCount,incompleteCount,todayPaymentGroups,balances,recentItems,paymentHistory,weather
  ]=await Promise.all([
   prisma.item.count({where:{organizationId:org.id}}),
-  prisma.order.findMany({where:{organizationId:org.id,eventDate:{gte:dates.monthStart,lt:dates.monthEnd}},select:{id:true,status:true,deliveryType:true,eventDate:true},orderBy:{eventDate:"asc"}}),
+  prisma.order.findMany({where:{organizationId:org.id,eventDate:{gte:dates.monthStart,lt:dates.monthEnd}},select:{id:true,orderNumber:true,status:true,deliveryType:true,eventDate:true,eventEndDate:true,totalAmount:true,amountPaid:true,deliveryAddress:true,customer:{select:{firstName:true,lastName:true,email:true,phone:true}},items:{select:{id:true,quantity:true,price:true,item:{select:{name:true}}}}},orderBy:{eventDate:"asc"}}),
   prisma.order.count({where:{organizationId:org.id,status:"quote"}}),
   prisma.order.count({where:{organizationId:org.id,status:{in:["incomplete","pending"]}}}),
   prisma.payment.groupBy({by:["type"],where:{organizationId:org.id,createdAt:{gte:dates.today,lt:dates.tomorrow}},_sum:{amount:true}}),
@@ -59,7 +59,7 @@ export default async function DashboardHomePage({searchParams:searchParamsPromis
   <div className="phase3-main">
    <div className="phase3-primary-column">
     <section className="tenant-panel phase3-calendar">
-     <HomeCalendar year={dates.year} month={dates.month} todayKey={dates.today.toISOString().slice(0,10)} orders={monthOrders.map(o=>({...o,eventDate:o.eventDate.toISOString()}))}/>
+     <HomeCalendar year={dates.year} month={dates.month} todayKey={dates.today.toISOString().slice(0,10)} orders={monthOrders.map(o=>({id:o.id,orderNumber:o.orderNumber,status:o.status,deliveryType:o.deliveryType,eventDate:o.eventDate.toISOString(),eventEndDate:o.eventEndDate?.toISOString()||null,totalAmount:o.totalAmount,amountPaid:o.amountPaid,deliveryAddress:o.deliveryAddress,customerName:(o.customer.firstName+" "+o.customer.lastName).trim(),customerEmail:o.customer.email,customerPhone:o.customer.phone,items:o.items.map(line=>({id:line.id,name:line.item.name,quantity:line.quantity,price:line.price}))}))}/>
     </section>
 
     <HomeScreen/>
