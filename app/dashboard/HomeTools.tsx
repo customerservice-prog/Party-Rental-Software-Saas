@@ -3,7 +3,7 @@ import Icon,{type IconName} from "./components/Icon";
 
 const groups:{title:string;links:{href:string;label:string;icon:IconName}[]}[]=[
  {title:"Orders & Customers",links:[
-  {href:"/dashboard/orders",label:"Orders",icon:"orders"},{href:"/dashboard/orders/new",label:"New Order",icon:"plus"},{href:"/dashboard/customers",label:"Customers",icon:"users"},{href:"/dashboard/do-not-rent",label:"Do Not Rent",icon:"shield"},
+  {href:"/dashboard/orders",label:"Orders",icon:"orders"},{href:"/dashboard/orders/new",label:"New Order",icon:"plus"},{href:"/dashboard/customers",label:"Customers",icon:"users"},{href:"/dashboard/do-not-rent",label:"Do Not Rent",icon:"shield"},{href:"/dashboard/rainchecks",label:"Rainchecks",icon:"wallet"},
  ]},
  {title:"Scheduling & Delivery",links:[
   {href:"/dashboard/scheduling",label:"Scheduling",icon:"calendar"},{href:"/dashboard/deliveries",label:"Delivery",icon:"truck"},{href:"/dashboard/dispatch",label:"Dispatch",icon:"calendar"},{href:"/dashboard/drivers",label:"Drivers",icon:"truck"},
