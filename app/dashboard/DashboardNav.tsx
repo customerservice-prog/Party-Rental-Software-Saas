@@ -62,6 +62,7 @@ export default function DashboardNav({showSettings,orgName="Your rental business
  const current=all.filter(i=>pathname===i.href||(i.href!=="/dashboard"&&pathname.startsWith(i.href+"/"))).sort((a,b)=>b.href.length-a.href.length)[0];
  const active=(i:Item)=>current?.href===i.href;
  const logout=()=>signOut({callbackUrl:"/login"});
+ const roleLabel=role==="owner"?"Administrator":role.replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase());
 
  return <div className="tenant-app">
   <FeatureUsageTracker path={pathname} enabled={!supportBanner}/>
@@ -78,7 +79,7 @@ export default function DashboardNav({showSettings,orgName="Your rental business
     </nav>
 
     <div className="tenant-parity-account">
-     <span>Signed in as <strong>{userName}</strong> ({role})</span>
+     <span>Signed in as <strong>{userName}</strong> ({roleLabel})</span>
      <button type="button" onClick={logout}>Logout</button>
     </div>
 
@@ -90,7 +91,7 @@ export default function DashboardNav({showSettings,orgName="Your rental business
       <div className="tenant-parity-mobile-links">
        {visiblePrimary.map(i=><Link key={i.href} href={i.href} onClick={()=>setMobileOpen(false)} className={active(i)?"is-active":""}><Icon name={i.icon} className="h-5 w-5"/><span>{i.label}</span></Link>)}
       </div>
-      <div className="tenant-parity-mobile-account">Signed in as <strong>{userName}</strong> ({role})</div>
+      <div className="tenant-parity-mobile-account">Signed in as <strong>{userName}</strong> ({roleLabel})</div>
       <button type="button" onClick={logout} className="tenant-parity-mobile-logout">Logout</button>
     </div>}
    </header>
