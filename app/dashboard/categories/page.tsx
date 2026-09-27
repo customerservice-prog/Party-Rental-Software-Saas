@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import {FormEvent,useEffect,useState} from "react";
-import Icon from "../components/Icon";
 
 type Category={
   id:string;
@@ -101,7 +100,6 @@ export default function CategoriesPage(){
     await load();
   }
 
-  const totalItems=categories.reduce((sum,row)=>sum+(row._count?.items||0),0);
 
   return <div className="friendly-admin-page is-wide">
     <div className="mb-2 flex items-center justify-between gap-3">
@@ -126,7 +124,7 @@ export default function CategoriesPage(){
             const index=categories.findIndex(row=>row.id===category.id);
             return <tr key={category.id}>
               <td><div className="flex gap-1"><button type="button" aria-label={"Move "+category.name+" up"} disabled={index===0} onClick={()=>moveCategory(category.id,-1)} className="friendly-admin-secondary !min-h-0 !px-2 !py-1 disabled:opacity-30">↑</button><button type="button" aria-label={"Move "+category.name+" down"} disabled={index===categories.length-1} onClick={()=>moveCategory(category.id,1)} className="friendly-admin-secondary !min-h-0 !px-2 !py-1 disabled:opacity-30">↓</button></div></td>
-              <td>{draft.picture?<img src={draft.picture} alt={category.name} className="h-12 w-12 rounded border object-cover"/>:<div className="h-12 w-12 rounded border bg-slate-50"/></td>
+              <td className="min-w-[150px]"><div className="flex items-center gap-2">{draft.picture?<img src={draft.picture} alt={category.name} className="h-12 w-12 rounded border object-cover"/>:<div className="h-12 w-12 shrink-0 rounded border bg-slate-50"/>}<input aria-label={category.name+" image URL"} className="friendly-admin-field w-24" value={draft.picture} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,picture:e.target.value}})} onBlur={()=>saveCategory(category.id)} placeholder="Image URL"/></div></td>
               <td className="min-w-[180px]"><input className="friendly-admin-field w-full" value={draft.name} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,name:e.target.value}})} onBlur={()=>saveCategory(category.id)}/></td>
               <td className="text-center"><input aria-label={"Show "+category.name+" on website"} type="checkbox" checked={draft.displayToCustomer} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,displayToCustomer:e.target.checked}})} onBlur={()=>saveCategory(category.id)}/></td>
               <td className="numeric">{category._count?.items||0}</td>
