@@ -96,7 +96,7 @@ export default function OrderPayments({ orderId }: { orderId: string }) {
             onChange={(e) => setType(e.target.value)}
           >
             <option value="payment">Payment</option>
-            <option value="refund">Refund</option>
+            <option value="refund">Manual refund / credit entry</option>
           </select>
         </div>
         <div>
@@ -143,6 +143,7 @@ export default function OrderPayments({ orderId }: { orderId: string }) {
             onChange={(e) => setNote(e.target.value)}
           />
         </div>
+        {type==="refund"&&<div className="basis-full rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] leading-4 text-amber-800">This records a refund/credit in the CRM ledger and reduces the order&apos;s paid balance. It does not automatically send money through Stripe or another card processor.</div>}
         <button
           type="submit"
           disabled={submitting}
@@ -175,7 +176,7 @@ export default function OrderPayments({ orderId }: { orderId: string }) {
             {payments.map((p) => (
               <tr key={p.id} className="border-b last:border-0">
                 <td className="py-2">{new Date(p.createdAt).toLocaleDateString()}</td>
-                <td className="py-2 capitalize">{p.type}</td>
+                <td className="py-2 capitalize">{p.type==="refund"?"manual refund / credit":p.type}</td>
                 <td className="py-2 capitalize">{p.method}</td>
                 <td className={"py-2 " + (p.type === "refund" ? "text-red-600" : "")}>
                   {p.type === "refund" ? "-" : ""}${p.amount.toFixed(2)}
