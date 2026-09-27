@@ -657,3 +657,16 @@
   .phase3-kpi span{font-size:13px}
   .phase3-kpi strong{font-size:30px}
 }
+
+
+/* Friendly Admin parity: hash-routed settings behave like focused screens */
+.business-settings-focus[data-focus="#company-info"]>.friendly-admin-card:not(:has(#company-info)),
+.business-settings-focus[data-focus="#website"]>.friendly-admin-card:not(:has(#website)),
+.business-settings-focus[data-focus="#seo"]>.friendly-admin-card:not(:has(#seo)),
+.business-settings-focus[data-focus="#order-pricing"]>.friendly-admin-card:not(:has(#order-pricing)),
+.business-settings-focus[data-focus="#business-hours"]>.friendly-admin-card:not(:has(#business-hours)),
+.business-settings-focus[data-focus="#closed-dates"]>.friendly-admin-card:not(:has(#closed-dates)),
+.business-settings-focus[data-focus="#email"]>.friendly-admin-card:not(:has(#email)),
+.business-settings-focus[data-focus="#sms"]>.friendly-admin-card:not(:has(#sms)),
+.business-settings-focus[data-focus="#payments"]>.friendly-admin-card:not(:has(#payments)){display:none}
+.business-settings-focus[data-focus]:not([data-focus="all"])>.friendly-admin-card{margin-bottom:0}
