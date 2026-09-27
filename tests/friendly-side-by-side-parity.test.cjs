@@ -172,7 +172,7 @@ test('Friendly-style navigation mirrors the ten-tab admin bar and leaves extra t
   assert.doesNotMatch(nav,/tenant-parity-more/);
   assert.doesNotMatch(nav,/>More</);
   assert.doesNotMatch(nav,/visibleGroups\.map\(group/);
-  for(const label of ['Home','Edit Website','Admin','Scheduling','Customers','Do Not Rent','Delivery','Reports','Analytics','Marketing']) assert.ok(nav.includes(',"'+label+'",'),label+' should remain in the Friendly ten-tab navigation');
+  for(const label of ['Home','Edit Website','Admin','Scheduling','Customers','Do Not Rent','Delivery','Reports','Analytics','Apps','Marketing']) assert.ok(nav.includes(',"'+label+'",'),label+' should remain in the Friendly ten-tab navigation');
   for(const href of ['/dashboard/orders','/dashboard/inventory','/dashboard/dispatch','/dashboard/warehouse','/dashboard/returns','/dashboard/rainchecks','/dashboard/messages']) assert.ok(tools.includes(href));
 });
 
@@ -282,4 +282,32 @@ test('customer detail never labels drafts as money due and only offers actions t
   assert.match(page,/restrictionHref=restriction\?/);
   assert.match(page,/\{restriction\?"View Restriction":"\+ Add to Do Not Rent"\}/);
   assert.match(page,/customer\.orders\.length===0&&<div/);
+});
+
+
+test('tenant marketplace exposes RentSketch as a native paid app with locked provisioning',()=>{
+  const nav=read('app/dashboard/DashboardNav.tsx');
+  const page=read('app/dashboard/apps/page.tsx');
+  const client=read('app/dashboard/apps/MarketplaceClient.tsx');
+  const api=read('app/api/apps/route.ts');
+  const catalog=read('lib/appMarketplace.ts');
+  const provisioning=read('lib/rentSketchProvisioning.ts');
+  const storefront=read('app/StorefrontNav.tsx');
+  const designer=read('app/design-your-event/page.tsx');
+  const schema=read('prisma/schema.prisma');
+  const ensure=read('scripts/ensure-fulfillment-schema.js');
+  assert.match(nav,/item\("\/apps","Apps","sparkle"\)/);
+  assert.match(page,/Apps & Add-ons/);
+  assert.match(client,/Preview live demo/);
+  assert.match(client,/Add to my business/);
+  assert.match(client,/No separate RentSketch bill/);
+  assert.match(catalog,/monthlyPriceCents: 9900/);
+  assert.match(catalog,/annualPriceCents: 99000/);
+  assert.match(api,/billing_pending/);
+  assert.match(api,/requireOwnerSession/);
+  assert.match(provisioning,/x-party-rental-crm-key/);
+  assert.match(storefront,/Design Your Event/);
+  assert.match(designer,/rentsketch\.com\/designer/);
+  assert.match(schema,/model TenantAppInstallation/);
+  assert.match(ensure,/CREATE TABLE IF NOT EXISTS "TenantAppInstallation"/);
 });
