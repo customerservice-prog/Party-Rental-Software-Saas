@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {requireCurrentOrganization} from "@/lib/tenant";
 import {prisma} from "@/lib/prisma";
-import {ORDER_STATUSES,orderSearchWhere} from "@/lib/orderFilters";
+import {ORDER_STATUSES,orderSearchWhere,orderStatusWhere} from "@/lib/orderFilters";
 import Icon from "../components/Icon";
 import {StatusBadge,money,eventDateLabel} from "../components/TenantUI";
 
@@ -10,7 +10,7 @@ export default async function OrdersPage({searchParams:searchParamsPromise}:{sea
  const org=await requireCurrentOrganization(),q=searchParams.q?.trim().slice(0,200)||"";
  const status=ORDER_STATUSES.includes(searchParams.status as any)?searchParams.status!:"";
  const unpaid=searchParams.balance==="unpaid";
- const where={organizationId:org.id,...orderSearchWhere(q),...(status?{status}:unpaid?{status:{in:["active","confirmed","completed"]}}:{}),...(unpaid?{amountPaid:{lt:prisma.order.fields.totalAmount}}:{})};
+ const where={organizationId:org.id,...orderSearchWhere(q),...(status?orderStatusWhere(status):unpaid?{status:{in:["active","confirmed","completed"]}}:{}),...(unpaid?{amountPaid:{lt:prisma.order.fields.totalAmount}}:{})};
  const total=await prisma.order.count({where}),pages=Math.max(1,Math.ceil(total/25)),page=Math.min(pages,Math.max(1,Math.floor(Number(searchParams.page)||1)));
  const orders=await prisma.order.findMany({where,include:{customer:true},orderBy:[{eventDate:"desc"},{id:"asc"}],take:25,skip:(page-1)*25});
  function url(patch:Record<string,string>={}){const params=new URLSearchParams({...q?{q}:{},...status?{status}:{},...unpaid?{balance:"unpaid"}:{},...patch});for(const[key,value]of Array.from(params.entries()))if(!value)params.delete(key);return"/dashboard/orders"+(params.size?"?"+params:"");}
