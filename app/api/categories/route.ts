@@ -67,6 +67,27 @@ export async function PATCH(req: NextRequest) {
   }
   const body = await req.json();
 
+  if (Array.isArray(body.orderedIds)) {
+    const orderedIds = body.orderedIds.filter((id: unknown): id is string => typeof id === "string" && id.length > 0);
+    const uniqueIds = Array.from(new Set(orderedIds));
+    if (uniqueIds.length !== orderedIds.length || uniqueIds.length === 0) {
+      return NextResponse.json({ error: "A valid category order is required" }, { status: 400 });
+    }
+    const owned = await prisma.category.findMany({
+      where: { organizationId: organization.id, id: { in: uniqueIds } },
+      select: { id: true },
+    });
+    if (owned.length !== uniqueIds.length) {
+      return NextResponse.json({ error: "One or more categories were not found" }, { status: 404 });
+    }
+    await prisma.$transaction(
+      orderedIds.map((id: string, sortOrder: number) =>
+        prisma.category.update({ where: { id }, data: { sortOrder } })
+      )
+    );
+    return NextResponse.json({ success: true });
+  }
+
   if (!body.id || typeof body.id !== "string") {
     return NextResponse.json({ error: "Category id is required" }, { status: 400 });
   }
