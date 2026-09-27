@@ -110,13 +110,15 @@ async function main(){
    await page.goto('http://localhost:3000/dashboard');
    if(viewport.width>=1024){
      await page.locator('summary').filter({hasText:'More'}).click();
-     await page.getByRole('link',{name:'Orders',exact:true}).waitFor();
-     await page.getByRole('link',{name:'Inventory',exact:true}).waitFor();
-     await page.keyboard.press('Escape').catch(()=>{});
+     const morePanel=page.locator('.tenant-parity-more .tenant-more-panel');
+     await morePanel.getByRole('link',{name:'Orders',exact:true}).waitFor();
+     await morePanel.getByRole('link',{name:'Inventory',exact:true}).waitFor();
+     await page.locator('summary').filter({hasText:'More'}).click();
    }else{
      await page.getByRole('button',{name:'Toggle menu'}).click();
-     await page.getByRole('link',{name:'Orders',exact:true}).waitFor();
-     await page.getByRole('link',{name:'Inventory',exact:true}).waitFor();
+     const mobileMenu=page.locator('#tenant-mobile-menu');
+     await mobileMenu.getByRole('link',{name:'Orders',exact:true}).waitFor();
+     await mobileMenu.getByRole('link',{name:'Inventory',exact:true}).waitFor();
      await page.getByRole('button',{name:'Toggle menu'}).click();
    }
    report.checks.push(viewport.name+': Friendly-style navigation exposes tenant operations');
