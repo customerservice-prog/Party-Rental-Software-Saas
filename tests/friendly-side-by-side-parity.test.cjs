@@ -84,3 +84,27 @@ test('order payment UI labels CRM-only refunds honestly',()=>{
   assert.match(source,/Manual refund \/ credit entry/);
   assert.match(source,/does not automatically send money through Stripe/);
 });
+
+
+test('Do Not Rent matches Friendly customer lookup, status filtering, and blocked-attempt metrics',()=>{
+  const page=read('app/dashboard/do-not-rent/page.tsx');
+  const api=read('app/api/do-not-rent/route.ts');
+  const customers=read('app/api/customers/route.ts');
+  assert.match(page,/Search existing customer/);
+  assert.match(page,/Reason category/);
+  assert.match(page,/Blocked Attempts \(30d\)/);
+  assert.match(page,/statusFilter/);
+  assert.match(api,/recentBlockedAttempts/);
+  assert.match(api,/restrictedAddressCount/);
+  assert.match(customers,/searchParams\.get\("q"\)|new URL\(request\.url\)\.searchParams\.get\("q"\)/);
+});
+
+test('driver roster supports Friendly-style inline edits without revealing saved PINs',()=>{
+  const page=read('app/dashboard/drivers/page.tsx');
+  const api=read('app/api/drivers/route.ts');
+  assert.match(page,/Open Driver App/);
+  assert.match(page,/New PIN for/);
+  assert.match(page,/Saved · enter new/);
+  assert.match(api,/hasPin:Boolean\(pin\)/);
+  assert.match(api,/\.\.\.driver,hasPin/);
+});
