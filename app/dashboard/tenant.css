@@ -562,6 +562,9 @@
 .tenant-parity-mobile-links{display:flex;flex-direction:column;padding:8px 0}
 .tenant-parity-mobile-links a{display:flex;align-items:center;gap:12px;border-bottom:1px solid #f0f0f0;padding:12px 20px;font-size:14px;color:#333}
 .tenant-parity-mobile-links a.is-active{background:#f0f7f0;color:#2d6a2d;font-weight:700}
+.tenant-parity-mobile-group{border-top:6px solid #f5f7f5}
+.tenant-parity-mobile-group>p{margin:0;padding:10px 20px 6px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#7d8981}
+.tenant-parity-mobile-group>a{padding-left:28px}
 .tenant-parity-mobile-account{border-top:1px solid #e5e7eb;padding:12px 20px;font-size:12px;color:#5b625d}
 .tenant-parity-mobile-logout{margin:0 20px 16px;border-radius:5px;background:#dc2626;padding:9px 12px;font-size:13px;font-weight:700;color:#fff}
 @media(min-width:1024px){
