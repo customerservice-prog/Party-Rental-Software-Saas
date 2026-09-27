@@ -67,13 +67,30 @@ async function main(){
     ['/dashboard/settings','settings-hub'],
     ['/dashboard/settings/business','settings-business'],
    ])await inspect(route,'tenant-'+label);
+   await page.goto('http://localhost:3000/dashboard');
+   const populatedDay=page.getByRole('button',{name:/Open orders for/}).filter({has:page.locator('text=1 delivery')}).first();
+   if(await populatedDay.count()){
+     await populatedDay.click();
+     await page.getByRole('heading',{name:/Orders for/}).waitFor();
+     await page.screenshot({path:`${out}/${viewport.name}-tenant-home-day-orders.png`,fullPage:true,animations:'disabled'});
+     assert.ok(await page.getByRole('link',{name:'CI Visual Customer',exact:true}).isVisible());
+     await page.getByRole('button',{name:'Close day orders'}).click();
+   }
    await page.goto('http://localhost:3000/dashboard/inventory');
    const itemLink=page.getByRole('link',{name:'CI Phase 4 Tent',exact:true});
    await itemLink.waitFor();
    const itemHref=await itemLink.getAttribute('href');
    assert.ok(itemHref&&itemHref.startsWith('/dashboard/inventory/'),'Dedicated item workspace link is missing');
    await inspect(itemHref,'tenant-item-workspace');
-   report.checks.push(viewport.name+': Friendly parity tenant routes rendered');
+   await page.goto('http://localhost:3000/dashboard/customers');
+   const customerHref=await page.getByRole('link',{name:'CI Visual Customer',exact:true}).getAttribute('href');
+   assert.ok(customerHref&&customerHref.startsWith('/dashboard/customers/'),'Customer detail link is missing');
+   await inspect(customerHref,'tenant-customer-detail');
+   await page.goto('http://localhost:3000/dashboard/orders');
+   const orderHref=await page.getByRole('link',{name:'CI-ORDER-1001',exact:true}).getAttribute('href');
+   assert.ok(orderHref&&orderHref.startsWith('/dashboard/orders/'),'Order detail link is missing');
+   await inspect(orderHref,'tenant-order-detail');
+   report.checks.push(viewport.name+': Friendly parity tenant routes and populated detail screens rendered');
    await page.getByRole('region',{name:'Tenant impersonation'}).waitFor();await page.getByRole('button',{name:'Exit tenant view'}).click();await page.waitForURL('**/support');
    report.checks.push(`${viewport.name}: tenant workspace, core directories and support exit`);
    await context.close();
