@@ -45,15 +45,15 @@ type FilterKey = typeof FILTERS[number]["key"];
 function matchesFilter(order: OrderLite, filter: FilterKey) {
   switch (filter) {
     case "active":
-      return order.status === "active";
+      return order.status === "active" || order.status === "confirmed";
     case "active-deliver":
-      return order.status === "active" && order.deliveryType === "delivery";
+      return (order.status === "active" || order.status === "confirmed") && order.deliveryType === "delivery";
     case "active-pickup":
-      return order.status === "active" && order.deliveryType === "pickup";
+      return (order.status === "active" || order.status === "confirmed") && order.deliveryType === "pickup";
     case "quote":
       return order.status === "quote";
     case "canceled":
-      return order.status === "canceled";
+      return order.status === "canceled" || order.status === "cancelled";
     case "created":
       return true;
     default:
@@ -183,7 +183,7 @@ export default function SchedulingCalendar({
           ))}
         </div>
         <Link
-          href="/book"
+          href="/dashboard/orders/new"
           className="friendly-admin-primary whitespace-nowrap"
         >
           + New Booking
@@ -300,7 +300,7 @@ export default function SchedulingCalendar({
                           Email
                         </a>
                       )}
-                      <Link href="/dashboard/orders" className="text-[#1a6fd4] hover:underline">
+                      <Link href={`/dashboard/orders/${order.id}`} className="text-[#1a6fd4] hover:underline">
                         View order
                       </Link>
                     </div>
