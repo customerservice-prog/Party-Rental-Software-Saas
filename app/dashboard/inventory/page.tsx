@@ -64,7 +64,7 @@ export default async function InventoryPage({searchParams:searchParamsPromise}:{
     <section className="friendly-admin-card flush">
       <div className="friendly-admin-table-wrap">
         <table data-inventory-cards className="friendly-admin-table">
-          <thead className="bg-[#2d6a2d] !text-white"><tr><th className="!text-white">Photo</th><th className="!text-white">Name</th><th className="!text-white">Price</th><th className="!text-white">Qty</th><th className="!text-white">Category</th><th className="!text-white">Display</th><th className="!text-white">Condition</th><th className="!text-white">Actions</th></tr></thead>
+          <thead className="friendly-admin-green-head"><tr><th>Photo</th><th>Name</th><th>Price</th><th>Qty</th><th>Category</th><th>Display</th><th>Condition</th><th>Actions</th></tr></thead>
           <tbody>{items.map(item=><tr key={item.id}>
             <td data-label="Photo">{item.picture?<img src={item.picture} alt={item.name} className="h-10 w-10 rounded object-cover"/>:<span className="text-[10px] text-slate-400">No image</span>}</td>
             <td data-label="Item"><Link href={"/dashboard/inventory/"+item.id} className="font-semibold">{item.name}</Link><div className="mt-1 text-[9px] text-slate-400">{item._count.addons} add-on{item._count.addons===1?"":"s"} · {item._count.units} tracked unit{item._count.units===1?"":"s"}</div></td>
