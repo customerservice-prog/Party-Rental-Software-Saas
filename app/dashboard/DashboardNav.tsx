@@ -40,6 +40,7 @@ const moreGroups:{label:string;items:Item[]}[]=[
   item("/automations","Automations","clock"),
   item("/automations/schedule","Scheduled delivery","clock",true),
   item("/messages","Messages","mail",true),
+  item("/rainchecks","Rainchecks","wallet"),
   item("/coupons","Coupons","wallet"),
   item("/pages","Website pages","orders"),
  ]},
