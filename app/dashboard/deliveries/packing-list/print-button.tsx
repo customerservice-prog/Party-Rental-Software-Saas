@@ -9,7 +9,7 @@ export default function PrintButton() {
       type: "button",
       onClick: () => window.print(),
       className:
-        "bg-blue-600 hover:bg-blue-700 text-white rounded px-4 py-1.5 text-sm font-medium whitespace-nowrap",
+        "friendly-admin-primary !min-h-0 !px-4 !py-1.5 whitespace-nowrap",
     },
     "Print"
   );
