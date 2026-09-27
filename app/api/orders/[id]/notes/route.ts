@@ -3,9 +3,7 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
-const VALID_STATUSES = ["quote", "incomplete", "pending", "active", "confirmed", "completed", "cancelled", "canceled"];
-
-export async function PATCH(
+export async function POST(
   request: NextRequest,
   { params: paramsPromise }: { params: Promise<{ id: string }> }
 ) {
@@ -19,38 +17,39 @@ export async function PATCH(
   }
 
   const body = await request.json();
-  const status = typeof body.status === "string" ? body.status : "";
-  const reason = typeof body.reason === "string" && body.reason.trim() ? body.reason.trim().slice(0, 500) : null;
-  const normalizedStatus = status === "pending" ? "incomplete" : status === "canceled" ? "cancelled" : status;
+  const note = typeof body.note === "string" ? body.note.trim().slice(0, 4000) : "";
+  if (!note) return NextResponse.json({ error: "Enter an internal note" }, { status: 400 });
 
-  if (!VALID_STATUSES.includes(status)) {
-    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
-  }
+  const actorRecord = await prisma.user.findUnique({ where: { id: actor.id }, select: { name: true } });
+  const author = actorRecord?.name || (actor.effectiveUserId ? "Platform administrator" : "Staff");
+  const stamp = new Intl.DateTimeFormat("en-US", {
+    timeZone: organization.timezone || "America/New_York",
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date());
 
   try {
-    const updated = await prisma.$transaction(async tx => {
+    const result = await prisma.$transaction(async tx => {
       const order = await tx.order.findFirst({
         where: { id: params.id, organizationId: organization.id },
-        select: { id: true, status: true },
+        select: { id: true, internalNotes: true },
       });
       if (!order) throw new Error("ORDER_NOT_FOUND");
-      if (order.status === normalizedStatus) return order;
 
-      const result = await tx.order.update({
-        where: { id: order.id },
-        data: { status: normalizedStatus },
-      });
+      const entry = `[${stamp} · ${author}] ${note}`;
+      const internalNotes = [order.internalNotes, entry].filter(Boolean).join("\n");
+      await tx.order.update({ where: { id: order.id }, data: { internalNotes } });
       await tx.auditLog.create({
         data: {
           organizationId: organization.id,
-          action: "order.status.changed",
+          action: "order.internal_note.added",
           performedBy: actor.id,
-          details: JSON.stringify({ orderId: order.id, from: order.status, to: normalizedStatus, reason }),
+          details: JSON.stringify({ orderId: order.id }),
         },
       });
-      return result;
+      return internalNotes;
     });
-    return NextResponse.json(updated);
+    return NextResponse.json({ internalNotes: result });
   } catch (err) {
     if (err instanceof Error && err.message === "ORDER_NOT_FOUND") {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });

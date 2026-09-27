@@ -43,32 +43,47 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const organization = await requireCurrentOrganization();
+  let actor;
   try {
-    await requirePermission(organization.id, "do_not_rent.manage");
-    } catch (err) {
+    actor = await requirePermission(organization.id, "do_not_rent.manage");
+  } catch (err) {
     return authzErrorResponse(err);
-    }
+  }
   const body = await req.json();
 
   const name = typeof body.name === "string" && body.name.trim() ? body.name.trim() : null;
   const email = typeof body.email === "string" && body.email.trim() ? body.email.trim().toLowerCase() : null;
   const phone = typeof body.phone === "string" && body.phone.trim() ? body.phone.trim() : null;
   const address = typeof body.address === "string" && body.address.trim() ? body.address.trim() : null;
-  const reason = typeof body.reason === "string" && body.reason.trim() ? body.reason.trim() : null;
+  const reason = typeof body.reason === "string" && body.reason.trim() ? body.reason.trim().slice(0, 1000) : null;
 
   if (!email && !phone && !address) {
     return NextResponse.json(
       { error: "Provide at least an email, phone, or address to restrict" },
       { status: 400 }
-      );
-    }
+    );
+  }
 
-  const restriction = await prisma.doNotRentRestriction.create({
-    data: { organizationId: organization.id, name, email, phone, address, reason },
+  const restriction = await prisma.$transaction(async tx => {
+    const created = await tx.doNotRentRestriction.create({
+      data: { organizationId: organization.id, name, email, phone, address, reason },
     });
+    await tx.auditLog.create({
+      data: {
+        organizationId: organization.id,
+        action: "do_not_rent.created",
+        performedBy: actor.id,
+        details: JSON.stringify({
+          restrictionId: created.id,
+          identifierTypes: [email ? "email" : null, phone ? "phone" : null, address ? "address" : null].filter(Boolean),
+        }),
+      },
+    });
+    return created;
+  });
 
   return NextResponse.json({ restriction }, { status: 201 });
-  }
+}
 
 export async function PATCH(req: NextRequest) {
   const organization = await requireCurrentOrganization();

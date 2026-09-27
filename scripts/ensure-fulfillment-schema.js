@@ -328,6 +328,11 @@ async function main() {
     )
   `);
 
+  // Staff-only order notes are additive and nullable so every existing order
+  // remains unchanged. Production preparation runs this before DMMF parity
+  // checks, avoiding unsafe broad schema synchronization.
+  await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "internalNotes" TEXT`);
+
   // External payment reference makes Stripe/webhook processing idempotent.
   // This is additive and nullable so existing payment rows remain valid.
   await prisma.$executeRawUnsafe(`ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "externalReference" TEXT`);

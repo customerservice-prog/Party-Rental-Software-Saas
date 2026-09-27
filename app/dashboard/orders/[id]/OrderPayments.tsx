@@ -42,7 +42,13 @@ export default function OrderPayments({ orderId }: { orderId: string }) {
   }
 
   useEffect(() => {
-    load();
+    void load();
+    const refresh = (event: Event) => {
+      const detail = (event as CustomEvent<{ orderId?: string }>).detail;
+      if (!detail?.orderId || detail.orderId === orderId) void load();
+    };
+    window.addEventListener("order-payments-changed", refresh);
+    return () => window.removeEventListener("order-payments-changed", refresh);
   }, [orderId]);
 
   async function handleSubmit(e: FormEvent) {

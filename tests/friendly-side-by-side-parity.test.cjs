@@ -193,11 +193,29 @@ test('website builder exposes Friendly-style real management tools without leavi
   for(const href of ['/dashboard/pages','/dashboard/settings/business#website','/dashboard/inventory','/dashboard/categories','/dashboard/inventory/packages','/dashboard/settings']) assert.ok(website.includes(href));
 });
 
-test('order detail exposes real Friendly-style quick actions and prefilled restriction context',()=>{
+test('order detail exposes real Friendly-style quick actions without pretending processor refunds exist',()=>{
   const page=read('app/dashboard/orders/[id]/page.tsx');
-  for(const label of ['Payment / Refund','Edit Items','Message Customer','Do Not Rent','Fulfillment']) assert.ok(page.includes(label));
-  assert.match(page,/dnrParams/);
-  assert.match(page,/customerId=/);
+  const quick=read('app/dashboard/orders/[id]/OrderQuickActions.tsx');
+  const notesApi=read('app/api/orders/[id]/notes/route.ts');
+  const statusApi=read('app/api/orders/[id]/status/route.ts');
+  const dnrApi=read('app/api/do-not-rent/route.ts');
+  const payments=read('app/dashboard/orders/[id]/OrderPayments.tsx');
+  const schema=read('prisma/schema.prisma');
+  const ensure=read('scripts/ensure-fulfillment-schema.js');
+  assert.match(page,/OrderQuickActions/);
+  assert.match(page,/Internal notes & tasks/);
+  for(const label of ['Payment','Cancel','Refund','Do Not Rent','Note']) assert.ok(quick.includes(label),label+' quick action should exist');
+  assert.match(quick,/does not send money back through Stripe or another card processor/);
+  assert.doesNotMatch(quick,/Charge Card On File/);
+  assert.match(quick,/only the identifiers selected above/);
+  assert.match(quick,/order-payments-changed/);
+  assert.match(payments,/order-payments-changed/);
+  assert.match(notesApi,/orders\.manage/);
+  assert.match(notesApi,/order\.internal_note\.added/);
+  assert.match(statusApi,/order\.status\.changed/);
+  assert.match(dnrApi,/do_not_rent\.created/);
+  assert.match(schema,/internalNotes\s+String\?\s+@db\.Text/);
+  assert.match(ensure,/ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "internalNotes" TEXT/);
 });
 
 test('tenant brand behaves like Friendly admin by opening the public business website',()=>{
