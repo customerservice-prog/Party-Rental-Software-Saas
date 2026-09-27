@@ -583,3 +583,45 @@
  .tenant-parity-name{display:block}
  .tenant-parity-link{padding-left:12px;padding-right:12px;font-size:14px}
 }
+
+
+/* Friendly home scale parity */
+.tenant-content-home{padding-top:16px}
+.phase3-toolbar{margin-bottom:16px}
+.phase3-main{grid-template-columns:minmax(0,2fr) minmax(320px,1fr);gap:18px}
+.phase3-primary-column,.phase3-rail{gap:16px}
+.phase3-kpi{border-left-width:6px;padding:22px 24px;box-shadow:0 2px 7px rgba(0,0,0,.08)}
+.phase3-kpi span{font-size:14px;font-weight:600;color:#6b7280}
+.phase3-kpi strong{margin-top:6px;font-size:36px;font-weight:800;line-height:1.05;color:#1f2937}
+.phase3-kpi small{margin-top:6px;font-size:11px;color:#6b7280}
+.phase3-best{padding:14px 16px}.phase3-empty{padding:30px 12px;font-size:12px}
+.phase3-followups>div>a{padding:12px 14px;font-size:12px}.phase3-followups b{font-size:12px}
+.phase3-report-link{padding:13px 15px;font-size:12px}
+.phase3-payments{margin-top:16px}.phase3-payments-chart{padding:16px 18px}
+.phase3-dashboard .phase2-widget-head{padding:13px 15px}
+.phase3-dashboard .phase2-widget-head h2{font-size:14px}
+.phase3-dashboard .phase2-widget-head p{margin-top:3px;font-size:11px}
+.phase3-dashboard .phase2-widget-head>strong{font-size:30px}
+.phase3-dashboard .phase2-widget-empty{padding:28px 15px;font-size:12px}
+.phase3-dashboard .phase2-weather-now{padding:14px 15px}
+.phase3-dashboard .phase2-weather-now b{font-size:13px}
+.phase3-dashboard .phase2-weather-now span{font-size:11px}
+.phase3-dashboard .phase2-weather-days b,.phase3-dashboard .phase2-weather-days span{font-size:10px}
+.phase3-dashboard .phase2-weather-days small{font-size:9px}
+.phase3-dashboard .phase2-inline-control{padding:12px 12px 0}
+.phase3-dashboard .phase2-inline-control button{padding:9px 14px;font-size:11px}
+.phase3-dashboard .phase2-meeting-title{font-size:12px}
+.phase3-dashboard .phase2-meeting-time{font-size:10px}
+.phase3-dashboard .phase2-text-action,.phase3-dashboard .phase2-remove-action{font-size:10px}
+.phase3-dashboard .recharts-wrapper text{font-size:10px}
+@media(max-width:900px){
+ .phase3-main{grid-template-columns:1fr}
+ .phase3-rail{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:640px){
+ .phase3-main{gap:12px}
+ .phase3-primary-column,.phase3-rail{gap:12px}
+ .phase3-rail{grid-template-columns:1fr}
+ .phase3-kpi{padding:17px 18px}
+ .phase3-kpi strong{font-size:30px}
+}
