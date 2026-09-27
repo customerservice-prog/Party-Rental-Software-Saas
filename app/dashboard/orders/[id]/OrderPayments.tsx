@@ -157,7 +157,8 @@ export default function OrderPayments({ orderId }: { orderId: string }) {
       {loading ? (
         <p className="text-sm text-gray-400">Loading payments...</p>
       ) : (
-        <table className="w-full text-sm text-left">
+        <div className="max-w-full overflow-x-auto">
+        <table className="min-w-[720px] w-full text-sm text-left">
           <thead>
             <tr className="text-gray-500 border-b">
               <th className="py-1">Date</th>
@@ -201,6 +202,7 @@ export default function OrderPayments({ orderId }: { orderId: string }) {
             )}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );
