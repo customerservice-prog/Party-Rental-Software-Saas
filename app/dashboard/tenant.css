@@ -549,7 +549,7 @@
 .tenant-parity-link span{margin-top:4px;white-space:nowrap}
 .tenant-parity-link:hover{background:#257025}
 .tenant-parity-link.is-active{color:#f5c518}
-.tenant-parity-more{position:relative;display:flex;min-width:0;flex:1}
+.tenant-parity-more{position:relative;display:flex;min-width:60px;flex:0 0 60px}
 .tenant-parity-more>summary{width:100%;height:100%;list-style:none;cursor:pointer}
 .tenant-parity-more>summary::-webkit-details-marker{display:none}
 .tenant-parity-more .tenant-more-panel{top:calc(100% + 3px);right:0}
