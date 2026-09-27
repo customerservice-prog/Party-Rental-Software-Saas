@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentOrganization } from "@/lib/tenant";
-import { requireStaffSession, authzErrorResponse } from "@/lib/authz";
+import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
 const VALID_STATUSES = ["quote", "pending", "confirmed", "completed", "cancelled"];
@@ -13,7 +13,7 @@ export async function PATCH(
 
   const organization = await requireCurrentOrganization();
   try {
-    await requireStaffSession(organization.id);
+    await requirePermission(organization.id, "orders.manage");
   } catch (err) {
     return authzErrorResponse(err);
   }
