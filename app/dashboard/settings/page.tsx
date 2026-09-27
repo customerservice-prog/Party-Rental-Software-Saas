@@ -37,7 +37,7 @@ const sections=[
     ["Items","/dashboard/inventory"],
     ["Packages","/dashboard/inventory/packages"],
     ["Add-ons","/dashboard/inventory"],
-    ["Cost of Goods","/dashboard/reports?tab=cogs"],
+    ["Cost of Goods","/dashboard/reports/overview?tab=cogs"],
     ["Warehouse","/dashboard/warehouse"],
     ["Returns & Damage","/dashboard/returns"],
   ]},
