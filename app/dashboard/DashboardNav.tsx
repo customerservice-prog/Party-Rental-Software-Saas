@@ -3,7 +3,7 @@ import Link from "next/link";
 import FeatureUsageTracker from "./FeatureUsageTracker";
 import {usePathname} from "next/navigation";
 import {signOut} from "next-auth/react";
-import type {ReactNode} from "react";
+import {useState,type ReactNode} from "react";
 import Icon,{type IconName} from "./components/Icon";
 
 type Item={href:string;label:string;icon:IconName;owner?:boolean};
@@ -55,46 +55,54 @@ const moreGroups:{label:string;items:Item[]}[]=[
 
 export default function DashboardNav({showSettings,orgName="Your rental business",logoUrl,userName="Account",role="User",children,supportBanner}:{showSettings:boolean;orgName?:string;logoUrl?:string|null;userName?:string;role?:string;children?:ReactNode;supportBanner?:ReactNode}){
  const pathname=usePathname();
- const all=[...primary,...moreGroups.flatMap(g=>g.items)].filter(i=>!i.owner||showSettings);
+ const[mobileOpen,setMobileOpen]=useState(false);
+ const visiblePrimary=primary.filter(i=>!i.owner||showSettings);
+ const visibleGroups=moreGroups.map(group=>({...group,items:group.items.filter(i=>!i.owner||showSettings)})).filter(group=>group.items.length);
+ const all=[...visiblePrimary,...visibleGroups.flatMap(g=>g.items)];
  const current=all.filter(i=>pathname===i.href||(i.href!=="/dashboard"&&pathname.startsWith(i.href+"/"))).sort((a,b)=>b.href.length-a.href.length)[0];
  const active=(i:Item)=>current?.href===i.href;
- const navLink=(i:Item)=><Link key={i.href} href={i.href} aria-current={active(i)?"page":undefined} className={"tenant-phase3-link "+(active(i)?"is-active":"")}><Icon name={i.icon} className="h-[18px] w-[18px]"/><span>{i.label}</span></Link>;
+ const logout=()=>signOut({callbackUrl:"/login"});
 
  return <div className="tenant-app">
   <FeatureUsageTracker path={pathname} enabled={!supportBanner}/>
   <a href="#tenant-main" className="tenant-skip">Skip to content</a>
   <div className="sticky top-0 z-50">
    {supportBanner}
-   <header className="tenant-phase3-bar">
-    <Link href="/dashboard" className="tenant-phase3-brand" aria-label="Tenant home">
-     {logoUrl?<span className="tenant-phase3-brand-logo"><img src={logoUrl} alt=""/></span>:<span className="tenant-phase3-brand-mark"><Icon name="box" className="h-5 w-5"/></span>}
-     <span className="tenant-phase3-brand-copy"><strong>{orgName}</strong><small>Rental admin</small></span>
+   <header className="tenant-parity-nav">
+    <Link href="/dashboard" className="tenant-parity-brand" aria-label="Tenant home">
+     {logoUrl?<span className="tenant-parity-logo"><img src={logoUrl} alt={orgName}/></span>:<><span className="tenant-parity-mark"><Icon name="box" className="h-5 w-5"/></span><span className="tenant-parity-name">{orgName}</span></>}
     </Link>
 
-    <nav className="tenant-phase3-nav" aria-label="Tenant navigation">
-     {primary.filter(i=>!i.owner||showSettings).map(navLink)}
-     <details className="tenant-phase3-more">
-      <summary className={"tenant-phase3-link "+(moreGroups.some(g=>g.items.some(active))?"is-active":"")}><Icon name="menu" className="h-[18px] w-[18px]"/><span>More</span></summary>
+    <nav className="tenant-parity-desktop" aria-label="Tenant navigation">
+     {visiblePrimary.map(i=><Link key={i.href} href={i.href} title={i.label} aria-current={active(i)?"page":undefined} className={"tenant-parity-link "+(active(i)?"is-active":"")}><Icon name={i.icon}/><span>{i.label}</span></Link>)}
+     <details className="tenant-parity-more">
+      <summary className={"tenant-parity-link "+(visibleGroups.some(g=>g.items.some(active))?"is-active":"")}><Icon name="menu"/><span>More</span></summary>
       <div className="tenant-more-panel">
-       {moreGroups.map(group=>{
-        const entries=group.items.filter(i=>!i.owner||showSettings);
-        if(!entries.length)return null;
-        return <div key={group.label} className="tenant-more-group"><p>{group.label}</p>{entries.map(i=><Link key={i.href} href={i.href} className={active(i)?"is-active":""}><Icon name={i.icon} className="h-4 w-4"/><span>{i.label}</span></Link>)}</div>;
-       })}
+       {visibleGroups.map(group=><div key={group.label} className="tenant-more-group"><p>{group.label}</p>{group.items.map(i=><Link key={i.href} href={i.href} className={active(i)?"is-active":""}><Icon name={i.icon} className="h-4 w-4"/><span>{i.label}</span></Link>)}</div>)}
       </div>
      </details>
     </nav>
 
-    <div className="tenant-phase3-account">
-     <span className="tenant-phase3-user">Signed in as <b>{userName}</b> <small>({role})</small></span>
-     <button type="button" onClick={()=>signOut({callbackUrl:"/login"})} className="tenant-phase3-logout">Logout</button>
+    <div className="tenant-parity-account">
+     <span>Signed in as <strong>{userName}</strong> ({role})</span>
+     <button type="button" onClick={logout}>Logout</button>
     </div>
+
+    <button type="button" className="tenant-parity-mobile-toggle" aria-label="Toggle menu" aria-expanded={mobileOpen} onClick={()=>setMobileOpen(open=>!open)}>
+     <Icon name={mobileOpen?"close":"menu"} className="h-7 w-7"/>
+    </button>
+
+    {mobileOpen&&<div className="tenant-parity-mobile" id="tenant-mobile-menu">
+      <div className="tenant-parity-mobile-links">
+       {visiblePrimary.map(i=><Link key={i.href} href={i.href} onClick={()=>setMobileOpen(false)} className={active(i)?"is-active":""}><Icon name={i.icon} className="h-5 w-5"/><span>{i.label}</span></Link>)}
+       {visibleGroups.flatMap(group=>group.items).map(i=><Link key={i.href} href={i.href} onClick={()=>setMobileOpen(false)} className={active(i)?"is-active":""}><Icon name={i.icon} className="h-5 w-5"/><span>{i.label}</span></Link>)}
+      </div>
+      <div className="tenant-parity-mobile-account">Signed in as <strong>{userName}</strong> ({role})</div>
+      <button type="button" onClick={logout} className="tenant-parity-mobile-logout">Logout</button>
+    </div>}
    </header>
   </div>
 
-  <main id="tenant-main" tabIndex={-1} className={"tenant-content "+(pathname==="/dashboard"?"tenant-content-home":"tenant-friendly-surface")}>
-   {pathname!=="/dashboard"&&<div className="tenant-breadcrumb-row"><div><span className="text-xs text-slate-400">Workspace</span><span className="mx-2 text-slate-300">/</span><strong className="text-xs text-slate-700">{current?.label||"Home"}</strong></div></div>}
-   {children}
-  </main>
+  <main id="tenant-main" tabIndex={-1} className={"tenant-content "+(pathname==="/dashboard"?"tenant-content-home":"tenant-friendly-surface")}>{children}</main>
  </div>;
 }
