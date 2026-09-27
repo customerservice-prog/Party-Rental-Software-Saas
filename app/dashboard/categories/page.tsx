@@ -10,6 +10,7 @@ type Category={
   description:string|null;
   picture:string|null;
   displayToCustomer:boolean;
+  sortOrder:number;
   _count?:{items:number};
 };
 
@@ -76,6 +77,19 @@ export default function CategoriesPage(){
     await load();
   }
 
+  async function moveCategory(id:string,direction:-1|1){
+    const index=categories.findIndex(category=>category.id===id);
+    const target=index+direction;
+    if(index<0||target<0||target>=categories.length)return;
+    const next=[...categories];
+    [next[index],next[target]]=[next[target],next[index]];
+    setCategories(next);
+    const response=await fetch("/api/categories",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderedIds:next.map(category=>category.id)})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok){setMessage(data.error||"Category order could not be saved.");await load();return;}
+    setMessage("Category order updated.");
+  }
+
   async function deleteCategory(category:Category){
     const count=category._count?.items||0;
     if(count>0){setMessage("Move or remove the "+count+" item"+(count===1?"":"s")+" in "+category.name+" before deleting this category.");return;}
@@ -119,10 +133,12 @@ export default function CategoriesPage(){
       <div className="friendly-admin-subhead"><div><h2>Rental categories</h2><p>Edit category names, descriptions, website visibility, and images.</p></div></div>
       {loading?<div className="friendly-admin-empty">Loading categories…</div>:categories.length===0?<div className="friendly-admin-empty">No categories yet.</div>:<div className="friendly-admin-table-wrap">
         <table className="friendly-admin-table">
-          <thead><tr><th>Category</th><th>Description</th><th>Items</th><th>Website</th><th>Picture</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Order</th><th>Category</th><th>Description</th><th>Items</th><th>Website</th><th>Picture</th><th>Actions</th></tr></thead>
           <tbody>{categories.map(category=>{
             const draft=drafts[category.id]||{name:category.name,description:category.description||"",picture:category.picture||"",displayToCustomer:category.displayToCustomer};
+            const index=categories.findIndex(row=>row.id===category.id);
             return <tr key={category.id}>
+              <td><div className="flex gap-1"><button type="button" aria-label={"Move "+category.name+" up"} disabled={index===0} onClick={()=>moveCategory(category.id,-1)} className="friendly-admin-secondary !min-h-0 !px-2 !py-1 disabled:opacity-30">↑</button><button type="button" aria-label={"Move "+category.name+" down"} disabled={index===categories.length-1} onClick={()=>moveCategory(category.id,1)} className="friendly-admin-secondary !min-h-0 !px-2 !py-1 disabled:opacity-30">↓</button></div></td>
               <td className="min-w-[180px]"><input className="friendly-admin-field w-full" value={draft.name} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,name:e.target.value}})}/></td>
               <td className="min-w-[260px]"><input className="friendly-admin-field w-full" value={draft.description} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,description:e.target.value}})} placeholder="Optional description"/></td>
               <td>{category._count?.items||0}</td>
