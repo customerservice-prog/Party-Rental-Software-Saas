@@ -43,6 +43,7 @@ const FILTERS = [
 ] as const;
 
 type FilterKey = typeof FILTERS[number]["key"];
+type JobFilter="all"|"delivery"|"pickup";
 
 function matchesFilter(order: OrderLite, filter: FilterKey) {
   switch (filter) {
@@ -94,6 +95,7 @@ export default function SchedulingCalendar({
 }) {
   const router = useRouter();
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [jobFilter,setJobFilter]=useState<JobFilter>("all");
   const [selectedDay, setSelectedDay] = useState<string | null>(initialSelectedDay);
   const [taskDrafts, setTaskDrafts] = useState<Record<string, string>>({});
   const [savingTaskFor, setSavingTaskFor] = useState<string | null>(null);
@@ -114,6 +116,7 @@ export default function SchedulingCalendar({
     const map = new Map<string, OrderLite[]>();
     activeOrders
       .filter((order) => matchesFilter(order, filter))
+      .filter((order)=>jobFilter==="all"||(jobFilter==="pickup"?order.deliveryType==="pickup":order.deliveryType!=="pickup"))
       .forEach((order) => {
         const key = dateKey(order[groupField] as string);
         const list = map.get(key) || [];
@@ -121,7 +124,7 @@ export default function SchedulingCalendar({
         map.set(key, list);
       });
     return map;
-  }, [activeOrders, filter, groupField]);
+  }, [activeOrders, filter, groupField, jobFilter]);
 
   const firstOfMonth = new Date(year, month, 1);
   const startWeekday = firstOfMonth.getDay();
@@ -173,8 +176,16 @@ export default function SchedulingCalendar({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4 gap-3">
-        <div className="flex flex-wrap gap-2 text-sm">
+      <div className="flex items-start justify-between mb-4 gap-3">
+        <div>
+          <label className="mb-2 block text-xs font-semibold text-gray-600">Job type
+            <select value={jobFilter} onChange={e=>setJobFilter(e.target.value as JobFilter)} className="ml-2 rounded border bg-white px-3 py-2 text-sm">
+              <option value="all">All jobs</option>
+              <option value="delivery">Delivery / drop-off</option>
+              <option value="pickup">Customer pickup</option>
+            </select>
+          </label>
+          <div className="flex flex-wrap gap-2 text-sm">
           {FILTERS.map((f) => (
             <button
               key={f.key}
@@ -189,6 +200,7 @@ export default function SchedulingCalendar({
               {f.label}
             </button>
           ))}
+          </div>
         </div>
         <Link
           href="/dashboard/orders/new"
