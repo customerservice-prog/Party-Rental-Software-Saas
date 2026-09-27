@@ -151,3 +151,14 @@ test('Rainchecks is a real tenant workspace backed by StoreCredit rain_check row
   assert.match(api,/const type=b\.type==="rain_check"/);
   for(const source of [nav,tools,reports]) assert.match(source,/\/dashboard\/rainchecks/);
 });
+
+
+test('Marketing uses Friendly-style module destinations without fabricating campaign features',()=>{
+  const page=read('app/dashboard/marketing/page.tsx');
+  const routes=read('app/dashboard/marketing/[section]/page.tsx');
+  for(const slug of ['campaigns','audiences','automations','performance','history','scheduler','calendar','settings']) assert.ok(page.includes('/dashboard/marketing/'+slug));
+  assert.match(routes,/campaigns-builder/);
+  assert.match(routes,/campaigns-gallery/);
+  assert.match(routes,/does not fabricate campaign data/);
+  for(const target of ['/dashboard/message-templates','/dashboard/customers','/dashboard/automations','/dashboard/analytics','/dashboard/messages','/dashboard/automations/schedule']) assert.ok(routes.includes(target));
+});
