@@ -110,3 +110,15 @@ test('driver roster supports Friendly-style inline edits without revealing saved
   assert.match(api,/hasPin:Boolean\(pin\)/);
   assert.match(api,/\.\.\.driver,hasPin/);
 });
+
+
+test('Settings hub mirrors Friendly navigation with real destinations instead of dead text',()=>{
+  const settings=read('app/dashboard/settings/page.tsx');
+  const dynamic=read('app/dashboard/settings/[section]/page.tsx');
+  assert.match(settings,/settingHref\(item\)/);
+  assert.doesNotMatch(settings,/<span key=\{item\.label\}>\{item\.label\}<\/span>/);
+  for(const label of ['Google Integration','QuickBooks Online','Service Areas','General Documents','Sorting','Auto Charge','Availability Rule Sets','Gallery']) assert.ok(settings.includes(label));
+  for(const supported of ['company-info','text-messaging','closed-dates','deposit-rules','navigation-editor','premium-features']) assert.ok(dynamic.includes('"'+supported+'"'));
+  assert.match(dynamic,/Not supported in this tenant CRM yet/);
+  assert.match(dynamic,/does not pretend the feature exists/);
+});
