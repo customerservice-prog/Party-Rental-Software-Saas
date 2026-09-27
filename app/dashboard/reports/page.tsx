@@ -51,6 +51,7 @@ export default async function ReportsPage(){
     {title:"Warehouse Status",description:"Warehouse scanning and fulfillment status.",category:"Inventory",href:"/dashboard/warehouse"},
     {title:"Do Not Rent",description:"Active customer/address restrictions and blocked attempts.",category:"Customers",href:"/dashboard/do-not-rent"},
     {title:"Customer Activity",description:"Review customers and order relationship history.",category:"Customers",href:"/dashboard/customers"},
+    {title:"Credits & Rainchecks",description:"Issued, active, redeemed and expired customer rain-check value.",category:"Payments & Accounting",href:"/dashboard/rainchecks"},
     {title:"Business Analytics",description:"Revenue, customer, inventory and trend analytics.",category:"Sales & Revenue",href:"/dashboard/analytics"},
     {title:"Marketing Performance",description:"Marketing activity and customer outreach workspace.",category:"Marketing",href:"/dashboard/marketing"},
     {title:"Activity Log",description:"Administrative changes recorded for this rental business.",category:"System",href:"/dashboard/activity"},
