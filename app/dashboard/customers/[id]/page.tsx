@@ -32,11 +32,30 @@ export default async function CustomerDetailPage({params:paramsPromise}:{params:
     return Boolean((normalizedEmail&&email===normalizedEmail)||(normalizedPhone&&phone===normalizedPhone)||(normalizedAddress&&address===normalizedAddress));
   })||null;
 
-  const bookedOrders=customer.orders.filter(order=>["active","confirmed","completed"].includes(order.status.toLowerCase()));
+  const bookedStatuses=new Set(["active","confirmed","completed"]);
+  const paidBookingByDate=new Map<string,(typeof customer.orders)[number]>();
+  for(const order of customer.orders){
+    if(bookedStatuses.has(order.status.toLowerCase())&&order.amountPaid>0){
+      const key=order.eventDate.toISOString().slice(0,10);
+      if(!paidBookingByDate.has(key))paidBookingByDate.set(key,order);
+    }
+  }
+  const relatedPaidBookingByDraftId=new Map<string,(typeof customer.orders)[number]>();
+  for(const order of customer.orders){
+    const status=order.status.toLowerCase();
+    if((status==="incomplete"||status==="pending")&&order.amountPaid<=0){
+      const related=paidBookingByDate.get(order.eventDate.toISOString().slice(0,10));
+      if(related&&related.id!==order.id)relatedPaidBookingByDraftId.set(order.id,related);
+    }
+  }
+  const bookedOrders=customer.orders.filter(order=>bookedStatuses.has(order.status.toLowerCase()));
   const balanceDue=bookedOrders.reduce((sum,order)=>sum+Math.max(0,order.totalAmount-order.amountPaid),0);
-  const dnrParams=new URLSearchParams({add:"1",name:(customer.firstName+" "+customer.lastName).trim(),email:customer.email});
-  if(customer.phone)dnrParams.set("phone",customer.phone);
-  if(customer.address)dnrParams.set("address",customer.address);
+
+  const addRestrictionParams=new URLSearchParams({add:"1",name:(customer.firstName+" "+customer.lastName).trim(),email:customer.email});
+  if(customer.phone)addRestrictionParams.set("phone",customer.phone);
+  if(customer.address)addRestrictionParams.set("address",customer.address);
+  const restrictionSearch=restriction?.email||restriction?.phone||restriction?.address||customer.email;
+  const restrictionHref=restriction?"/dashboard/do-not-rent?q="+encodeURIComponent(restrictionSearch):"/dashboard/do-not-rent?"+addRestrictionParams.toString();
 
   return <div className="friendly-admin-page is-wide">
     <div className="mb-4"><Link href="/dashboard/customers" className="text-xs font-semibold text-[#1a6fd4] hover:underline">← Back to Customers</Link></div>
@@ -47,7 +66,7 @@ export default async function CustomerDetailPage({params:paramsPromise}:{params:
       </div>
       <div className="friendly-admin-actions">
         <Link href={"/dashboard/orders/new?customerId="+customer.id} className="friendly-admin-primary">Book an Order</Link>
-        <Link href={"/dashboard/do-not-rent?"+dnrParams.toString()} className={restriction?"friendly-admin-danger":"friendly-admin-secondary"}>{restriction?"View Restriction":"+ Add to Do Not Rent"}</Link>
+        <Link href={restrictionHref} className={restriction?"friendly-admin-danger":"friendly-admin-secondary"}>{restriction?"View Restriction":"+ Add to Do Not Rent"}</Link>
       </div>
     </div>
 
@@ -71,7 +90,7 @@ export default async function CustomerDetailPage({params:paramsPromise}:{params:
     <section className="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm font-semibold">Do Not Rent</span>
-        <Link href={"/dashboard/do-not-rent?"+dnrParams.toString()} className="text-sm text-[#1a6fd4] hover:underline">+ Add to Do Not Rent</Link>
+        <Link href={restrictionHref} className="text-sm text-[#1a6fd4] hover:underline">{restriction?"View Restriction":"+ Add to Do Not Rent"}</Link>
       </div>
       <p className={"mt-2 text-sm "+(restriction?"text-red-700":"text-slate-500")}>{restriction?"Active rental restriction on file.":"No active rental restriction on file."}</p>
     </section>
@@ -81,14 +100,23 @@ export default async function CustomerDetailPage({params:paramsPromise}:{params:
       {balanceDue>0&&<span className="text-xs font-semibold text-red-600">{money(balanceDue)} total balance due</span>}
     </div>
     <section className="mb-6 overflow-hidden rounded bg-white shadow">
-      {customer.orders.length?customer.orders.map(order=><div key={order.id} className="flex items-center justify-between gap-4 border-b px-4 py-3 last:border-0">
-        <div>
-          <Link href={"/dashboard/orders/"+order.id} className="font-medium text-[#1a6fd4] hover:underline">{order.orderNumber}</Link>
-          <span className={"ml-2 friendly-admin-badge "+(order.status==="active"||order.status==="confirmed"?"green":order.status==="quote"?"yellow":order.status==="canceled"||order.status==="cancelled"?"red":"gray")}>{order.status==="pending"?"incomplete":order.status}</span>
-          <span className="ml-2 text-sm text-slate-500">{new Date(order.eventDate).toLocaleDateString()}</span>
-        </div>
-        <div className="text-right"><span className="font-medium">{money(order.totalAmount)}</span>{order.totalAmount-order.amountPaid>0.009&&<div className="text-xs font-semibold text-red-600">{money(order.totalAmount-order.amountPaid)} due</div>}</div>
-      </div>):<div className="px-4 py-4 text-sm text-slate-500">This customer has no orders yet.</div>}
+      {customer.orders.length?customer.orders.map(order=>{
+        const status=order.status.toLowerCase();
+        const isBooked=bookedStatuses.has(status);
+        const relatedPaidBooking=relatedPaidBookingByDraftId.get(order.id);
+        const orderBalance=Math.max(0,order.totalAmount-order.amountPaid);
+        return <div key={order.id} className="flex items-start justify-between gap-4 border-b px-4 py-3 last:border-0">
+          <div>
+            <div>
+              <Link href={"/dashboard/orders/"+order.id} className="font-medium text-[#1a6fd4] hover:underline">{order.orderNumber}</Link>
+              <span className={"ml-2 friendly-admin-badge "+(status==="active"||status==="confirmed"?"green":status==="quote"?"yellow":status==="canceled"||status==="cancelled"?"red":"gray")}>{status==="pending"?"incomplete":status}</span>
+              <span className="ml-2 text-sm text-slate-500">{new Date(order.eventDate).toLocaleDateString()}</span>
+            </div>
+            {relatedPaidBooking&&<p className="mt-2 max-w-2xl text-xs text-amber-800">Earlier incomplete checkout — paid booking for this event: <Link href={"/dashboard/orders/"+relatedPaidBooking.id} className="font-semibold underline">#{relatedPaidBooking.orderNumber}</Link>. Excluded from the customer balance; kept in order history.</p>}
+          </div>
+          <div className="text-right"><span className="font-medium">{money(order.totalAmount)}</span>{isBooked&&orderBalance>0.009&&<div className="text-xs font-semibold text-red-600">{money(orderBalance)} due</div>}</div>
+        </div>;
+      }):<div className="px-4 py-4 text-sm text-slate-500">This customer has no orders yet.</div>}
     </section>
 
     <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
@@ -112,8 +140,8 @@ export default async function CustomerDetailPage({params:paramsPromise}:{params:
       </div>):<div className="px-4 py-4 text-sm text-slate-500">No messages yet.</div>}
     </section>
 
-    <div className="border-t border-slate-200 pt-4">
+    {customer.orders.length===0&&<div className="border-t border-slate-200 pt-4">
       <DeleteCustomerButton customerId={customer.id} customerName={customer.firstName+" "+customer.lastName}/>
-    </div>
+    </div>}
   </div>;
 }

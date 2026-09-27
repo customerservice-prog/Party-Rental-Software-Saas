@@ -272,3 +272,14 @@ test('customer money and scheduling day cards match Friendly operational meaning
   assert.match(newOrder,/requestedDate/);
   assert.match(newOrder,/useState\(requestedDate\)/);
 });
+
+
+test('customer detail never labels drafts as money due and only offers actions that can succeed',()=>{
+  const page=read('app/dashboard/customers/[id]/page.tsx');
+  assert.match(page,/relatedPaidBookingByDraftId/);
+  assert.match(page,/Earlier incomplete checkout — paid booking for this event/);
+  assert.match(page,/isBooked&&orderBalance>0\.009/);
+  assert.match(page,/restrictionHref=restriction\?/);
+  assert.match(page,/\{restriction\?"View Restriction":"\+ Add to Do Not Rent"\}/);
+  assert.match(page,/customer\.orders\.length===0&&<div/);
+});
