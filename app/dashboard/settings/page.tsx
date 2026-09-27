@@ -1,79 +1,107 @@
 import Link from "next/link";
 
-const sections=[
+type SettingEntry={label:string;href?:string};
+type SettingSection={title:string;items:SettingEntry[]};
+
+const sections:SettingSection[]=[
   {title:"General Config",items:[
-    ["Company Info","/dashboard/settings/business#company-info"],
-    ["Time Zone","/dashboard/settings/business#company-info"],
-    ["Routing / Delivery","/dashboard/settings/business#order-pricing"],
-    ["Text Messaging","/dashboard/settings/business#sms"],
-    ["Email Sending","/dashboard/settings/business#email"],
-    ["Tax Rate","/dashboard/settings/business#order-pricing"],
-    ["Users","/dashboard/staff"],
-    ["Company Roles","/dashboard/roles"],
-    ["Sign-in Sessions","/dashboard/sessions"],
-    ["Plan & Billing","/dashboard/settings/billing"],
+    {label:"Company Info",href:"/dashboard/settings/business#company-info"},
+    {label:"Time Zone",href:"/dashboard/settings/business#company-info"},
+    {label:"Routing Settings",href:"/dashboard/settings/business#order-pricing"},
+    {label:"Google Integration"},
+    {label:"QuickBooks Online"},
+    {label:"Mailchimp"},
+    {label:"AWeber"},
+    {label:"Constant Contact"},
+    {label:"Text Messaging",href:"/dashboard/settings/business#sms"},
+    {label:"Text Logs",href:"/dashboard/messages"},
+    {label:"Tax Rate",href:"/dashboard/settings/business#order-pricing"},
+    {label:"Misc Settings",href:"/dashboard/settings/business"},
+    {label:"API Info"},
+    {label:"Users",href:"/dashboard/staff"},
+    {label:"System Setup",href:"/dashboard/settings/business"},
+    {label:"System Settings",href:"/dashboard/settings/business"},
+    {label:"Locations",href:"/dashboard/settings/business#company-info"},
+    {label:"Company Types"},
+    {label:"Company Roles",href:"/dashboard/roles"},
+    {label:"HighLevel Connect"},
   ]},
   {title:"Order Config",items:[
-    ["Reminders","/dashboard/automations"],
-    ["Order Options","/dashboard/settings/business#order-pricing"],
-    ["Coupons","/dashboard/coupons"],
-    ["Closed Dates","/dashboard/settings/business#closed-dates"],
-    ["Business Hours","/dashboard/settings/business#business-hours"],
-    ["Deposit Rules","/dashboard/settings/business#order-pricing"],
-    ["Scheduling","/dashboard/scheduling"],
-    ["Do Not Rent","/dashboard/do-not-rent"],
+    {label:"Reminders",href:"/dashboard/automations"},
+    {label:"Order Options",href:"/dashboard/settings/business#order-pricing"},
+    {label:"References"},
+    {label:"Setup Surfaces"},
+    {label:"Coupons",href:"/dashboard/coupons"},
+    {label:"Service Areas"},
+    {label:"Closed Dates",href:"/dashboard/settings/business#closed-dates"},
+    {label:"Misc Order Settings",href:"/dashboard/settings/business#order-pricing"},
+    {label:"Loyalty & Credit Types"},
   ]},
-  {title:"Documents & Messaging",items:[
-    ["Automatic Messages","/dashboard/automations"],
-    ["Scheduled Delivery","/dashboard/automations/schedule"],
-    ["Message Templates","/dashboard/message-templates"],
-    ["Messages","/dashboard/messages"],
-    ["Contract Options","/dashboard/settings/business#company-info"],
-    ["Print Contracts","/dashboard/deliveries/print-contracts"],
-    ["Print Invoices","/dashboard/deliveries/print-invoices"],
+  {title:"Documents",items:[
+    {label:"General Documents"},
+    {label:"Source Code"},
+    {label:"Setup Surveys"},
+    {label:"Automatic Messages",href:"/dashboard/automations"},
+    {label:"Automatic Text Messaging",href:"/dashboard/automations"},
+    {label:"Text Message Templates",href:"/dashboard/message-templates"},
+    {label:"Email Templates for Orders",href:"/dashboard/message-templates"},
+    {label:"Email Templates for Marketing",href:"/dashboard/message-templates"},
+    {label:"FPRMail",href:"/dashboard/messages"},
+    {label:"Contract Options",href:"/dashboard/settings/business#company-info"},
   ]},
   {title:"Products",items:[
-    ["Categories","/dashboard/categories"],
-    ["Items","/dashboard/inventory"],
-    ["Packages","/dashboard/inventory/packages"],
-    ["Add-ons","/dashboard/inventory"],
-    ["Cost of Goods","/dashboard/reports/overview?tab=cogs"],
-    ["Warehouse","/dashboard/warehouse"],
-    ["Returns & Damage","/dashboard/returns"],
+    {label:"Categories",href:"/dashboard/categories"},
+    {label:"Items",href:"/dashboard/inventory"},
+    {label:"Sorting"},
+    {label:"Schedule Profiles"},
+    {label:"Bulk Pricing"},
+    {label:"Addons",href:"/dashboard/inventory"},
+    {label:"Product Sharing"},
+    {label:"Cost of Goods",href:"/dashboard/reports/overview?tab=cogs"},
+    {label:"Register Setup"},
+    {label:"Auto Charge"},
+    {label:"Recurring Profiles"},
+    {label:"Wedding Packages",href:"/dashboard/inventory/packages"},
+  ]},
+  {title:"Rules",items:[
+    {label:"Adjustments"},
+    {label:"Deposit Rules",href:"/dashboard/settings/business#order-pricing"},
+    {label:"Price Rule Sets"},
+    {label:"Special Request Fees"},
+    {label:"Availability Rule Sets"},
   ]},
   {title:"Website",items:[
-    ["Website Pages","/dashboard/pages"],
-    ["Edit Website","/dashboard/website"],
-    ["Branding & Images","/dashboard/settings/business#website"],
-    ["SEO","/dashboard/settings/business#seo"],
-    ["Public Site Settings","/dashboard/settings/business#website"],
-  ]},
-  {title:"Operations",items:[
-    ["Delivery","/dashboard/deliveries"],
-    ["Assign Drivers","/dashboard/dispatch"],
-    ["Drivers","/dashboard/drivers"],
-    ["Packing List","/dashboard/deliveries/packing-list"],
-    ["Tasks","/dashboard/tasks"],
-    ["Workforce","/dashboard/workforce"],
-    ["Activity Log","/dashboard/activity"],
+    {label:"Website Pages",href:"/dashboard/pages"},
+    {label:"Visual Builder",href:"/dashboard/website"},
+    {label:"General Images",href:"/dashboard/settings/business#website"},
+    {label:"Gallery"},
+    {label:"Navigation Editor"},
+    {label:"Premium Features"},
+    {label:"Responsive Editor",href:"/dashboard/website"},
+    {label:"Conversion Booster"},
   ]},
 ];
 
 export default function SettingsPage(){
   return <div className="friendly-admin-page">
-    <div className="friendly-admin-head">
-      <div><h1>Settings</h1><p>Business setup organized like the Friendly Party Rental admin instead of one long configuration page.</p></div>
-      <div className="friendly-admin-actions">
-        <Link href="/dashboard/settings/business" className="friendly-admin-primary">Full Business Settings</Link>
-      </div>
-    </div>
+    <h1 className="mb-6 text-xl font-bold text-[#1a1a1a]">Settings</h1>
+
     <div className="space-y-4">
       {sections.map(section=><section key={section.title} className="friendly-admin-settings-section">
         <h2>{section.title}</h2>
         <div className="friendly-admin-settings-grid">
-          {section.items.map(([label,href])=><Link key={label} href={href}>{label}</Link>)}
+          {section.items.map(item=>item.href
+            ?<Link key={item.label} href={item.href}>{item.label}</Link>
+            :<span key={item.label} className="text-slate-400" title="Not available in this tenant yet">{item.label}</span>
+          )}
         </div>
       </section>)}
+    </div>
+
+    <div className="mt-5 flex flex-wrap gap-2">
+      <Link href="/dashboard/settings/business" className="friendly-admin-secondary">Business Settings</Link>
+      <Link href="/dashboard/settings/billing" className="friendly-admin-secondary">Plan & Billing</Link>
+      <Link href="/dashboard/sessions" className="friendly-admin-secondary">Sign-in Sessions</Link>
     </div>
   </div>;
 }
