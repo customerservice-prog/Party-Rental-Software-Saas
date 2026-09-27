@@ -4,6 +4,7 @@ import {requireCurrentOrganization} from "@/lib/tenant";
 import {prisma} from "@/lib/prisma";
 import DeleteCustomerButton from "@/app/dashboard/customers/DeleteCustomerButton";
 import CustomerNotes from "@/app/dashboard/customers/CustomerNotes";
+import CustomerProfileEditor from "@/app/dashboard/customers/CustomerProfileEditor";
 
 const money=(value:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(value);
 
@@ -46,6 +47,8 @@ export default async function CustomerDetailPage({params:paramsPromise}:{params:
       <Link href={"/dashboard/orders/new?customerId="+customer.id} className="friendly-admin-primary !min-h-0 !py-1.5">Book an Order</Link>
       <Link href={"/dashboard/do-not-rent?"+dnrParams.toString()} className="text-sm font-semibold text-[#1a6fd4] hover:underline">{restriction?"View Restriction":"+ Add to Do Not Rent"}</Link>
     </div>
+
+    <CustomerProfileEditor customer={{id:customer.id,firstName:customer.firstName,lastName:customer.lastName,email:customer.email,phone:customer.phone||"",address:customer.address||"",city:customer.city||"",state:customer.state||"",zip:customer.zip||""}}/>
 
     <section className="mt-4 mb-4">
       <p className="mb-1 text-sm text-slate-600">{customer.email}</p>
