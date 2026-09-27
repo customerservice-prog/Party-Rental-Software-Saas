@@ -26,12 +26,12 @@ export default async function DashboardHomePage({searchParams:searchParamsPromis
  const now=new Date(),dates=dashboardDates(now,org.timezone,searchParams);
  const historyStart=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()-12,1));
  const [
-  itemCount,monthOrders,quoteCount,pendingCount,todayPaymentGroups,balances,recentItems,paymentHistory,weather
+  itemCount,monthOrders,quoteCount,incompleteCount,todayPaymentGroups,balances,recentItems,paymentHistory,weather
  ]=await Promise.all([
   prisma.item.count({where:{organizationId:org.id}}),
   prisma.order.findMany({where:{organizationId:org.id,eventDate:{gte:dates.monthStart,lt:dates.monthEnd}},select:{id:true,status:true,deliveryType:true,eventDate:true},orderBy:{eventDate:"asc"}}),
   prisma.order.count({where:{organizationId:org.id,status:"quote"}}),
-  prisma.order.count({where:{organizationId:org.id,status:"pending"}}),
+  prisma.order.count({where:{organizationId:org.id,status:{in:["incomplete","pending"]}}}),
   prisma.payment.groupBy({by:["type"],where:{organizationId:org.id,createdAt:{gte:dates.today,lt:dates.tomorrow}},_sum:{amount:true}}),
   prisma.order.aggregate({where:{organizationId:org.id,status:{in:["active","confirmed","completed"]},amountPaid:{lt:prisma.order.fields.totalAmount}},_sum:{totalAmount:true,amountPaid:true}}),
   prisma.orderItem.findMany({where:{order:{organizationId:org.id,status:{in:["active","confirmed","completed"]},createdAt:{gte:new Date(+now-60*86400000)}}},select:{quantity:true,item:{select:{name:true}}}}),
@@ -92,7 +92,7 @@ export default async function DashboardHomePage({searchParams:searchParamsPromis
      <SectionHeading title="Office Follow-ups" href="/dashboard/orders" label="Orders"/>
      <div>
       <Link href="/dashboard/orders?status=quote"><span>Open quotes</span><b>{quoteCount}</b></Link>
-      <Link href="/dashboard/orders?status=pending"><span>Pending orders</span><b>{pendingCount}</b></Link>
+      <Link href="/dashboard/orders?status=incomplete"><span>Incomplete orders</span><b>{incompleteCount}</b></Link>
       <Link href="/dashboard/orders?balance=unpaid"><span>Balance to collect</span><b>{money(balance)}</b></Link>
      </div>
     </section>
