@@ -12,8 +12,11 @@ export async function GET(req: NextRequest) {
     }
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q")?.trim().toLowerCase();
+  const status = searchParams.get("status");
+  const since=new Date(Date.now()-30*86400000);
 
-  const restrictions = await prisma.doNotRentRestriction.findMany({
+  const [restrictions,activeCount,restrictedAddressCount,recentBlockedAttempts] = await Promise.all([
+  prisma.doNotRentRestriction.findMany({
     where: {
       organizationId: organization.id,
       ...(q
@@ -26,11 +29,16 @@ export async function GET(req: NextRequest) {
               ],
             }
           : {}),
+        ...(status==="active"?{isActive:true}:status==="inactive"?{isActive:false}:{}),
       },
     orderBy: { createdAt: "desc" },
-    });
+    }),
+    prisma.doNotRentRestriction.count({where:{organizationId:organization.id,isActive:true}}),
+    prisma.doNotRentRestriction.count({where:{organizationId:organization.id,isActive:true,address:{not:null}}}),
+    prisma.blockedBookingAttempt.count({where:{organizationId:organization.id,createdAt:{gte:since}}}),
+  ]);
 
-  return NextResponse.json({ restrictions });
+  return NextResponse.json({ restrictions,activeCount,restrictedAddressCount,recentBlockedAttempts });
   }
 
 export async function POST(req: NextRequest) {
