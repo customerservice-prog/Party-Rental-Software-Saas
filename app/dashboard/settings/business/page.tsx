@@ -460,7 +460,7 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Business Settings</h1>
 
       <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>Profile</h2>
+        <h2 id="company-info" className={sectionTitleClass}>Profile</h2>
         {message && <p className="mb-4 text-sm text-green-700">{message}</p>}
         <label className={labelClass}>
           <span className={labelTextClass}>Business name</span>
@@ -563,7 +563,7 @@ export default function SettingsPage() {
 
       <div className={sectionClass}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className={sectionTitleClass + " mb-0"}>Website / Site Builder</h2>
+          <h2 id="website" className={sectionTitleClass + " mb-0"}>Website / Site Builder</h2>
           <a
             href={orgSlug ? "/t/" + orgSlug + "/book" : "/book"}
             target="_blank"
@@ -643,7 +643,7 @@ export default function SettingsPage() {
       </div>
 
       <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>Search Engine Optimization (SEO)</h2>
+        <h2 id="seo" className={sectionTitleClass}>Search Engine Optimization (SEO)</h2>
         <p className="text-sm text-gray-500 mb-4">
           Controls the title and description search engines and social media links show for
           your public homepage. Leave blank to automatically use your published homepage's
@@ -677,7 +677,7 @@ export default function SettingsPage() {
       </div>
 
       <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>Delivery, Deposit &amp; Tax</h2>
+        <h2 id="order-pricing" className={sectionTitleClass}>Delivery, Deposit &amp; Tax</h2>
         {pricingMessage && <p className="mb-4 text-sm text-green-700">{pricingMessage}</p>}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
           <label className={labelClass}>
@@ -740,7 +740,7 @@ export default function SettingsPage() {
       </div>
 
       <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>Business Hours</h2>
+        <h2 id="business-hours" className={sectionTitleClass}>Business Hours</h2>
         {hoursMessage && <p className="mb-4 text-sm text-green-700">{hoursMessage}</p>}
         <div className="space-y-2 mb-4">
           {hours.map((row, idx) => (
@@ -792,7 +792,7 @@ export default function SettingsPage() {
       </div>
 
       <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>Closed Dates</h2>
+        <h2 id="closed-dates" className={sectionTitleClass}>Closed Dates</h2>
         <p className="text-sm text-gray-500 mb-4">
           Add specific holidays or days off that override your regular business hours.
         </p>
@@ -841,7 +841,7 @@ export default function SettingsPage() {
       </div>
 
       <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>Email Sending</h2>
+        <h2 id="email" className={sectionTitleClass}>Email Sending</h2>
         <p className="text-sm text-gray-500 mb-4">
           Connect your own Resend account to send real marketing and customer emails from
           Marketing and Messages. Until connected, messages are saved as drafts only and
@@ -905,7 +905,7 @@ export default function SettingsPage() {
       </div>
 
       <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>SMS / Text Messaging</h2>
+        <h2 id="sms" className={sectionTitleClass}>SMS / Text Messaging</h2>
         <p className="text-sm text-gray-500 mb-4">
           Connect your own Twilio account to send real text messages from Messages and automatic delivery / pickup updates. Credentials stay server-side and are never shown back after saving.
         </p>
@@ -968,7 +968,7 @@ export default function SettingsPage() {
       </div>
 
       <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>Payments</h2>
+        <h2 id="payments" className={sectionTitleClass}>Payments</h2>
         {stripeStatus.connected ? (
           <div>
             <p className="text-gray-600 mb-3">
