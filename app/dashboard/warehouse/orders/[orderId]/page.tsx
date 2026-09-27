@@ -14,14 +14,13 @@ export default async function OrderWarehouseScanPage({params: paramsPromise}:{pa
   });
   if(!order)notFound();
   return <div className="friendly-admin-page is-wide">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="friendly-admin-head">
       <div>
         <Link href={`/dashboard/orders/${order.id}/fulfillment`} className="text-xs font-semibold text-[#1a6fd4]">← Order fulfillment</Link>
-        <div className="mt-2 text-xs font-semibold text-[#1a6fd4]">Warehouse · Order #{order.orderNumber}</div>
-        <h1 className="mt-1 text-2xl font-bold text-dark">Scan assets for this order</h1>
+        <h1 className="!mt-2">Scan assets for this order</h1>
         <p className="mt-1 text-sm text-slate-500">{order.customer.firstName} {order.customer.lastName} · {new Date(order.eventDate).toLocaleDateString()}</p>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="friendly-admin-actions">
         <Link href="/dashboard/warehouse" className="friendly-admin-secondary">Asset registry</Link>
         <Link href="/dashboard/deliveries/packing-list" className="friendly-admin-secondary">Packing list</Link>
       </div>
