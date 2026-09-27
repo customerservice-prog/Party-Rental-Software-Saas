@@ -9,6 +9,7 @@ import HomeTasks from "./HomeTasks";
 import HomeWeather from "./HomeWeather";
 import HomeScreen from "./HomeScreen";
 import HomeMeetings from "./HomeMeetings";
+import HomeTools from "./HomeTools";
 import BestSellersChart from "./BestSellersChart";
 import MonthlyPaymentsChart from "./MonthlyPaymentsChart";
 import Icon from "./components/Icon";
@@ -58,7 +59,7 @@ export default async function DashboardHomePage({searchParams:searchParamsPromis
    </div>
   </div>
 
-  {itemCount===0&&<div className="phase3-onboarding"><div><b>Finish setting up your catalog</b><span>Add inventory and pricing before publishing online booking.</span></div><Link href="/onboarding" className="tenant-button tenant-button-primary">Continue setup</Link></div>}
+  <div className="mb-3"><HomeTools/></div>\n\n  {itemCount===0&&<div className="phase3-onboarding"><div><b>Finish setting up your catalog</b><span>Add inventory and pricing before publishing online booking.</span></div><Link href="/onboarding" className="tenant-button tenant-button-primary">Continue setup</Link></div>}
 
   <div className="phase3-main">
    <div className="phase3-primary-column">
