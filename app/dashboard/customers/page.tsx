@@ -79,7 +79,7 @@ export default async function CustomersPage({searchParams:searchParamsPromise}:{
   const filters=new URLSearchParams({...q?{q}:{},...from?{from}:{},...to?{to}:{}});
   const pageUrl=(p:number)=>"/dashboard/customers?"+new URLSearchParams({...Object.fromEntries(filters),page:String(p)});
 
-  return <div className="friendly-admin-page is-wide">
+  return <div className="friendly-admin-page">
     <CustomerAutoRefresh/>
     <div className="friendly-admin-head">
       <div><h1>Customers</h1><p>{total} customer{total===1?"":"s"} · Latest payment, quote or incomplete checkout first</p><p className="!mt-1 text-[10px]">Refreshes automatically every 15 seconds. Customers without booking activity appear last.</p></div>
@@ -89,9 +89,14 @@ export default async function CustomersPage({searchParams:searchParamsPromise}:{
     <section className="friendly-admin-card accent-blue">
       <form method="get" className="friendly-admin-filters">
         <label className="min-w-[240px] flex-1"><span>Search</span><input type="search" name="q" defaultValue={q} placeholder="Search by name, email, phone, or order #..." className="w-full"/></label>
-        <label><span>Added from</span><input type="date" name="from" defaultValue={from}/></label>
-        <label><span>Added through</span><input type="date" name="to" defaultValue={to}/></label>
-        <button className="friendly-admin-secondary" type="submit">Apply</button>
+        <button className="friendly-admin-secondary" type="submit">Search</button>
+        <details className="customer-more-filters">
+          <summary className="friendly-admin-secondary cursor-pointer list-none">More filters</summary>
+          <div className="customer-more-filter-panel">
+            <label><span>Added from</span><input type="date" name="from" defaultValue={from}/></label>
+            <label><span>Added through</span><input type="date" name="to" defaultValue={to}/></label>
+          </div>
+        </details>
         {filters.size>0&&<Link href="/dashboard/customers" className="friendly-admin-secondary">Clear</Link>}
       </form>
     </section>
