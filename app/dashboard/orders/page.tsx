@@ -12,7 +12,8 @@ export default async function OrdersPage({searchParams:searchParamsPromise}:{sea
  const unpaid=searchParams.balance==="unpaid";
  const where={organizationId:org.id,...orderSearchWhere(q),...(status?orderStatusWhere(status):unpaid?{status:{in:["active","confirmed","completed"]}}:{}),...(unpaid?{amountPaid:{lt:prisma.order.fields.totalAmount}}:{})};
  const total=await prisma.order.count({where}),pages=Math.max(1,Math.ceil(total/25)),page=Math.min(pages,Math.max(1,Math.floor(Number(searchParams.page)||1)));
- const orders=await prisma.order.findMany({where,include:{customer:true},orderBy:[{eventDate:"desc"},{id:"asc"}],take:25,skip:(page-1)*25});
+ const orderBy=status==="incomplete"||status==="pending"?[{createdAt:"desc" as const},{id:"asc" as const}]:[{eventDate:"desc" as const},{id:"asc" as const}];
+ const orders=await prisma.order.findMany({where,include:{customer:true},orderBy,take:25,skip:(page-1)*25});
  function url(patch:Record<string,string>={}){const params=new URLSearchParams({...q?{q}:{},...status?{status}:{},...unpaid?{balance:"unpaid"}:{},...patch});for(const[key,value]of Array.from(params.entries()))if(!value)params.delete(key);return"/dashboard/orders"+(params.size?"?"+params:"");}
  const exportParams=new URLSearchParams({...q?{q}:{},...status?{status}:{},...unpaid?{balance:"unpaid"}:{}});
  return <div className="friendly-admin-page">
@@ -34,13 +35,13 @@ export default async function OrdersPage({searchParams:searchParamsPromise}:{sea
   <div className="friendly-admin-card flush">
    <div className="friendly-admin-table-wrap">
     <table className="friendly-admin-table">
-     <thead><tr><th>Order#</th><th>Customer</th><th>Event Date</th><th>Status</th><th className="numeric">Total</th><th className="numeric">Paid</th><th className="numeric">Balance</th><th>Actions</th></tr></thead>
+     <thead><tr><th>Order#</th><th>Customer</th><th>Event Date</th><th>Status / Funnel</th><th className="numeric">Total</th><th className="numeric">Paid</th><th className="numeric">Balance</th><th>Actions</th></tr></thead>
      <tbody>
       {orders.map(o=><tr key={o.id}>
        <td><Link href={"/dashboard/orders/"+o.id}>{o.orderNumber}</Link><div className="mt-1 text-[9px] capitalize text-gray-400">{o.deliveryType==="pickup"?"Customer pickup":"Delivery"}</div></td>
-       <td><div className="font-medium text-[#333]">{o.customer.firstName} {o.customer.lastName}</div><div className="mt-1 text-[9px] text-gray-400">{o.customer.email}</div></td>
-       <td>{eventDateLabel(o.eventDate)}</td>
-       <td><StatusBadge status={o.status}/></td>
+       <td><div className="font-medium text-[#333]">{o.customer.firstName} {o.customer.lastName}</div><div className="mt-1 text-[9px] text-gray-400">{o.customer.email}{(o.status==="incomplete"||o.status==="pending")&&o.customer.phone?" · "+o.customer.phone:""}</div></td>
+       <td>{eventDateLabel(o.eventDate)}{(o.status==="incomplete"||o.status==="pending")&&<div className="mt-1 text-[9px] text-gray-400">Started {o.createdAt.toLocaleString("en-US",{timeZone:org.timezone||"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</div>}</td>
+       <td><StatusBadge status={o.status}/><div className="mt-1 text-[9px] capitalize text-gray-400">{o.source||"online"} · {o.deliveryType==="pickup"?"customer pickup":"delivery"}</div></td>
        <td className="numeric">{money(o.totalAmount)}</td>
        <td className="numeric">{money(o.amountPaid)}</td>
        <td className={"numeric "+(o.totalAmount>o.amountPaid?"!text-red-600 font-semibold":"!text-green-700")}>{money(Math.max(0,o.totalAmount-o.amountPaid))}</td>
