@@ -104,47 +104,34 @@ export default function CategoriesPage(){
   const totalItems=categories.reduce((sum,row)=>sum+(row._count?.items||0),0);
 
   return <div className="friendly-admin-page is-wide">
-    <div className="friendly-admin-head">
-      <div><h1>Categories</h1><p>Organize the rental catalog into customer-facing groups without mixing category setup into item editing.</p></div>
-      <div className="friendly-admin-actions"><Link href="/dashboard/inventory" className="friendly-admin-secondary">All Items</Link><Link href="/dashboard/inventory/new" className="friendly-admin-primary"><Icon name="plus" className="h-4 w-4"/>New Item</Link></div>
+    <div className="mb-2 flex items-center justify-between gap-3">
+      <h1 className="text-xl font-bold text-[#1a1a1a]">Categories</h1>
+      <Link href="/dashboard/inventory" className="text-sm font-semibold text-[#1a6fd4] hover:underline">Items →</Link>
     </div>
+    <p className="mb-6 text-sm text-slate-500">Edit category names, descriptions, display visibility and images. Use the arrow controls to set the customer-facing order.</p>
 
-    <section className="friendly-admin-kpis">
-      <div className="friendly-admin-kpi"><small>Categories</small><strong>{categories.length}</strong></div>
-      <div className="friendly-admin-kpi"><small>Rental items</small><strong>{totalItems}</strong></div>
-      <div className="friendly-admin-kpi"><small>Website visible</small><strong>{categories.filter(row=>row.displayToCustomer).length}</strong></div>
-      <div className="friendly-admin-kpi"><small>Hidden</small><strong>{categories.filter(row=>!row.displayToCustomer).length}</strong></div>
-    </section>
+    {message&&<div role="status" className="mb-4 text-sm text-slate-600">{message}</div>}
 
-    {message&&<div role="status" className="friendly-admin-info mb-4">{message}</div>}
+    <form onSubmit={createCategory} className="mb-4 flex flex-wrap items-center gap-2">
+      <input className="friendly-admin-field w-64" value={newCategory.name} onChange={e=>setNewCategory({...newCategory,name:e.target.value})} placeholder="New category name"/>
+      <button type="submit" className="friendly-admin-primary !min-h-0 !py-1.5">Add New Category</button>
+    </form>
 
-    <details className="friendly-admin-card" open={categories.length===0}>
-      <summary className="cursor-pointer text-sm font-semibold text-slate-800">Add a category</summary>
-      <form onSubmit={createCategory} className="mt-4 grid gap-3 lg:grid-cols-[220px_minmax(0,1fr)_minmax(0,1fr)_auto_auto]">
-        <input className="friendly-admin-field" value={newCategory.name} onChange={e=>setNewCategory({...newCategory,name:e.target.value})} placeholder="Category name"/>
-        <input className="friendly-admin-field" value={newCategory.description} onChange={e=>setNewCategory({...newCategory,description:e.target.value})} placeholder="Description (optional)"/>
-        <input className="friendly-admin-field" value={newCategory.picture} onChange={e=>setNewCategory({...newCategory,picture:e.target.value})} placeholder="Picture URL (optional)"/>
-        <label className="flex items-center gap-2 rounded-md border border-slate-200 px-3 text-xs text-slate-600"><input type="checkbox" checked={newCategory.displayToCustomer} onChange={e=>setNewCategory({...newCategory,displayToCustomer:e.target.checked})}/>Visible</label>
-        <button type="submit" className="friendly-admin-primary">Add Category</button>
-      </form>
-    </details>
-
-    <section className="friendly-admin-card flush">
-      <div className="friendly-admin-subhead"><div><h2>Rental categories</h2><p>Edit category names, descriptions, website visibility, and images.</p></div></div>
+    <section className="friendly-admin-card flush !shadow-sm">
       {loading?<div className="friendly-admin-empty">Loading categories…</div>:categories.length===0?<div className="friendly-admin-empty">No categories yet.</div>:<div className="friendly-admin-table-wrap">
         <table className="friendly-admin-table">
-          <thead><tr><th>Order</th><th>Category</th><th>Description</th><th>Items</th><th>Website</th><th>Picture</th><th>Actions</th></tr></thead>
+          <thead className="bg-[#2d6a2d]"><tr><th className="!text-white">Order</th><th className="!text-white">Image</th><th className="!text-white">Name</th><th className="!text-white">Display</th><th className="!text-white">Items</th><th className="!text-white">Description</th><th className="!text-white">Actions</th></tr></thead>
           <tbody>{categories.map(category=>{
             const draft=drafts[category.id]||{name:category.name,description:category.description||"",picture:category.picture||"",displayToCustomer:category.displayToCustomer};
             const index=categories.findIndex(row=>row.id===category.id);
             return <tr key={category.id}>
               <td><div className="flex gap-1"><button type="button" aria-label={"Move "+category.name+" up"} disabled={index===0} onClick={()=>moveCategory(category.id,-1)} className="friendly-admin-secondary !min-h-0 !px-2 !py-1 disabled:opacity-30">↑</button><button type="button" aria-label={"Move "+category.name+" down"} disabled={index===categories.length-1} onClick={()=>moveCategory(category.id,1)} className="friendly-admin-secondary !min-h-0 !px-2 !py-1 disabled:opacity-30">↓</button></div></td>
-              <td className="min-w-[180px]"><input className="friendly-admin-field w-full" value={draft.name} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,name:e.target.value}})}/></td>
-              <td className="min-w-[260px]"><input className="friendly-admin-field w-full" value={draft.description} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,description:e.target.value}})} placeholder="Optional description"/></td>
-              <td>{category._count?.items||0}</td>
-              <td><label className="inline-flex items-center gap-2"><input type="checkbox" checked={draft.displayToCustomer} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,displayToCustomer:e.target.checked}})}/><span>{draft.displayToCustomer?"Visible":"Hidden"}</span></label></td>
-              <td className="min-w-[220px]"><input className="friendly-admin-field w-full" value={draft.picture} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,picture:e.target.value}})} placeholder="Image URL"/></td>
-              <td><div className="flex gap-2"><button type="button" onClick={()=>saveCategory(category.id)} className="friendly-admin-secondary !min-h-0 !py-1">Save</button><button type="button" onClick={()=>deleteCategory(category)} className="friendly-admin-danger !min-h-0 !py-1">Delete</button></div></td>
+              <td>{draft.picture?<img src={draft.picture} alt={category.name} className="h-12 w-12 rounded border object-cover"/>:<div className="h-12 w-12 rounded border bg-slate-50"/></td>
+              <td className="min-w-[180px]"><input className="friendly-admin-field w-full" value={draft.name} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,name:e.target.value}})} onBlur={()=>saveCategory(category.id)}/></td>
+              <td className="text-center"><input aria-label={"Show "+category.name+" on website"} type="checkbox" checked={draft.displayToCustomer} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,displayToCustomer:e.target.checked}})} onBlur={()=>saveCategory(category.id)}/></td>
+              <td className="numeric">{category._count?.items||0}</td>
+              <td className="min-w-[280px]"><input className="friendly-admin-field w-full" value={draft.description} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,description:e.target.value}})} onBlur={()=>saveCategory(category.id)} placeholder="Optional description"/></td>
+              <td><div className="flex gap-2"><button type="button" onClick={()=>saveCategory(category.id)} className="text-xs font-semibold text-[#1a6fd4] hover:underline">Save</button><button type="button" onClick={()=>deleteCategory(category)} className="text-xs font-semibold text-red-600 hover:underline">Delete</button></div></td>
             </tr>;
           })}</tbody>
         </table>
