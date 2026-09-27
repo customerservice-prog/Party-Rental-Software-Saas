@@ -677,3 +677,10 @@
 .order-parity-jump a{border-radius:5px;padding:7px 11px;font-size:11px;font-weight:700;color:#52605a}
 .order-parity-jump a:hover{background:#f1f6f2;color:#2d6a2d}
 @media(max-width:640px){.order-parity-jump{overflow-x:auto;flex-wrap:nowrap}.order-parity-jump a{flex:0 0 auto}}
+
+
+/* Friendly customer directory: secondary filters stay out of the primary search row */
+.customer-more-filters{position:relative}
+.customer-more-filters>summary::-webkit-details-marker{display:none}
+.customer-more-filter-panel{position:absolute;right:0;top:calc(100% + 6px);z-index:30;display:grid;min-width:300px;grid-template-columns:1fr 1fr;gap:10px;border:1px solid #d9dfdc;border-radius:7px;background:#fff;padding:12px;box-shadow:0 12px 30px rgba(0,0,0,.14)}
+@media(max-width:640px){.customer-more-filters{width:100%}.customer-more-filters>summary{width:100%}.customer-more-filter-panel{position:static;margin-top:6px;min-width:0;grid-template-columns:1fr;box-shadow:none}}
