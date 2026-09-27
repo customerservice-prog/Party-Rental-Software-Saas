@@ -46,7 +46,7 @@ const sections:SettingSection[]=[
     {label:"Text Message Templates",href:"/dashboard/message-templates"},
     {label:"Email Templates for Orders",href:"/dashboard/message-templates"},
     {label:"Email Templates for Marketing",href:"/dashboard/message-templates"},
-    {label:"FPRMail",href:"/dashboard/messages"},
+    {label:"Messages",href:"/dashboard/messages"},
     {label:"Contract Options",href:"/dashboard/settings/business#company-info"},
   ]},
   {title:"Products",items:[
@@ -80,7 +80,21 @@ const sections:SettingSection[]=[
     {label:"Responsive Editor",href:"/dashboard/website"},
     {label:"Conversion Booster",href:"/dashboard/settings/conversion-booster"},
   ]},
+  {title:"Party Rental CRM Account",items:[
+    {label:"Business Settings",href:"/dashboard/settings/business"},
+    {label:"Plan & Billing",href:"/dashboard/settings/billing"},
+    {label:"Sign-in Sessions",href:"/dashboard/sessions"},
+    {label:"Staff Accounts",href:"/dashboard/staff"},
+    {label:"Roles & Permissions",href:"/dashboard/roles"},
+  ]},
 ];
+
+const disabledSettingLabels=new Set([
+  "Google Integration","QuickBooks Online","Mailchimp","AWeber","Constant Contact","API Info","Company Types","HighLevel Connect",
+  "References","Setup Surfaces","Service Areas","Loyalty & Credit Types","General Documents","Source Code","Setup Surveys",
+  "Sorting","Schedule Profiles","Bulk Pricing","Product Sharing","Register Setup","Auto Charge","Recurring Profiles",
+  "Adjustments","Price Rule Sets","Special Request Fees","Availability Rule Sets","Gallery","Conversion Booster",
+]);
 
 export default function SettingsPage(){
   return <div className="friendly-admin-page">
@@ -90,15 +104,10 @@ export default function SettingsPage(){
       {sections.map(section=><section key={section.title} className="friendly-admin-settings-section">
         <h2>{section.title}</h2>
         <div className="friendly-admin-settings-grid">
-          {section.items.map(item=><Link key={item.label} href={item.href||"/dashboard/settings"}>{item.label}</Link>)}
+          {section.items.map(item=>item.href&&!disabledSettingLabels.has(item.label)?<Link key={item.label} href={item.href}>{item.label}</Link>:<span key={item.label} title="Not available in this tenant CRM yet">{item.label}</span>)}
         </div>
       </section>)}
     </div>
 
-    <div className="mt-5 flex flex-wrap gap-2">
-      <Link href="/dashboard/settings/business" className="friendly-admin-secondary">Business Settings</Link>
-      <Link href="/dashboard/settings/billing" className="friendly-admin-secondary">Plan & Billing</Link>
-      <Link href="/dashboard/sessions" className="friendly-admin-secondary">Sign-in Sessions</Link>
-    </div>
   </div>;
 }
