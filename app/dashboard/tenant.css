@@ -694,3 +694,19 @@
 .analytics-parity-page>.friendly-admin-tabs{gap:24px;margin-bottom:28px}
 .analytics-parity-page>.friendly-admin-tabs .friendly-admin-tab{padding:12px 0;font-size:14px;font-weight:500}
 @media(max-width:640px){.analytics-parity-head h1{font-size:28px!important}.analytics-parity-page>.friendly-admin-tabs{gap:18px}}
+
+
+/* Friendly Marketing autopilot parity */
+.marketing-parity-page{padding-bottom:32px}
+.marketing-parity-tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid #e5e7eb;padding:0 16px}
+.marketing-parity-tabs a{white-space:nowrap;border-bottom:2px solid transparent;padding:12px 12px;font-size:14px;font-weight:600;color:#6b7280}
+.marketing-parity-tabs a:hover{border-color:#d1d5db;color:#111827}
+.marketing-parity-tabs a.is-active{border-color:#166534;color:#14532d}
+.marketing-parity-hero{border-radius:16px;background:#153d28;padding:20px;color:#fff}
+.marketing-mode-badge{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.25);border-radius:999px;background:rgba(255,255,255,.1);padding:5px 12px;font-size:12px;font-weight:600}
+.marketing-hero-button{display:inline-flex;align-items:center;justify-content:center;border-radius:8px;background:#fff;padding:10px 14px;font-size:14px;font-weight:700;color:#143b27}
+.marketing-hero-button.secondary{border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff}
+.marketing-hero-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:24px;border-top:1px solid rgba(255,255,255,.2);padding-top:20px}
+.marketing-hero-facts p{font-size:12px;color:#d1fae5}
+.marketing-hero-facts strong{display:block;margin-top:4px;font-size:14px}
+@media(max-width:640px){.marketing-hero-facts{grid-template-columns:1fr}.marketing-parity-hero{border-radius:12px;padding:18px}}
