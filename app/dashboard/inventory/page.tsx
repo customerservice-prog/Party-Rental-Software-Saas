@@ -2,7 +2,7 @@ import Link from "next/link";
 import {requireCurrentOrganization} from "@/lib/tenant";
 import {requirePermission} from "@/lib/authz";
 import {prisma} from "@/lib/prisma";
-import InventoryActions from "./InventoryActions";
+import InventoryActions,{InventoryUtilityActions} from "./InventoryActions";
 
 const money=(n:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(n);
 
@@ -39,14 +39,16 @@ export default async function InventoryPage({searchParams:searchParamsPromise}:{
       <InventoryActions/>
     </div>
 
-    <div className="friendly-admin-tabs">
-      <span className="friendly-admin-tab is-active">Browse Mode</span>
-      <Link href="/dashboard/categories" className="friendly-admin-tab">Categories</Link>
-      <Link href="/dashboard/inventory/packages" className="friendly-admin-tab">Packages</Link>
-      <span className="friendly-admin-tab text-slate-400">Spreadsheet Mode</span>
+    <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200 pb-2">
+      <div className="friendly-admin-tabs !mb-0 !border-0">
+        <span className="friendly-admin-tab is-active">Browse Mode</span>
+        <span className="friendly-admin-tab text-slate-400">Spreadsheet Mode</span>
+        <span className="friendly-admin-tab text-slate-400">Import & Export Mode</span>
+      </div>
+      <InventoryUtilityActions/>
     </div>
 
-    <section className="friendly-admin-card accent-blue">
+    <section className="mt-4 mb-2">
       <form method="get" className="friendly-admin-filters">
         <label className="min-w-[210px] flex-1"><span>Search</span><input name="q" defaultValue={q} placeholder="Search items..." className="w-full"/></label>
         <label><span>Category</span><select name="category" defaultValue={categoryId}><option value="">All Categories (browse)</option>{categories.map(category=><option key={category.id} value={category.id}>{category.name} ({category._count.items})</option>)}</select></label>
@@ -56,6 +58,8 @@ export default async function InventoryPage({searchParams:searchParamsPromise}:{
         <span className="ml-auto text-xs text-slate-500">{items.length} of {total} records</span>
       </form>
     </section>
+
+    <div className="mb-2 text-xs text-slate-500">Use Categories to manage category names, images and website visibility. <Link href="/dashboard/categories" className="font-semibold text-[#1a6fd4] hover:underline">Open Categories →</Link> · <Link href="/dashboard/inventory/packages" className="font-semibold text-[#1a6fd4] hover:underline">Packages →</Link></div>
 
     <section className="friendly-admin-card flush">
       <div className="friendly-admin-table-wrap">
