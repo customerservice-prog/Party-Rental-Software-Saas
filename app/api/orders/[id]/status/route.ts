@@ -3,7 +3,7 @@ import { requireCurrentOrganization } from "@/lib/tenant";
 import { requirePermission, authzErrorResponse } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
-const VALID_STATUSES = ["quote", "pending", "confirmed", "completed", "cancelled"];
+const VALID_STATUSES = ["quote", "incomplete", "pending", "active", "confirmed", "completed", "cancelled", "canceled"];
 
 export async function PATCH(
   request: NextRequest,
@@ -19,6 +19,7 @@ export async function PATCH(
   }
   const body = await request.json();
   const { status } = body;
+  const normalizedStatus = status === "pending" ? "incomplete" : status === "canceled" ? "cancelled" : status;
 
   if (!VALID_STATUSES.includes(status)) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
@@ -34,7 +35,7 @@ export async function PATCH(
 
   const updated = await prisma.order.update({
     where: { id: order.id },
-    data: { status },
+    data: { status: normalizedStatus },
   });
 
   return NextResponse.json(updated);
