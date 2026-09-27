@@ -17,10 +17,11 @@ export async function GET() {
           return authzErrorResponse(err);
     }
 
-  const drivers = await prisma.driver.findMany({
+  const rows = await prisma.driver.findMany({
         where: { organizationId: organization.id },
         orderBy: { name: "asc" },
   });
+  const drivers=rows.map(({pin,...driver})=>({...driver,hasPin:Boolean(pin)}));
 
   return NextResponse.json({ drivers });
 }
