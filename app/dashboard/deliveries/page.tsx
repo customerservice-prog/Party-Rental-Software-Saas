@@ -37,7 +37,7 @@ export default async function DeliveriesPage({searchParams:searchParamsPromise}:
     prisma.order.findMany({
       where:{organizationId:organization.id,eventDate:{gte:monthStart,lt:monthEnd}},
       orderBy:{eventDate:"asc"},
-      include:{customer:true,deliveryDriver:true,pickupDriver:true},
+      include:{customer:true,deliveryDriver:true,pickupDriver:true,driverRunStops:{include:{driverRun:{include:{driver:true}}},orderBy:{stopOrder:"asc"}}},
     }),
     prisma.driver.findMany({where:{organizationId:organization.id,isActive:true},orderBy:{name:"asc"}}),
     prisma.closedDate.findMany({where:{organizationId:organization.id,date:{gte:monthStart,lt:monthEnd}},orderBy:{date:"asc"}}),
@@ -138,19 +138,27 @@ export default async function DeliveriesPage({searchParams:searchParamsPromise}:
     </section>
 
     {selectedDate?<section className="friendly-admin-card !p-0 overflow-hidden">
-      <div className="friendly-admin-subhead"><div><h2>{new Date(selectedDate+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</h2><p>{selectedOrders.length} scheduled order{selectedOrders.length===1?"":"s"}</p></div></div>
+      <div className="friendly-admin-subhead"><div><h2>{new Date(selectedDate+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</h2><p>{selectedOrders.length} scheduled order{selectedOrders.length===1?"":"s"}</p></div><Link href={"/dashboard/dispatch?date="+selectedDate} className="friendly-admin-secondary !min-h-0 !px-3 !py-1">Work Route / Dispatch →</Link></div>
       {selectedOrders.length?<div className="divide-y divide-slate-100">{selectedOrders.map(order=>{
         const due=Math.max(0,order.totalAmount-order.amountPaid),canceled=order.status==="cancelled"||order.status==="canceled";
+        const dispatchStop=order.driverRunStops.find(stop=>dayKey(stop.driverRun.runDate,organization.timezone||"America/New_York")===selectedDate)||order.driverRunStops[0]||null;
+        const dispatchStatus=dispatchStop?.status?dispatchStop.status.replaceAll("_"," "):"not started";
         return <div key={order.id} className={"p-4 "+(canceled?"opacity-60":"")}>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2"><span className={"friendly-admin-badge "+(order.deliveryType==="pickup"?"yellow":"blue")}>{order.deliveryType==="pickup"?"Customer Pickup":"Delivery"}</span>{canceled&&<span className="friendly-admin-badge gray">Canceled</span>}<Link href={"/dashboard/orders/"+order.id} className="font-bold text-[#1a6fd4] hover:underline">#{order.orderNumber}</Link><span className="font-semibold">{order.customer.firstName} {order.customer.lastName}</span></div>
               <p className="mt-2 text-xs text-slate-500">{order.deliveryAddress||order.customer.address||"No delivery address on file"}</p>
-              <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-slate-500"><span>Status: <b className="capitalize text-slate-700">{order.status}</b></span><span>Driver: <b className="text-slate-700">{order.deliveryDriver?.name||order.pickupDriver?.name||"Unassigned"}</b></span></div>
+              <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-slate-500">
+                <span>Status: <b className="capitalize text-slate-700">{order.status}</b></span>
+                <span>Driver: <b className="text-slate-700">{dispatchStop?.driverRun.driver.name||order.deliveryDriver?.name||order.pickupDriver?.name||"Unassigned"}</b></span>
+                <span>Route: <b className="text-slate-700">{dispatchStop?"Stop "+dispatchStop.stopOrder:"Not assigned"}</b></span>
+                <span>Route status: <b className="capitalize text-slate-700">{dispatchStatus}</b></span>
+                {dispatchStop?.attentionStatus&&<span>Attention: <b className="capitalize text-amber-700">{dispatchStop.attentionStatus.replaceAll("_"," ")}</b></span>}
+              </div>
             </div>
             <div className="text-right"><div className="text-sm font-extrabold">{money(order.totalAmount)}</div><div className={"text-[10px] font-bold "+(due>0?"text-red-600":"text-green-700")}>{due>0?money(due)+" due":"Paid in full"}</div><Link href={"/dashboard/orders/"+order.id} className="mt-2 inline-flex text-xs font-semibold text-[#1a6fd4] hover:underline">Open order →</Link></div>
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3"><label className="text-[10px] font-bold text-slate-500">Delivery driver</label><AssignDriverSelect orderId={order.id} drivers={drivers} currentDriverId={order.deliveryDriverId}/></div>
+          <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3"><label className="text-[10px] font-bold text-slate-500">Delivery driver</label><AssignDriverSelect orderId={order.id} drivers={drivers} currentDriverId={order.deliveryDriverId}/><Link href={"/dashboard/dispatch?date="+selectedDate} className="text-[10px] font-bold text-[#1a6fd4] hover:underline">Route order & live status →</Link></div>
         </div>;
       })}</div>:<div className="friendly-admin-empty">No orders match this day and filter.</div>}
     </section>:<div className="friendly-admin-info">Choose a date on the calendar to open that day&apos;s delivery and pickup schedule.</div>}
