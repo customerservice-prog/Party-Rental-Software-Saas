@@ -38,15 +38,17 @@ export default async function CustomerDetailPage({params:paramsPromise}:{params:
   if(customer.phone)dnrParams.set("phone",customer.phone);
   if(customer.address)dnrParams.set("address",customer.address);
 
-  return <div className="mx-auto max-w-4xl p-4">
-    <Link href="/dashboard/customers" className="text-sm font-medium text-[#1a6fd4] hover:underline">← Back to Customers</Link>
-
-    <h1 className="mt-2 text-2xl font-bold text-slate-900">{customer.firstName} {customer.lastName}</h1>
-    {restriction&&<p className="mt-1 text-xs font-semibold text-red-700">⚠ Active Rental Restriction</p>}
-
-    <div className="mt-3 flex flex-wrap items-center gap-2">
-      <Link href={"/dashboard/orders/new?customerId="+customer.id} className="friendly-admin-primary !min-h-0 !py-1.5">Book an Order</Link>
-      <Link href={"/dashboard/do-not-rent?"+dnrParams.toString()} className="text-sm font-semibold text-[#1a6fd4] hover:underline">{restriction?"View Restriction":"+ Add to Do Not Rent"}</Link>
+  return <div className="friendly-admin-page is-wide">
+    <div className="mb-4"><Link href="/dashboard/customers" className="text-xs font-semibold text-[#1a6fd4] hover:underline">← Back to Customers</Link></div>
+    <div className="friendly-admin-head">
+      <div>
+        <h1>{customer.firstName} {customer.lastName}</h1>
+        <p>{customer.email}{customer.phone?" · "+customer.phone:""}{restriction?" · Active rental restriction":""}</p>
+      </div>
+      <div className="friendly-admin-actions">
+        <Link href={"/dashboard/orders/new?customerId="+customer.id} className="friendly-admin-primary">Book an Order</Link>
+        <Link href={"/dashboard/do-not-rent?"+dnrParams.toString()} className={restriction?"friendly-admin-danger":"friendly-admin-secondary"}>{restriction?"View Restriction":"+ Add to Do Not Rent"}</Link>
+      </div>
     </div>
 
     <CustomerProfileEditor customer={{id:customer.id,firstName:customer.firstName,lastName:customer.lastName,email:customer.email,phone:customer.phone||"",address:customer.address||"",city:customer.city||"",state:customer.state||"",zip:customer.zip||""}}/>
