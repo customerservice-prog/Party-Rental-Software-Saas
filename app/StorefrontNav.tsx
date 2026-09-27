@@ -3,9 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { StorefrontCartLink } from "./StorefrontCartControls";
 
 export default async function StorefrontNav({ organizationId, activeSlug }: { organizationId: string; activeSlug?: string }) {
-  const [organization, pages] = await Promise.all([
+  const [organization, pages, rentSketch] = await Promise.all([
     prisma.organization.findUnique({ where: { id: organizationId }, select: { name: true, primaryColor: true, logoUrl: true } }),
     prisma.page.findMany({ where: { organizationId, showInNav: true, isPublished: true }, orderBy: { navOrder: "asc" } }),
+    prisma.tenantAppInstallation.findFirst({ where: { organizationId, appCode: "rentsketch", status: "active" }, select: { id: true } }),
   ]);
   const accent = organization?.primaryColor || "#4f46e5";
   const linkClass = (slug: string) => `rounded-lg px-3 py-2 text-sm font-semibold transition hover:bg-slate-100 ${activeSlug === slug ? "bg-slate-100 text-slate-950" : "text-slate-600 hover:text-slate-950"}`;
@@ -22,6 +23,7 @@ export default async function StorefrontNav({ organizationId, activeSlug }: { or
           <Link href="/" className={linkClass("")}>Home</Link>
           <Link href="/book" className={linkClass("book")}>Rentals</Link>
           <Link href="/order-status" className={linkClass("order-status")}>Track Order</Link>
+          {rentSketch&&<Link href="/design-your-event" className={linkClass("design-your-event")}>Design Your Event</Link>}
           {pages.map((page: { id: string; slug: string; navLabel: string | null; title: string }) => <Link key={page.id} href={`/${page.slug}`} className={linkClass(page.slug)}>{page.navLabel || page.title}</Link>)}
         </nav>
 
@@ -31,7 +33,7 @@ export default async function StorefrontNav({ organizationId, activeSlug }: { or
         </div>
       </div>
       <nav className="flex gap-1 overflow-x-auto border-t border-slate-100 px-3 py-2 md:hidden">
-        <Link href="/" className={linkClass("")}>Home</Link><Link href="/book" className={linkClass("book")}>Rentals</Link><Link href="/order-status" className={linkClass("order-status")}>Track Order</Link>{pages.map((page: { id: string; slug: string; navLabel: string | null; title: string }) => <Link key={page.id} href={`/${page.slug}`} className={`${linkClass(page.slug)} whitespace-nowrap`}>{page.navLabel || page.title}</Link>)}
+        <Link href="/" className={linkClass("")}>Home</Link><Link href="/book" className={linkClass("book")}>Rentals</Link><Link href="/order-status" className={linkClass("order-status")}>Track Order</Link>{rentSketch&&<Link href="/design-your-event" className={`${linkClass("design-your-event")} whitespace-nowrap`}>Design Your Event</Link>}{pages.map((page: { id: string; slug: string; navLabel: string | null; title: string }) => <Link key={page.id} href={`/${page.slug}`} className={`${linkClass(page.slug)} whitespace-nowrap`}>{page.navLabel || page.title}</Link>)}
       </nav>
     </header>
   );
