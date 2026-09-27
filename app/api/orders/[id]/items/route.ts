@@ -80,6 +80,7 @@ export async function PATCH(request:NextRequest,{params:paramsPromise}:{params:P
       const taxable=Math.max(0,newSubtotal+newAddonTotal-preservedDiscount);
       const newTax=Math.round(taxable*historicalTaxRate*100)/100;
       const newTotal=Math.max(0,newSubtotal+order.deliveryFee+newAddonTotal-preservedDiscount+newTax);
+      if(newTotal+0.009<order.amountPaid)throw new Error("PAID_TOTAL");
 
       await tx.orderAddon.deleteMany({where:{orderId:order.id,addonId:{notIn:[...preservedAddonIds]}}});
       if(missingRequired.length)await tx.orderAddon.createMany({data:missingRequired.map(addon=>({orderId:order.id,addonId:addon.id,name:addon.name,price:addon.price}))});
@@ -91,6 +92,7 @@ export async function PATCH(request:NextRequest,{params:paramsPromise}:{params:P
     },{isolationLevel:"Serializable"});
     return NextResponse.json({order:result});
   }catch(err){
+    if(err instanceof Error&&err.message==="PAID_TOTAL")return NextResponse.json({error:"The edited order total would be lower than payments already recorded. Refund or remove the excess payment before reducing the order further."},{status:409});
     if(err instanceof Error&&err.message==="ITEM_GONE")return NextResponse.json({error:"One or more rental items are no longer available"},{status:404});
     if(err instanceof Error&&err.message.startsWith("RESTRICTION|"))return NextResponse.json({error:err.message.slice("RESTRICTION|".length)},{status:409});
     if(err instanceof Error&&err.message.startsWith("RESOURCE|")){
