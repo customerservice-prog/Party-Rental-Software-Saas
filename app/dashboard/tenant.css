@@ -625,3 +625,12 @@
  .phase3-kpi{padding:17px 18px}
  .phase3-kpi strong{font-size:30px}
 }
+
+
+/* Friendly exact settings density */
+.friendly-admin-settings-section>h2{background:#234523}
+.friendly-admin-settings-grid span{color:#6b7280;font-weight:400}
+.friendly-admin-settings-grid a{color:#1a6fd4}
+@media(min-width:1024px){
+  .friendly-admin-settings-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
