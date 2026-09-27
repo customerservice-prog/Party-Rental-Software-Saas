@@ -11,7 +11,7 @@ const item=(path:string,label:string,icon:IconName,owner=false):Item=>({href:"/d
 
 const primary:Item[]=[
  item("","Home","home"),
- item("/website","Website","globe"),
+ item("/website","Edit Website","globe"),
  item("/settings","Admin","settings",true),
  item("/scheduling","Scheduling","calendar"),
  item("/customers","Customers","users"),
@@ -24,6 +24,7 @@ const primary:Item[]=[
 
 const moreGroups:{label:string;items:Item[]}[]=[
  {label:"Orders & Operations",items:[
+  item("/orders/new","New Order","plus"),
   item("/orders","Orders","orders"),
   item("/operations","Operations","truck"),
   item("/dispatch","Dispatch","calendar"),
@@ -85,8 +86,7 @@ export default function DashboardNav({showSettings,orgName="Your rental business
     </nav>
 
     <div className="tenant-phase3-account">
-     <Link href="/dashboard/orders/new" className="tenant-phase3-new"><Icon name="plus" className="h-4 w-4"/><span>New order</span></Link>
-     <span className="tenant-phase3-user"><b>{userName}</b><small>{role}</small></span>
+     <span className="tenant-phase3-user">Signed in as <b>{userName}</b> <small>({role})</small></span>
      <button type="button" onClick={()=>signOut({callbackUrl:"/login"})} className="tenant-phase3-logout">Logout</button>
     </div>
    </header>
