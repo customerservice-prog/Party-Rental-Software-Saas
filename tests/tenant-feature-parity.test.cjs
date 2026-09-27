@@ -64,10 +64,13 @@ test('inventory add-on changes require inventory manage permission', () => {
 });
 
 
-test('inline inventory save stays visible while background refresh runs', () => {
-  const source = read('app/dashboard/inventory/page.tsx');
-  assert.match(source, /async function load\(showLoading = true\)/);
-  assert.match(source, /setItems\(current=>current\.map\(item=>item\.id===id\?\{\.\.\.item,\.\.\.data\.item\}:item\)\)/);
-  assert.match(source, /void load\(false\)/);
-  assert.match(source, /Changes were saved, but the inventory refresh failed/);
+test('inventory list uses dedicated item workspace instead of inline editor', () => {
+  const list = read('app/dashboard/inventory/page.tsx');
+  const workspace = read('app/dashboard/inventory/[id]/ItemWorkspace.tsx');
+  assert.match(list, /InventoryActions/);
+  assert.match(list, /\/dashboard\/inventory\/"\+item\.id/);
+  assert.doesNotMatch(list, /editingItemId/);
+  assert.doesNotMatch(list, /expandedAddonItemId/);
+  assert.match(workspace, /Save Item/);
+  assert.match(workspace, /Item updated\./);
 });
