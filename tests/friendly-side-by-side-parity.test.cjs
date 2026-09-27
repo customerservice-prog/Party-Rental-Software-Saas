@@ -57,3 +57,30 @@ test('categories support direct image upload and show stored slug',()=>{
   assert.match(source,/accept="image\/\*"/);
   assert.match(source,/category\.slug/);
 });
+
+
+test('order workspace now exposes safe Friendly-style schedule and item editing',()=>{
+  const page=read('app/dashboard/orders/[id]/page.tsx');
+  const schedule=read('app/dashboard/orders/[id]/OrderScheduleEditor.tsx');
+  const items=read('app/dashboard/orders/[id]/OrderItemsEditor.tsx');
+  const orderApi=read('app/api/orders/[id]/route.ts');
+  const itemApi=read('app/api/orders/[id]/items/route.ts');
+  assert.match(page,/OrderScheduleEditor/);
+  assert.match(page,/OrderItemsEditor/);
+  assert.match(schedule,/>Edit Schedule</);
+  assert.match(items,/Edit Items/);
+  assert.match(orderApi,/pg_advisory_xact_lock/);
+  assert.match(orderApi,/excludeOrderId|order\.id/);
+  assert.match(itemApi,/RentalFulfillment/);
+  assert.match(itemApi,/fulfillment has already started/);
+  assert.match(itemApi,/pg_advisory_xact_lock/);
+  assert.match(itemApi,/preservedDiscount/);
+  assert.match(itemApi,/historicalTaxRate/);
+  assert.match(itemApi,/PAID_TOTAL/);
+});
+
+test('order payment UI labels CRM-only refunds honestly',()=>{
+  const source=read('app/dashboard/orders/[id]/OrderPayments.tsx');
+  assert.match(source,/Manual refund \/ credit entry/);
+  assert.match(source,/does not automatically send money through Stripe/);
+});
