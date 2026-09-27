@@ -112,15 +112,15 @@ test('driver roster supports Friendly-style inline edits without revealing saved
 });
 
 
-test('Settings hub mirrors Friendly navigation with real destinations instead of dead text',()=>{
+test('Settings hub matches Friendly behavior by linking real controls and leaving unsupported entries inert',()=>{
   const settings=read('app/dashboard/settings/page.tsx');
   const dynamic=read('app/dashboard/settings/[section]/page.tsx');
-  assert.match(settings,/settingHref\(item\)/);
-  assert.doesNotMatch(settings,/<span key=\{item\.label\}>\{item\.label\}<\/span>/);
+  assert.doesNotMatch(settings,/settingHref\(item\)/);
+  assert.match(settings,/item\.href\?<Link/);
+  assert.match(settings,/Not available in this tenant CRM yet/);
   for(const label of ['Google Integration','QuickBooks Online','Service Areas','General Documents','Sorting','Auto Charge','Availability Rule Sets','Gallery']) assert.ok(settings.includes(label));
-  for(const supported of ['company-info','text-messaging','closed-dates','deposit-rules','navigation-editor','premium-features']) assert.ok(dynamic.includes('"'+supported+'"'));
+  for(const supported of ['/dashboard/settings/business#company-info','/dashboard/automations','/dashboard/categories','/dashboard/inventory','/dashboard/pages','/dashboard/website']) assert.ok(settings.includes(supported));
   assert.match(dynamic,/Not supported in this tenant CRM yet/);
-  assert.match(dynamic,/does not pretend the feature exists/);
 });
 
 
@@ -162,4 +162,25 @@ test('Marketing uses Friendly-style module destinations without fabricating camp
   assert.match(routes,/campaigns-gallery/);
   assert.match(routes,/does not fabricate campaign data/);
   for(const target of ['/dashboard/message-templates','/dashboard/customers','/dashboard/automations','/dashboard/analytics','/dashboard/messages','/dashboard/automations/schedule']) assert.ok(routes.includes(target));
+});
+
+
+test('Friendly-style navigation keeps the main row compact but exposes tenant-only tools through More on desktop and mobile',()=>{
+  const nav=read('app/dashboard/DashboardNav.tsx');
+  const css=read('app/dashboard/tenant.css');
+  assert.match(nav,/tenant-parity-more/);
+  assert.match(nav,/>More</);
+  assert.match(nav,/visibleGroups\.map\(group/);
+  for(const href of ['/orders','/inventory','/dispatch','/warehouse','/returns','/rainchecks','/messages']) assert.ok(nav.includes('item("'+href));
+  assert.match(css,/tenant-parity-mobile-group/);
+});
+
+test('customer detail keeps Friendly-style contacts and credits in the main customer workspace',()=>{
+  const page=read('app/dashboard/customers/[id]/page.tsx');
+  const relationships=read('app/dashboard/customers/[id]/relationships/CustomerRelationships.tsx');
+  assert.match(page,/CustomerRelationships/);
+  assert.match(page,/Contacts, Credits & Rainchecks/);
+  assert.match(relationships,/friendly-admin-card/);
+  assert.match(relationships,/friendly-admin-field/);
+  assert.match(relationships,/friendly-admin-primary/);
 });
