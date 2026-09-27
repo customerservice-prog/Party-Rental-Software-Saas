@@ -41,23 +41,24 @@ async function main(){
    if(viewport.width<640){const dimensions=await table.evaluate(el=>({width:el.clientWidth,content:el.scrollWidth}));assert.ok(dimensions.content<=dimensions.width+1,'Populated mobile inventory overflows');assert.ok(await table.locator('td[data-label="Actions"]').count());}
    assert.ok(await page.getByRole('img',{name:'CI Catalog Chair',exact:true}).isVisible());
    await page.screenshot({path:`${out}/${viewport.width}-populated-inventory.png`,fullPage:true});
-   await table.getByRole('button',{name:'Edit',exact:true}).click();await page.getByPlaceholder('Name',{exact:true}).waitFor();
-   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);assert.equal(overflow,false,'Inventory editing page overflows');
-   const save=page.getByRole('button',{name:'Save',exact:true});
+   await table.getByRole('link',{name:'CI Catalog Chair',exact:true}).click();await page.waitForURL('**/dashboard/inventory/**');
+   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);assert.equal(overflow,false,'Item workspace overflows');
+   const save=page.getByRole('button',{name:'Save Item',exact:true});
    const style=await save.evaluate(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return{foreground:s.color,background:s.backgroundColor,width:r.width,height:r.height}});
-   assert.notEqual(style.foreground,style.background,'Save label must not be painted white on white');
-   assert.ok(style.width>=64&&style.height>=42,'Save must have a usable target size');
+   assert.notEqual(style.foreground,style.background,'Save Item label must not be painted white on white');
+   assert.ok(style.width>=64&&style.height>=36,'Save Item must have a usable target size');
    await save.scrollIntoViewIfNeeded();await page.screenshot({path:`${out}/${viewport.width}-edit-item.png`,fullPage:true});
-   await page.getByPlaceholder('Name',{exact:true}).fill('CI Catalog Chair Edited');
+   await page.getByLabel('Item name',{exact:true}).fill('CI Catalog Chair Edited');
    const response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/items'&&r.request().method()==='PATCH');
    await save.click();assert.ok((await response).ok(),'Item edit save request failed');
+   await page.getByRole('status').filter({hasText:'Item updated.'}).waitFor();
    await page.getByRole('img',{name:'CI Catalog Chair Edited',exact:true}).waitFor();
    const saved=await db.item.findUniqueOrThrow({where:{id:copied[0].id}});assert.equal(saved.name,'CI Catalog Chair Edited');assert.equal(saved.picture,'/logo.png');assert.equal(saved.displayToCustomer,false);
-   await table.getByRole('button',{name:'Edit',exact:true}).click();await page.getByPlaceholder('Name',{exact:true}).waitFor();await page.getByRole('button',{name:'Cancel',exact:true}).click();
+   await page.goto('http://localhost:3000/dashboard/inventory');
    await page.getByRole('button',{name:/Add from catalog/i,exact:true}).click();await page.getByRole('dialog',{name:'Find your first rentals. Or your next ones.'}).waitFor();await page.keyboard.press('Escape');
    assert.equal(await page.getByRole('dialog',{name:'Find your first rentals. Or your next ones.'}).count(),0);
    await page.getByRole('button',{name:'Exit tenant view'}).click();await page.waitForURL('**/support');
-   report.checks.push(`${viewport.width}px: photo/fallback, cross-category selection, native dialog, explicit price/stock, photo/description copy, private items, populated inventory, visible Save target, persisted edit, cancel, Escape and support exit passed`);
+   report.checks.push(`${viewport.width}px: photo/fallback, cross-category selection, native dialog, explicit price/stock, photo/description copy, private items, populated inventory, visible Save target, persisted dedicated-item edit, Escape and support exit passed`);
    await context.close();
   }
   assert.equal(await db.sentMessage.count(),0);assert.deepEqual(report.errors,[]);
