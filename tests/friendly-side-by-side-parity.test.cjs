@@ -112,13 +112,15 @@ test('driver roster supports Friendly-style inline edits without revealing saved
 });
 
 
-test('Settings hub matches Friendly by making every visible setting navigable',()=>{
+test('Settings hub mirrors Friendly by linking only implemented settings',()=>{
   const settings=read('app/dashboard/settings/page.tsx');
   const dynamic=read('app/dashboard/settings/[section]/page.tsx');
-  assert.doesNotMatch(settings,/Not available in this tenant CRM yet/);
-  assert.match(settings,/section\.items\.map\(item=><Link/);
+  assert.match(settings,/disabledSettingLabels/);
+  assert.match(settings,/item\.href&&!disabledSettingLabels\.has\(item\.label\)/);
+  assert.match(settings,/Not available in this tenant CRM yet/);
   for(const slug of ['google-integration','quickbooks-online','service-areas','general-documents','sorting','auto-charge','availability-rule-sets','gallery']) assert.ok(settings.includes('/dashboard/settings/'+slug));
   for(const supported of ['/dashboard/settings/business#company-info','/dashboard/automations','/dashboard/categories','/dashboard/inventory','/dashboard/pages','/dashboard/website']) assert.ok(settings.includes(supported));
+  assert.match(settings,/Party Rental CRM Account/);
   assert.match(dynamic,/Not supported in this tenant CRM yet/);
 });
 
@@ -218,4 +220,15 @@ test('specialist operations screens use the Friendly admin component system inst
   assert.doesNotMatch(returns,/rounded-xl bg-slate-950/);
   assert.doesNotMatch(scanner,/rounded-xl bg-slate-950/);
   assert.match(automations,/friendly-admin-tab is-active/);
+});
+
+
+test('inventory and delivery preserve Friendly green operational headers',()=>{
+  const inventory=read('app/dashboard/inventory/page.tsx');
+  const delivery=read('app/dashboard/deliveries/page.tsx');
+  const css=read('app/dashboard/tenant.css');
+  assert.match(inventory,/friendly-admin-green-head/);
+  assert.match(css,/thead\.friendly-admin-green-head/);
+  assert.match(delivery,/bg-\[#2d6a2d\]/);
+  assert.match(delivery,/text-white/);
 });
