@@ -9,6 +9,7 @@ import HomeTasks from "./HomeTasks";
 import HomeWeather from "./HomeWeather";
 import HomeScreen from "./HomeScreen";
 import HomeMeetings from "./HomeMeetings";
+import HomeTools from "./HomeTools";
 import BestSellersChart from "./BestSellersChart";
 import MonthlyPaymentsChart from "./MonthlyPaymentsChart";
 import Icon from "./components/Icon";
@@ -54,29 +55,7 @@ export default async function DashboardHomePage({searchParams:searchParamsPromis
    <Link href="/dashboard/workforce" className="tenant-button"><Icon name="users" className="h-4 w-4"/>Open Employee Hub</Link>
   </div>
 
-  <details className="mb-3 rounded-lg border border-slate-200 bg-white shadow-sm">
-   <summary className="cursor-pointer px-4 py-3 text-sm font-extrabold text-green-800">All tools</summary>
-   <div className="grid gap-2 border-t border-slate-100 px-4 py-4 sm:grid-cols-2 lg:grid-cols-4">
-    {[
-      ["/dashboard/orders/new","New Order","Create a quote or booking"],
-      ["/dashboard/orders","Orders","Quotes, active, incomplete & completed"],
-      ["/dashboard/customers","Customers","Customer records and balances"],
-      ["/dashboard/inventory","Items","Inventory, pricing and condition"],
-      ["/dashboard/categories","Categories","Website groups and category images"],
-      ["/dashboard/deliveries","Delivery","Calendar, drivers and print tools"],
-      ["/dashboard/scheduling","Scheduling","Event calendar and schedule"],
-      ["/dashboard/dispatch","Dispatch","Assign drivers and routes"],
-      ["/dashboard/warehouse","Warehouse","Fulfillment and scanning"],
-      ["/dashboard/returns","Returns & Damage","Returns, damage and exceptions"],
-      ["/dashboard/do-not-rent","Do Not Rent","Customer and address restrictions"],
-      ["/dashboard/tasks","Tasks","Office and crew tasks"],
-      ["/dashboard/messages","Messages","Customer email and SMS"],
-      ["/dashboard/automations","Automations","Booking follow-ups"],
-      ["/dashboard/reports","Reports","Operational and financial reports"],
-      ["/dashboard/settings","Admin Settings","Company, pricing and integrations"],
-    ].map(([href,title,description])=><Link key={href} href={href} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 hover:border-green-300 hover:bg-green-50"><b className="block text-xs text-slate-800">{title}</b><span className="mt-1 block text-[10px] leading-4 text-slate-500">{description}</span></Link>)}
-   </div>
-  </details>
+  <HomeTools/>
 
   {itemCount===0&&<div className="phase3-onboarding"><div><b>Finish setting up your catalog</b><span>Add inventory and pricing before publishing online booking.</span></div><Link href="/onboarding" className="tenant-button tenant-button-primary">Continue setup</Link></div>}
 
