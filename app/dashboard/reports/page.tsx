@@ -3,6 +3,7 @@ import {requireCurrentOrganization} from "@/lib/tenant";
 import {prisma} from "@/lib/prisma";
 import {requirePermission} from "@/lib/authz";
 import ReportLibrary,{type TenantReportLink} from "./ReportLibrary";
+import ReportSearch from "./ReportSearch";
 
 const money=(value:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(value);
 
@@ -56,9 +57,11 @@ export default async function ReportsPage(){
   ];
 
   return <div className="friendly-admin-page is-wide">
-    <div className="friendly-admin-head"><div><h1>Reports</h1><p>Find, run and export detailed business reports.</p></div><div className="friendly-admin-actions"><Link href="/dashboard/reports/overview" className="friendly-admin-primary">Detailed Report Dashboard</Link></div></div>
+    <div className="friendly-admin-head reports-parity-head"><div><h1>Reports</h1><p>Find, run and export detailed business reports.</p></div><div className="friendly-admin-actions"><Link href="/dashboard/reports/overview" className="friendly-admin-primary">Detailed Report Dashboard</Link></div></div>
 
-    <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
+    <ReportSearch reports={library}/>
+
+    <section className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-5">
       <div className="friendly-admin-kpi"><small>Revenue this month</small><strong>{money(monthOrders._sum.totalAmount||0)}</strong></div>
       <div className="friendly-admin-kpi"><small>Collected this month</small><strong>{money(monthCollected._sum.amount||0)}</strong></div>
       <div className="friendly-admin-kpi"><small>Outstanding</small><strong>{money(outstanding)}</strong><span className="mt-1 block text-[9px] text-slate-400">{outstandingCount} orders</span></div>
@@ -78,7 +81,7 @@ export default async function ReportsPage(){
 
     <section>
       <h2 className="mb-3 text-base font-bold text-slate-900">Report Library</h2>
-      <ReportLibrary reports={library}/>
+      <ReportLibrary reports={library} showSearch={false}/>
     </section>
   </div>;
 }
