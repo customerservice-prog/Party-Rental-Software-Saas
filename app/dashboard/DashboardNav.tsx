@@ -58,9 +58,7 @@ export default function DashboardNav({showSettings,orgName="Your rental business
  const pathname=usePathname();
  const[mobileOpen,setMobileOpen]=useState(false);
  const visiblePrimary=primary.filter(i=>!i.owner||showSettings);
- const visibleGroups=moreGroups.map(group=>({...group,items:group.items.filter(i=>!i.owner||showSettings)})).filter(group=>group.items.length);
- const all=[...visiblePrimary,...visibleGroups.flatMap(g=>g.items)];
- const current=all.filter(i=>pathname===i.href||(i.href!=="/dashboard"&&pathname.startsWith(i.href+"/"))).sort((a,b)=>b.href.length-a.href.length)[0];
+ const current=visiblePrimary.filter(i=>pathname===i.href||(i.href!=="/dashboard"&&pathname.startsWith(i.href+"/"))).sort((a,b)=>b.href.length-a.href.length)[0];
  const active=(i:Item)=>current?.href===i.href;
  const logout=()=>signOut({callbackUrl:"/login"});
  const roleLabel=role==="owner"?"Administrator":role.replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase());
@@ -77,15 +75,6 @@ export default function DashboardNav({showSettings,orgName="Your rental business
 
     <nav className="tenant-parity-desktop" aria-label="Tenant navigation">
      {visiblePrimary.map(i=><Link key={i.href} href={i.href} title={i.label} aria-current={active(i)?"page":undefined} className={"tenant-parity-link "+(active(i)?"is-active":"")}><Icon name={i.icon}/><span>{i.label}</span></Link>)}
-     <details className="tenant-parity-more">
-      <summary className={"tenant-parity-link "+(visibleGroups.some(group=>group.items.some(active))?"is-active":"")}><Icon name="menu"/><span>More</span></summary>
-      <div className="tenant-more-panel">
-       {visibleGroups.map(group=><div key={group.label} className="tenant-more-group">
-        <p>{group.label}</p>
-        {group.items.map(i=><Link key={i.href} href={i.href} className={active(i)?"is-active":""}><Icon name={i.icon} className="h-4 w-4"/><span>{i.label}</span></Link>)}
-       </div>)}
-      </div>
-     </details>
     </nav>
 
     <div className="tenant-parity-account">
@@ -100,10 +89,6 @@ export default function DashboardNav({showSettings,orgName="Your rental business
     {mobileOpen&&<div className="tenant-parity-mobile" id="tenant-mobile-menu">
       <div className="tenant-parity-mobile-links">
        {visiblePrimary.map(i=><Link key={i.href} href={i.href} onClick={()=>setMobileOpen(false)} className={active(i)?"is-active":""}><Icon name={i.icon} className="h-5 w-5"/><span>{i.label}</span></Link>)}
-       {visibleGroups.map(group=><div key={group.label} className="tenant-parity-mobile-group">
-        <p>{group.label}</p>
-        {group.items.map(i=><Link key={i.href} href={i.href} onClick={()=>setMobileOpen(false)} className={active(i)?"is-active":""}><Icon name={i.icon} className="h-5 w-5"/><span>{i.label}</span></Link>)}
-       </div>)}
       </div>
       <div className="tenant-parity-mobile-account">Signed in as <strong>{userName}</strong> ({roleLabel})</div>
       <button type="button" onClick={logout} className="tenant-parity-mobile-logout">Logout</button>
