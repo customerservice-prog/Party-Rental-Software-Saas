@@ -2,6 +2,7 @@ import Link from "next/link";
 import {requireCurrentOrganization} from "@/lib/tenant";
 import {prisma} from "@/lib/prisma";
 import Icon from "../components/Icon";
+import CustomerAutoRefresh from "./CustomerAutoRefresh";
 
 const money=(value:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(value);
 const ts=(date:Date|null|undefined)=>date?date.getTime():0;
@@ -72,8 +73,9 @@ export default async function CustomersPage({searchParams:searchParamsPromise}:{
   const pageUrl=(p:number)=>"/dashboard/customers?"+new URLSearchParams({...Object.fromEntries(filters),page:String(p)});
 
   return <div className="friendly-admin-page is-wide">
+    <CustomerAutoRefresh/>
     <div className="friendly-admin-head">
-      <div><h1>Customers</h1><p>{total} customer{total===1?"":"s"} · Latest payment or quote first</p><p className="!mt-1 text-[10px]">Customers without booking activity appear after customers with newer activity.</p></div>
+      <div><h1>Customers</h1><p>{total} customer{total===1?"":"s"} · Latest payment, quote or incomplete checkout first</p><p className="!mt-1 text-[10px]">Refreshes automatically every 15 seconds. Customers without booking activity appear last.</p></div>
       <div className="friendly-admin-actions"><a href={"/api/customers/export?"+filters} className="friendly-admin-secondary">Export CSV</a><Link href="/dashboard/customers/new" className="friendly-admin-primary"><Icon name="plus" className="h-4 w-4"/>Add Customer</Link></div>
     </div>
 
