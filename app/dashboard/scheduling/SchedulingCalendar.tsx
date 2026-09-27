@@ -32,9 +32,11 @@ type BusinessHour = {
 };
 
 const FILTERS = [
+  { key: "all", label: "All Orders" },
   { key: "active", label: "Active" },
   { key: "active-deliver", label: "Active - Deliver" },
   { key: "active-pickup", label: "Active - Customer Pickup" },
+  { key: "incomplete", label: "Incomplete" },
   { key: "quote", label: "Sent Quotes" },
   { key: "canceled", label: "Canceled" },
   { key: "created", label: "Orders Created" },
@@ -44,12 +46,16 @@ type FilterKey = typeof FILTERS[number]["key"];
 
 function matchesFilter(order: OrderLite, filter: FilterKey) {
   switch (filter) {
+    case "all":
+      return true;
     case "active":
       return order.status === "active" || order.status === "confirmed";
     case "active-deliver":
       return (order.status === "active" || order.status === "confirmed") && order.deliveryType === "delivery";
     case "active-pickup":
       return (order.status === "active" || order.status === "confirmed") && order.deliveryType === "pickup";
+    case "incomplete":
+      return order.status === "pending" || order.status === "incomplete";
     case "quote":
       return order.status === "quote";
     case "canceled":
@@ -85,7 +91,7 @@ export default function SchedulingCalendar({
   ordersByCreatedAt: OrderLite[];
 }) {
   const router = useRouter();
-  const [filter, setFilter] = useState<FilterKey>("active");
+  const [filter, setFilter] = useState<FilterKey>("all");
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [taskDrafts, setTaskDrafts] = useState<Record<string, string>>({});
   const [savingTaskFor, setSavingTaskFor] = useState<string | null>(null);
