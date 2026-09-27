@@ -5,7 +5,7 @@ import {useMemo,useState} from "react";
 
 export type TenantReportLink={title:string;description:string;category:string;href:string;icon?:string};
 
-export default function ReportLibrary({reports}:{reports:TenantReportLink[]}){
+export default function ReportLibrary({reports,showSearch=true}:{reports:TenantReportLink[];showSearch?:boolean}){
   const[query,setQuery]=useState("");
   const[category,setCategory]=useState("All Reports");
   const categories=useMemo(()=>Array.from(new Set(reports.map(report=>report.category))),[reports]);
@@ -15,13 +15,13 @@ export default function ReportLibrary({reports}:{reports:TenantReportLink[]}){
   },[reports,query,category]);
 
   return <>
-    <div className="mb-6 max-w-[620px]">
+    {showSearch&&<div className="mb-6 max-w-[620px]">
       <div className="relative">
         <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">⌕</span>
         <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search reports by name, task, or keyword..." className="friendly-admin-field h-11 w-full !pl-11 !pr-10"/>
         {query&&<button type="button" onClick={()=>setQuery("")} aria-label="Clear search" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">×</button>}
       </div>
-    </div>
+    </div>}
 
     <div className="grid gap-6 md:grid-cols-[220px_minmax(0,1fr)]">
       <aside>
