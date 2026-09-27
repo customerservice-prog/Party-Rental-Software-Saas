@@ -14,6 +14,7 @@ function readCategoryImage(file:File|undefined,onLoaded:(dataUrl:string)=>void){
 type Category={
   id:string;
   name:string;
+  slug:string;
   description:string|null;
   picture:string|null;
   displayToCustomer:boolean;
@@ -150,7 +151,7 @@ export default function CategoriesPage(){
                 </div>
               </td>
               <td className="min-w-[180px]"><input className="friendly-admin-field w-full" value={draft.name} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,name:e.target.value}})} onBlur={()=>saveCategory(category.id)}/></td>
-              <td className="text-[10px] text-slate-500">{category.name.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"")}</td>
+              <td className="text-[10px] text-slate-500">{category.slug}</td>
               <td className="text-center"><input aria-label={"Show "+category.name+" on website"} type="checkbox" checked={draft.displayToCustomer} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,displayToCustomer:e.target.checked}})} onBlur={()=>saveCategory(category.id)}/></td>
               <td className="numeric">{category._count?.items||0}</td>
               <td className="min-w-[280px]"><input className="friendly-admin-field w-full" value={draft.description} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,description:e.target.value}})} onBlur={()=>saveCategory(category.id)} placeholder="Optional description"/></td>
