@@ -66,6 +66,7 @@ async function main(){
     ['/dashboard/deliveries/product-attention-report','product-attention'],
     ['/dashboard/deliveries/print-invoices','print-invoices'],
     ['/dashboard/deliveries/print-contracts','print-contracts'],
+    ['/dashboard/deliveries/truck-tracker','truck-tracker'],
     ['/dashboard/scheduling','scheduling'],
     ['/dashboard/do-not-rent','do-not-rent'],
     ['/dashboard/reports','reports-library'],
