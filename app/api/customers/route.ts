@@ -4,7 +4,7 @@ import { requireOwnerSession, requireStaffSession, authzErrorResponse } from "@/
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/audit";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     const organization = await requireCurrentOrganization();
     try {
         await requireStaffSession(organization.id);
@@ -12,9 +12,16 @@ export async function GET() {
         return authzErrorResponse(err);
     }
 
+  const q=new URL(request.url).searchParams.get("q")?.trim().slice(0,200)||"";
   const customers = await prisma.customer.findMany({
-        where: { organizationId: organization.id },
+        where: { organizationId: organization.id, ...(q?{OR:[
+          {firstName:{contains:q,mode:"insensitive"}},
+          {lastName:{contains:q,mode:"insensitive"}},
+          {email:{contains:q,mode:"insensitive"}},
+          {phone:{contains:q,mode:"insensitive"}},
+        ]}:{}) },
         orderBy: { createdAt: "desc" },
+        ...(q?{take:20}:{}),
   });
 
   return NextResponse.json(customers);
