@@ -24,7 +24,7 @@ export default async function OrdersPage({searchParams:searchParamsPromise}:{sea
   <div className="friendly-admin-card accent-blue">
    <form className="friendly-admin-filters" method="get">
     <label><span>Status</span><select name="status" defaultValue={status}><option value="">All Statuses</option>{ORDER_STATUSES.map(value=><option key={value} value={value}>{value[0].toUpperCase()+value.slice(1)}</option>)}</select></label>
-    <label className="min-w-[220px] flex-1"><span>Search</span><input name="q" defaultValue={q} placeholder="Search by customer name or order number..." className="w-full"/></label>
+    <label className="min-w-[220px] flex-1"><span>Search</span><input name="q" defaultValue={q} placeholder="Search name, email, phone, or order number..." className="w-full"/></label>
     <label className="flex items-center gap-2 pb-2"><input type="checkbox" name="balance" value="unpaid" defaultChecked={unpaid}/><span className="!mb-0">Balance due only</span></label>
     <button className="friendly-admin-secondary" type="submit">Apply</button>
     {(q||status||unpaid)&&<Link href="/dashboard/orders" className="friendly-admin-secondary">Clear</Link>}
