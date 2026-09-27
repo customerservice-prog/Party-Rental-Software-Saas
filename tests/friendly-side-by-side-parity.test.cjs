@@ -149,7 +149,8 @@ test('Rainchecks is a real tenant workspace backed by StoreCredit rain_check row
   assert.match(page,/Active value/);
   assert.match(page,/Apply \/ Manage/);
   assert.match(api,/const type=b\.type==="rain_check"/);
-  for(const source of [nav,tools,reports]) assert.match(source,/\/dashboard\/rainchecks/);
+  assert.match(nav,/item\("\/rainchecks","Rainchecks","wallet"\)/);
+  for(const source of [tools,reports]) assert.match(source,/\/dashboard\/rainchecks/);
 });
 
 
