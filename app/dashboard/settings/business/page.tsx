@@ -456,8 +456,8 @@ export default function SettingsPage() {
   const sectionTitleClass = "friendly-admin-card-title";
 
   return (
-    <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Business Settings</h1>
+    <div className="friendly-admin-page">
+      <div className="friendly-admin-head"><div><h1>Business Settings</h1><p>Company, website, pricing, hours, messaging, and payment settings.</p></div></div>
 
       <div className={sectionClass}>
         <h2 id="company-info" className={sectionTitleClass}>Profile</h2>
