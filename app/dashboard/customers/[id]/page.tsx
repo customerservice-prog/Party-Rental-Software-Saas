@@ -13,14 +13,16 @@ if(!customer)notFound();
 const normalizedPhone=(customer.phone||"").replace(/\D/g,"");
 const normalizedEmail=customer.email.trim().toLowerCase();
 const normalizedAddress=(customer.address||"").trim().toLowerCase();
-const [customerMessages,restriction]=await Promise.all([
+const [customerMessages,activeRestrictions]=await Promise.all([
  prisma.sentMessage.findMany({where:{organizationId:organization.id,customerId:customer.id},orderBy:{createdAt:"desc"},take:50}),
- prisma.doNotRentRestriction.findFirst({where:{organizationId:organization.id,isActive:true,OR:[
-  ...(normalizedEmail?[{email:{equals:normalizedEmail,mode:"insensitive" as const}}]:[]),
-  ...(normalizedPhone?[{phone:{contains:normalizedPhone}}]:[]),
-  ...(normalizedAddress?[{address:{equals:customer.address||"",mode:"insensitive" as const}}]:[]),
- ]}})
+ prisma.doNotRentRestriction.findMany({where:{organizationId:organization.id,isActive:true},select:{id:true,email:true,phone:true,address:true}})
 ]);
+const restriction=activeRestrictions.find(row=>{
+ const email=(row.email||"").trim().toLowerCase();
+ const phone=(row.phone||"").replace(/\D/g,"");
+ const address=(row.address||"").trim().toLowerCase();
+ return Boolean((normalizedEmail&&email===normalizedEmail)||(normalizedPhone&&phone===normalizedPhone)||(normalizedAddress&&address===normalizedAddress));
+})||null;
 const lifetime=customer.orders.filter(o=>!o.status.toLowerCase().includes("cancel")).reduce((s,o)=>s+o.totalAmount,0);
 const dnrParams=new URLSearchParams({add:"1",name:`${customer.firstName} ${customer.lastName}`,email:customer.email});
 if(customer.phone)dnrParams.set("phone",customer.phone);
