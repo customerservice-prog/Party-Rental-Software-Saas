@@ -3,25 +3,6 @@ import Link from "next/link";
 type SettingEntry={label:string;href?:string};
 type SettingSection={title:string;items:SettingEntry[]};
 
-const routeOverrides:Record<string,string>={
-  "FPRMail":"ersmail",
-  "Price Rule Sets":"pricing-tiers",
-  "Loyalty & Credit Types":"loyalty-credit-types",
-  "Email Templates for Orders":"email-templates-orders",
-  "Email Templates for Marketing":"email-templates-marketing",
-  "Text Message Templates":"text-message-templates",
-  "Automatic Text Messaging":"automatic-text-messaging",
-  "Misc Order Settings":"misc-order-settings",
-  "QuickBooks Online":"quickbooks-online",
-  "HighLevel Connect":"highlevel-connect",
-  "Cost of Goods":"cost-of-goods",
-};
-function settingHref(item:SettingEntry){
-  if(item.href)return item.href;
-  const slug=routeOverrides[item.label]||item.label.toLowerCase().replace(/&/g,"and").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
-  return "/dashboard/settings/"+slug;
-}
-
 const sections:SettingSection[]=[
   {title:"General Config",items:[
     {label:"Company Info",href:"/dashboard/settings/business#company-info"},
@@ -109,7 +90,7 @@ export default function SettingsPage(){
       {sections.map(section=><section key={section.title} className="friendly-admin-settings-section">
         <h2>{section.title}</h2>
         <div className="friendly-admin-settings-grid">
-          {section.items.map(item=><Link key={item.label} href={settingHref(item)}>{item.label}</Link>)}
+          {section.items.map(item=>item.href?<Link key={item.label} href={item.href}>{item.label}</Link>:<span key={item.label} title="Not available in this tenant CRM yet">{item.label}</span>)}
         </div>
       </section>)}
     </div>
