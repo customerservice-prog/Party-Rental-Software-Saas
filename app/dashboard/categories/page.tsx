@@ -3,6 +3,14 @@
 import Link from "next/link";
 import {FormEvent,useEffect,useState} from "react";
 
+function readCategoryImage(file:File|undefined,onLoaded:(dataUrl:string)=>void){
+  if(!file)return;
+  if(file.size>5*1024*1024){alert("Please choose an image smaller than 5MB.");return;}
+  const reader=new FileReader();
+  reader.onload=()=>onLoaded(String(reader.result||""));
+  reader.readAsDataURL(file);
+}
+
 type Category={
   id:string;
   name:string;
@@ -118,14 +126,26 @@ export default function CategoriesPage(){
     <section className="friendly-admin-card flush !shadow-sm">
       {loading?<div className="friendly-admin-empty">Loading categories…</div>:categories.length===0?<div className="friendly-admin-empty">No categories yet.</div>:<div className="friendly-admin-table-wrap">
         <table className="friendly-admin-table">
-          <thead className="bg-[#2d6a2d]"><tr><th className="!text-white">Order</th><th className="!text-white">Image</th><th className="!text-white">Name</th><th className="!text-white">Display</th><th className="!text-white">Items</th><th className="!text-white">Description</th><th className="!text-white">Actions</th></tr></thead>
+          <thead className="bg-[#2d6a2d]"><tr><th className="!text-white">Order</th><th className="!text-white">Image</th><th className="!text-white">Name</th><th className="!text-white">Slug</th><th className="!text-white">Display</th><th className="!text-white">Items</th><th className="!text-white">Description</th><th className="!text-white">Actions</th></tr></thead>
           <tbody>{categories.map(category=>{
             const draft=drafts[category.id]||{name:category.name,description:category.description||"",picture:category.picture||"",displayToCustomer:category.displayToCustomer};
             const index=categories.findIndex(row=>row.id===category.id);
             return <tr key={category.id}>
               <td><div className="flex gap-1"><button type="button" aria-label={"Move "+category.name+" up"} disabled={index===0} onClick={()=>moveCategory(category.id,-1)} className="friendly-admin-secondary !min-h-0 !px-2 !py-1 disabled:opacity-30">↑</button><button type="button" aria-label={"Move "+category.name+" down"} disabled={index===categories.length-1} onClick={()=>moveCategory(category.id,1)} className="friendly-admin-secondary !min-h-0 !px-2 !py-1 disabled:opacity-30">↓</button></div></td>
-              <td className="min-w-[150px]"><div className="flex items-center gap-2">{draft.picture?<img src={draft.picture} alt={category.name} className="h-12 w-12 rounded border object-cover"/>:<div className="h-12 w-12 shrink-0 rounded border bg-slate-50"/>}<input aria-label={category.name+" image URL"} className="friendly-admin-field w-24" value={draft.picture} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,picture:e.target.value}})} onBlur={()=>saveCategory(category.id)} placeholder="Image URL"/></div></td>
+              <td className="min-w-[190px]">
+                <div className="flex items-center gap-2">
+                  {draft.picture?<img src={draft.picture} alt={category.name} className="h-12 w-12 rounded border object-cover"/>:<div className="h-12 w-12 shrink-0 rounded border bg-slate-50"/>}
+                  <div className="min-w-0">
+                    <label className="inline-flex cursor-pointer items-center rounded border border-slate-300 bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-700 hover:bg-slate-100">
+                      Upload
+                      <input type="file" accept="image/*" className="hidden" onChange={e=>readCategoryImage(e.target.files?.[0],dataUrl=>{setDrafts(current=>({...current,[category.id]:{...(current[category.id]||draft),picture:dataUrl}}));setTimeout(()=>saveCategory(category.id),0);})}/>
+                    </label>
+                    <input aria-label={category.name+" image URL"} className="friendly-admin-field mt-1 w-28" value={draft.picture} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,picture:e.target.value}})} onBlur={()=>saveCategory(category.id)} placeholder="Image URL"/>
+                  </div>
+                </div>
+              </td>
               <td className="min-w-[180px]"><input className="friendly-admin-field w-full" value={draft.name} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,name:e.target.value}})} onBlur={()=>saveCategory(category.id)}/></td>
+              <td className="text-[10px] text-slate-500">{category.name.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"")}</td>
               <td className="text-center"><input aria-label={"Show "+category.name+" on website"} type="checkbox" checked={draft.displayToCustomer} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,displayToCustomer:e.target.checked}})} onBlur={()=>saveCategory(category.id)}/></td>
               <td className="numeric">{category._count?.items||0}</td>
               <td className="min-w-[280px]"><input className="friendly-admin-field w-full" value={draft.description} onChange={e=>setDrafts({...drafts,[category.id]:{...draft,description:e.target.value}})} onBlur={()=>saveCategory(category.id)} placeholder="Optional description"/></td>
