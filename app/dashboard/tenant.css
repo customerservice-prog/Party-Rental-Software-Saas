@@ -380,6 +380,7 @@
 .friendly-admin-table-wrap{max-width:100%;overflow-x:auto}
 .friendly-admin-table{width:100%;border-collapse:collapse;font-size:11px;text-align:left}
 .friendly-admin-table thead tr{border-bottom:1px solid #dedede;background:#f8f9f8}
+.friendly-admin-table thead.friendly-admin-green-head tr{background:#2d6a2d!important;border-bottom-color:#245824}.friendly-admin-table thead.friendly-admin-green-head th{color:#fff!important}
 .friendly-admin-table th{padding:11px 12px;font-size:10px;font-weight:800;color:#242424;white-space:nowrap;text-transform:none;letter-spacing:0}
 .friendly-admin-table td{padding:11px 12px;border-bottom:1px solid #ededed;color:#565656;vertical-align:middle}
 .friendly-admin-table tbody tr:nth-child(even){background:#fbfbfb}
