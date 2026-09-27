@@ -5,6 +5,7 @@ import {prisma} from "@/lib/prisma";
 import DeleteCustomerButton from "@/app/dashboard/customers/DeleteCustomerButton";
 import CustomerNotes from "@/app/dashboard/customers/CustomerNotes";
 import CustomerProfileEditor from "@/app/dashboard/customers/CustomerProfileEditor";
+import CustomerRelationships from "./relationships/CustomerRelationships";
 
 const money=(value:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(value);
 
@@ -87,6 +88,14 @@ export default async function CustomerDetailPage({params:paramsPromise}:{params:
         <div className="text-right"><span className="font-medium">{money(order.totalAmount)}</span>{order.totalAmount-order.amountPaid>0.009&&<div className="text-xs font-semibold text-red-600">{money(order.totalAmount-order.amountPaid)} due</div>}</div>
       </div>):<div className="px-4 py-4 text-sm text-slate-500">This customer has no orders yet.</div>}
     </section>
+
+    <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+      <div><h2 className="text-lg font-semibold text-slate-900">Contacts, Credits & Rainchecks</h2><p className="mt-1 text-xs text-slate-500">Manage alternate contacts and customer credit directly from this customer record, like Friendly admin.</p></div>
+      <Link href={"/dashboard/customers/"+customer.id+"/relationships"} className="text-xs font-semibold text-[#1a6fd4] hover:underline">Open full CRM view →</Link>
+    </div>
+    <div className="mb-6">
+      <CustomerRelationships customerId={customer.id} orders={customer.orders.slice(0,50).map(order=>({id:order.id,orderNumber:order.orderNumber,eventDate:order.eventDate.toISOString(),totalAmount:order.totalAmount}))}/>
+    </div>
 
     <div className="mb-2 flex items-center justify-between">
       <h2 className="text-lg font-semibold text-slate-900">Communication History</h2>
