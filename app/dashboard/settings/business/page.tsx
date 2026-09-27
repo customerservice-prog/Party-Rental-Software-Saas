@@ -477,7 +477,7 @@ export default function SettingsPage() {
 
   return (
     <div className="friendly-admin-page business-settings-focus" data-focus={focusHash||"all"}>
-      <div className="friendly-admin-head"><div><h1>{focusedTitle[focusHash]||"Business Settings"}</h1><p>{focusHash?"Edit this setting for your rental business.":"Company, website, pricing, hours, messaging, and payment settings."}</p></div></div>
+      <div className="friendly-admin-head"><div><h1>{focusedTitle[focusHash]||"Business Settings"}</h1><p>{focusHash?"Edit this setting for your rental business.":"Company, website, pricing, hours, messaging, and payment settings."}</p></div>{focusHash&&<div className="friendly-admin-actions"><a href="/dashboard/settings" className="friendly-admin-secondary">← All Settings</a></div>}</div>
 
       <div className={sectionClass}>
         <h2 id="company-info" className={sectionTitleClass}>Profile</h2>
