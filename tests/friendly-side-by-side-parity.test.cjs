@@ -204,3 +204,19 @@ test('tenant brand behaves like Friendly admin by opening the public business we
   assert.match(nav,/href="\/" target="_blank"/);
   assert.match(nav,/Open .+ website/);
 });
+
+
+test('specialist operations screens use the Friendly admin component system instead of old SaaS controls',()=>{
+  const portal=read('app/dashboard/orders/[id]/PortalLinkButton.tsx');
+  const packages=read('app/dashboard/inventory/packages/PackageBuilder.tsx');
+  const fulfillment=read('app/dashboard/orders/[id]/fulfillment/page.tsx');
+  const returns=read('app/dashboard/returns/orders/[orderId]/ReturnReconciliation.tsx');
+  const scanner=read('app/dashboard/warehouse/orders/[orderId]/OrderWarehouseScanner.tsx');
+  const automations=read('app/dashboard/automations/page.tsx');
+  for(const source of [portal,packages,fulfillment,returns,scanner,automations]) assert.match(source,/friendly-admin-/);
+  assert.doesNotMatch(portal,/rounded-xl bg-blue-600/);
+  assert.doesNotMatch(packages,/rounded-xl bg-blue-600/);
+  assert.doesNotMatch(returns,/rounded-xl bg-slate-950/);
+  assert.doesNotMatch(scanner,/rounded-xl bg-slate-950/);
+  assert.match(automations,/friendly-admin-tab is-active/);
+});
