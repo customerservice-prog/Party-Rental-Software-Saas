@@ -316,7 +316,7 @@ export default function WebsiteEditorPage() {
   if (permissionDenied) {
     return (
       <div className="max-w-lg rounded-lg border border-amber-200 bg-amber-50 p-6 text-amber-800">
-        <h1 className="mb-2 text-lg font-semibold">You don't have access to the Website editor</h1>
+        <h1 className="mb-2 text-lg font-semibold">You don't have access to the Website Builder</h1>
         <p className="text-sm">
           Editing your website requires the "Manage website pages &amp; branding" permission. Ask
           your account owner to grant it to your staff role, or sign in as the owner.
@@ -341,7 +341,7 @@ export default function WebsiteEditorPage() {
 
       {/* Global toolbar */}
       <div className="flex flex-wrap items-center gap-3 border-b bg-white px-4 py-2 shadow-sm">
-        <h1 className="text-sm font-semibold text-gray-900">Website Editor</h1>
+        <h1 className="text-sm font-semibold text-gray-900">Website Builder</h1>
 
         <span
           className={
