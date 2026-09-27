@@ -68,8 +68,8 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json();
 
   if (Array.isArray(body.orderedIds)) {
-    const orderedIds = body.orderedIds.filter((id: unknown): id is string => typeof id === "string" && id.length > 0);
-    const uniqueIds = Array.from(new Set(orderedIds));
+    const orderedIds: string[] = (body.orderedIds as unknown[]).filter((id): id is string => typeof id === "string" && id.length > 0);
+    const uniqueIds: string[] = Array.from(new Set<string>(orderedIds));
     if (uniqueIds.length !== orderedIds.length || uniqueIds.length === 0) {
       return NextResponse.json({ error: "A valid category order is required" }, { status: 400 });
     }
