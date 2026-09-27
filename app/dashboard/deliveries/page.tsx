@@ -91,12 +91,12 @@ export default async function DeliveriesPage({searchParams:searchParamsPromise}:
     </section>
 
     <div className="mb-4 flex flex-wrap gap-2">
-      <Link href="/dashboard/dispatch" className="friendly-admin-secondary">Assign Drivers</Link>
+      <Link href="/dashboard/dispatch" className="friendly-admin-secondary">Assign Drivers</Link>\n      <Link href="/dashboard/dispatch" className="friendly-admin-secondary">Truck / Route Tracker</Link>
       <Link href="/dashboard/deliveries/print-contracts" target="_blank" className="friendly-admin-secondary">Print Contracts</Link>
       <Link href="/dashboard/deliveries/print-invoices" target="_blank" className="friendly-admin-secondary">Print Invoices</Link>
       <Link href="/dashboard/deliveries/packing-list" target="_blank" className="friendly-admin-secondary">Packing List</Link>
-      <Link href="/dashboard/warehouse" className="friendly-admin-secondary">Product Status</Link>
-      <Link href="/dashboard/returns" className="friendly-admin-secondary">Product Attention</Link>
+      <Link href="/dashboard/deliveries/product-status-report" className="friendly-admin-secondary">Product Status Report</Link>
+      <Link href="/dashboard/deliveries/product-attention-report" className="friendly-admin-secondary">Product Attention Report</Link>
     </div>
 
     <section className="friendly-admin-card !p-0 overflow-hidden">
