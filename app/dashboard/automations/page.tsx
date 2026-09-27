@@ -126,14 +126,11 @@ export default function AutomationsPage() {
     );
   }
 
-  const sectionStyle = "border border-gray-200 rounded-lg p-5 bg-white mb-5";
+  const sectionStyle = "friendly-admin-card";
 
   return (
-    <div className="friendly-legacy-page">
-      <h1 className="text-2xl font-bold mb-1">Marketing</h1>
-      <p className="text-sm text-gray-500 mb-4">
-        Automations - booking confirmations, event reminders, and balance-due reminders by connected email/SMS providers.
-      </p>
+    <div className="friendly-admin-page is-wide">
+      <div className="friendly-admin-head"><div><h1>Marketing Automations</h1><p>Booking confirmations, event reminders, and balance-due reminders through connected email/SMS providers.</p></div><div className="friendly-admin-actions"><Link href="/dashboard/automations/schedule" className="friendly-admin-secondary">Scheduled Delivery</Link></div></div>
 
       <div className="friendly-admin-tabs">
         {TABS.map((tab) => (
@@ -142,8 +139,8 @@ export default function AutomationsPage() {
             href={tab.href}
             className={
               tab.label === "Automations"
-                ? "pb-2 font-semibold text-sm text-indigo-600 border-b-2 border-indigo-600"
-                : "pb-2 font-semibold text-sm text-gray-600 border-b-2 border-transparent"
+                ? "friendly-admin-tab is-active"
+                : "friendly-admin-tab"
             }
           >
             {tab.label}
@@ -275,7 +272,7 @@ export default function AutomationsPage() {
           <button
             onClick={runNow}
             disabled={running}
-            className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="friendly-admin-primary !min-h-0 !px-3 !py-1.5 text-xs disabled:opacity-50"
           >
             {running ? "Running..." : "Run automations now"}
           </button>
