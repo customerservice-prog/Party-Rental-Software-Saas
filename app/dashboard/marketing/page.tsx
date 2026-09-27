@@ -100,14 +100,14 @@ export default async function MarketingPage() {
 
   const TABS = [
     { label: "Overview", href: "/dashboard/marketing", active: true },
-    { label: "Automatic marketing", href: "/dashboard/automations" },
-    { label: "Campaign library", href: "/dashboard/message-templates" },
-    { label: "Audiences", href: "/dashboard/customers" },
-    { label: "Performance", href: "/dashboard/analytics" },
-    { label: "Send history", href: "/dashboard/messages" },
-    { label: "Review queue", href: "/dashboard/automations/schedule" },
-    { label: "Seasonal calendar", href: "/dashboard/scheduling" },
-    { label: "Settings", href: "/dashboard/settings/business#email" },
+    { label: "Campaigns", href: "/dashboard/marketing/campaigns" },
+    { label: "Audiences", href: "/dashboard/marketing/audiences" },
+    { label: "Automations", href: "/dashboard/marketing/automations" },
+    { label: "Performance", href: "/dashboard/marketing/performance" },
+    { label: "History", href: "/dashboard/marketing/history" },
+    { label: "Scheduler", href: "/dashboard/marketing/scheduler" },
+    { label: "Calendar", href: "/dashboard/marketing/calendar" },
+    { label: "Settings", href: "/dashboard/marketing/settings" },
   ];
 
   const sectionStyle = {
@@ -154,8 +154,8 @@ export default async function MarketingPage() {
               <p className="mt-3 text-sm leading-6 text-green-50">Seasonal reminders, repeat bookings and customer follow-ups using your real customer history. Review audiences and messaging before sending.</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Link href="/dashboard/message-templates" className="marketing-hero-button">Campaign Library</Link>
-              <Link href="/dashboard/settings/business#email" className="marketing-hero-button secondary">Settings</Link>
+              <Link href="/dashboard/marketing/campaigns" className="marketing-hero-button">Campaign Library</Link>
+              <Link href="/dashboard/marketing/settings" className="marketing-hero-button secondary">Settings</Link>
             </div>
           </div>
           <div className="marketing-hero-facts">
