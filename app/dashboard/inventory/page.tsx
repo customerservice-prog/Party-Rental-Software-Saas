@@ -1,721 +1,81 @@
-"use client";
+import Link from "next/link";
+import {requireCurrentOrganization} from "@/lib/tenant";
+import {requirePermission} from "@/lib/authz";
+import {prisma} from "@/lib/prisma";
+import InventoryActions from "./InventoryActions";
 
-import { useEffect, useState, FormEvent, Fragment } from "react";
-import {PageHeading, MetricCard, EmptyState, StatusBadge} from "../components/TenantUI";
-import Icon from "../components/Icon";
-import CatalogBrowser from "./CatalogBrowser";
-import ImportCsvModal from "./ImportCsvModal";
-import ItemUnitsPanel from "./ItemUnitsPanel";
+const money=(n:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(n);
 
-function readImageFile(file: File | undefined | null, onLoaded: (dataUrl: string) => void) {
-  if (!file) return;
-  if (file.size > 3 * 1024 * 1024) {
-    alert("Please choose an image smaller than 3MB.");
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = () => onLoaded(reader.result as string);
-  reader.readAsDataURL(file);
-}
+export default async function InventoryPage({searchParams:searchParamsPromise}:{searchParams:Promise<{q?:string;category?:string;view?:string;page?:string}>}){
+  const searchParams=await searchParamsPromise;
+  const organization=await requireCurrentOrganization();
+  await requirePermission(organization.id,"inventory.view");
+  const q=searchParams.q?.trim().slice(0,160)||"";
+  const categoryId=searchParams.category?.trim()||"";
+  const view=["all","attention","visible","hidden"].includes(searchParams.view||"")?String(searchParams.view):"all";
+  const where={
+    organizationId:organization.id,
+    ...(categoryId?{categoryId}:{}),
+    ...(q?{OR:[{name:{contains:q,mode:"insensitive" as const}},{description:{contains:q,mode:"insensitive" as const}}]}:{}),
+    ...(view==="attention"?{status:{not:"available"}}:view==="visible"?{displayToCustomer:true}:view==="hidden"?{displayToCustomer:false}:{}),
+  };
+  const total=await prisma.item.count({where});
+  const pages=Math.max(1,Math.ceil(total/100));
+  const page=Math.min(pages,Math.max(1,Math.floor(Number(searchParams.page)||1)));
+  const[items,categories]=await Promise.all([
+    prisma.item.findMany({where,include:{category:true,_count:{select:{addons:true,units:true}}},orderBy:[{name:"asc"},{id:"asc"}],take:100,skip:(page-1)*100}),
+    prisma.category.findMany({where:{organizationId:organization.id},include:{_count:{select:{items:true}}},orderBy:[{sortOrder:"asc"},{name:"asc"}]}),
+  ]);
 
-type Item = {
-  id: string;
-  categoryId: string;
-  name: string;
-  description: string | null;
-  cost: number;
-  acquisitionCost: number | null;
-  quantity: number;
-  picture: string | null;
-  displayToCustomer: boolean;
-  status: string;
-  lastInspectedAt: string | null;
-  attentionNotes: string | null;
-  blockBookingsUntil: string | null;
-  restrictionMessage: string | null;
-};
-
-type Category = {
-  id: string;
-  name: string;
-  description: string | null;
-  picture: string | null;
-  displayToCustomer: boolean;
-};
-
-type Addon = {
-  id: string;
-  itemId: string;
-  name: string;
-  price: number;
-  isRequired: boolean;
-};
-
-type ItemFormState = {
-  name: string;
-  description: string;
-  cost: string;
-  acquisitionCost: string;
-  quantity: string;
-  picture: string;
-  displayToCustomer: boolean;
-  status: string;
-  lastInspectedAt: string;
-  attentionNotes: string;
-  blockBookingsUntil: string;
-  restrictionMessage: string;
-};
-
-type AddonFormState = {
-  name: string;
-  price: string;
-  isRequired: boolean;
-};
-
-const emptyItemForm: ItemFormState = {
-  name: "",
-  description: "",
-  cost: "",
-  acquisitionCost: "",
-  quantity: "1",
-  picture: "",
-  displayToCustomer: true,
-  status: "available",
-  lastInspectedAt: "",
-  attentionNotes: "",
-  blockBookingsUntil: "",
-  restrictionMessage: "",
-};
-
-const emptyAddonForm: AddonFormState = { name: "", price: "", isRequired: false };
-
-export default function InventoryPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [items, setItems] = useState<Item[]>([]);
-  const [addons, setAddons] = useState<Addon[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
-  const [showCatalog, setShowCatalog] = useState(false);
-  const [showImport, setShowImport] = useState(false);
-  const [query, setQuery] = useState("");
-  const [condition, setCondition] = useState("all");
-  const [loadError, setLoadError] = useState("");
-
-  const [newCategory, setNewCategory] = useState({ name: "", description: "", picture: "" });
-  const [itemForms, setItemForms] = useState<Record<string, ItemFormState>>({});
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<ItemFormState | null>(null);
-
-  const [expandedAddonItemId, setExpandedAddonItemId] = useState<string | null>(null);
-  const [expandedUnitsItemId, setExpandedUnitsItemId] = useState<string | null>(null);
-  const [addonForms, setAddonForms] = useState<Record<string, AddonFormState>>({});
-
-  async function load(showLoading = true) {
-    if (showLoading) {
-      setLoading(true);
-      setLoadError("");
-    }
-    try {
-      const responses=await Promise.all([fetch("/api/categories"),fetch("/api/items"),fetch("/api/addons")]);
-      if(responses.some(response=>!response.ok))throw new Error("Inventory could not be loaded. Check your access or try again.");
-      const [cats,stock,extras]=await Promise.all(responses.map(response=>response.json()));
-      setCategories(cats.categories); setItems(stock.items); setAddons(extras.addons);
-      setLoadError("");
-    } catch(e) {
-      const reason=e instanceof Error?e.message:"Inventory could not be loaded.";
-      if(showLoading)setLoadError(reason);
-      else setMessage("Changes were saved, but the inventory refresh failed. "+reason);
-    } finally {
-      if(showLoading)setLoading(false);
-    }
+  function href(patch:Record<string,string>={}){
+    const params=new URLSearchParams({...q?{q}:{},...categoryId?{category:categoryId}:{},...view!=="all"?{view}:{},...patch});
+    for(const[key,value]of Array.from(params.entries()))if(!value||value==="all")params.delete(key);
+    return "/dashboard/inventory"+(params.size?"?"+params.toString():"");
   }
 
-  useEffect(() => {
-    load();
-  }, []);
-
-  function itemFormFor(categoryId: string): ItemFormState {
-    return itemForms[categoryId] || emptyItemForm;
-  }
-
-  function setItemFormFor(categoryId: string, next: ItemFormState) {
-    setItemForms((prev) => ({ ...prev, [categoryId]: next }));
-  }
-
-  function addonFormFor(itemId: string): AddonFormState {
-    return addonForms[itemId] || emptyAddonForm;
-  }
-
-  function setAddonFormFor(itemId: string, next: AddonFormState) {
-    setAddonForms((prev) => ({ ...prev, [itemId]: next }));
-  }
-
-  async function addCategory(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!newCategory.name.trim()) return;
-    const res = await fetch("/api/categories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newCategory),
-    });
-    if (res.ok) {
-      setNewCategory({ name: "", description: "", picture: "" });
-      setMessage("Category added.");
-      load();
-    } else {
-      setMessage("Could not add category.");
-    }
-  }
-
-  async function deleteCategory(id: string) {
-    if (!confirm("Delete this category? It must have no items in it.")) return;
-    const res = await fetch("/api/categories?id=" + id, { method: "DELETE" });
-    if (res.ok) {
-      load();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setMessage(data.error || "Could not delete category.");
-    }
-  }
-
-  async function addItem(categoryId: string, e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = itemFormFor(categoryId);
-    const cost = parseFloat(form.cost);
-    if (!form.name.trim() || !form.cost || Number.isNaN(cost)) return;
-    const acquisitionCost = form.acquisitionCost.trim() === "" ? undefined : parseFloat(form.acquisitionCost);
-    const res = await fetch("/api/items", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        categoryId,
-        name: form.name,
-        description: form.description,
-        cost,
-        acquisitionCost: acquisitionCost !== undefined && !Number.isNaN(acquisitionCost) ? acquisitionCost : undefined,
-        quantity: parseInt(form.quantity || "1", 10),
-        picture: form.picture,
-        displayToCustomer: form.displayToCustomer,
-      }),
-    });
-    if (res.ok) {
-      setItemFormFor(categoryId, emptyItemForm);
-      setMessage("Item added.");
-      load();
-    } else {
-      setMessage("Could not add item.");
-    }
-  }
-
-  async function deleteItem(id: string) {
-    if (!confirm("Delete this item?")) return;
-    const res = await fetch("/api/items?id=" + id, { method: "DELETE" });
-    if (res.ok) {
-      load();
-    } else {
-      setMessage("Could not delete item.");
-    }
-  }
-
-  function startEdit(item: Item) {
-    setEditingItemId(item.id);
-    setEditForm({
-      name: item.name,
-      description: item.description || "",
-      cost: String(item.cost),
-      acquisitionCost: item.acquisitionCost != null ? String(item.acquisitionCost) : "",
-      quantity: String(item.quantity),
-      picture: item.picture || "",
-      displayToCustomer: item.displayToCustomer,
-      status: item.status || "available",
-      lastInspectedAt: item.lastInspectedAt ? item.lastInspectedAt.slice(0, 10) : "",
-      attentionNotes: item.attentionNotes || "",
-      blockBookingsUntil: item.blockBookingsUntil ? item.blockBookingsUntil.slice(0, 10) : "",
-      restrictionMessage: item.restrictionMessage || "",
-    });
-  }
-
-  async function saveEdit(id: string) {
-    if (!editForm) return;
-    const cost = parseFloat(editForm.cost);
-    const acquisitionCost =
-      editForm.acquisitionCost.trim() === "" ? null : parseFloat(editForm.acquisitionCost);
-    const res = await fetch("/api/items", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id,
-        name: editForm.name,
-        description: editForm.description,
-        cost: Number.isNaN(cost) ? undefined : cost,
-        acquisitionCost: acquisitionCost !== null && Number.isNaN(acquisitionCost) ? null : acquisitionCost,
-        quantity: parseInt(editForm.quantity || "1", 10),
-        picture: editForm.picture,
-        displayToCustomer: editForm.displayToCustomer,
-        status: editForm.status,
-        lastInspectedAt: editForm.lastInspectedAt ? editForm.lastInspectedAt : null,
-        attentionNotes: editForm.attentionNotes,
-        blockBookingsUntil: editForm.blockBookingsUntil ? editForm.blockBookingsUntil : null,
-        restrictionMessage: editForm.restrictionMessage,
-      }),
-    });
-    const data=await res.json().catch(()=>({}));
-    if (res.ok) {
-      if(data.item){
-        setItems(current=>current.map(item=>item.id===id?{...item,...data.item}:item));
-      }
-      setEditingItemId(null);
-      setEditForm(null);
-      setMessage("Item updated.");
-      void load(false);
-    } else {
-      setMessage(data.error || "Could not update item.");
-    }
-  }
-
-  async function toggleVisible(item: Item) {
-    await fetch("/api/items", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: item.id, displayToCustomer: !item.displayToCustomer }),
-    });
-    load();
-  }
-
-  async function addAddon(itemId: string, e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = addonFormFor(itemId);
-    const price = parseFloat(form.price);
-    if (!form.name.trim() || Number.isNaN(price)) return;
-    const res = await fetch("/api/addons", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ itemId, name: form.name, price, isRequired: form.isRequired }),
-    });
-    if (res.ok) {
-      setAddonFormFor(itemId, emptyAddonForm);
-      setMessage("Add-on added.");
-      load();
-    } else {
-      setMessage("Could not add add-on.");
-    }
-  }
-
-  async function deleteAddon(id: string) {
-    if (!confirm("Delete this add-on?")) return;
-    const res = await fetch("/api/addons?id=" + id, { method: "DELETE" });
-    if (res.ok) {
-      load();
-    } else {
-      setMessage("Could not delete add-on.");
-    }
-  }
-
-  if (loading) return <div role="status" aria-label="Loading inventory" className="space-y-5"><div className="h-16 animate-pulse rounded-xl bg-slate-200/60"/><div className="grid grid-cols-2 gap-4 lg:grid-cols-4">{[1,2,3,4].map(n=><div key={n} className="h-28 animate-pulse rounded-xl bg-slate-200/60"/>)}</div><div className="h-64 animate-pulse rounded-2xl bg-slate-200/60"/></div>;
-  if(loadError)return <div className="tenant-panel p-8" role="alert"><h1>Inventory unavailable</h1><p className="my-4 text-sm text-slate-500">{loadError}</p><button className="tenant-button" onClick={()=>load()}>Try again</button></div>;
-  const matches=(item:Item)=>item.name.toLowerCase().includes(query.toLowerCase())&&(condition==="all"||(condition==="attention"?!!item.status&&item.status!=="available":item.displayToCustomer));
-  const visibleCategories=categories.filter(category=>!query&&condition==="all"||items.some(item=>item.categoryId===category.id&&matches(item)));
-  return (
-    <div className="tenant-inventory space-y-6">
-      <div className="friendly-admin-head"><div><h1>Items</h1><p>{items.length} rental item{items.length===1?"":"s"}</p></div><div className="friendly-admin-actions"><button onClick={()=>setShowImport(true)} className="friendly-admin-secondary">Import CSV</button><a href="/api/items/export" className="friendly-admin-secondary">Export CSV</a><button onClick={()=>setShowCatalog(true)} className="friendly-admin-secondary">Add from catalog</button><a href="/dashboard/inventory/new" className="friendly-admin-primary"><Icon name="plus" className="h-4 w-4"/>New Item</a></div></div>
-      <div className="friendly-admin-tabs"><span className="friendly-admin-tab is-active">Browse Mode</span><a href="/dashboard/categories" className="friendly-admin-tab">Categories</a><a href="/dashboard/inventory/packages" className="friendly-admin-tab">Packages</a><button type="button" onClick={()=>setShowImport(true)} className="friendly-admin-tab">Import & Export Mode</button></div>
-      <div className="friendly-admin-card accent-blue"><div className="friendly-admin-filters"><label className="relative min-w-[150px] flex-1"><span className="sr-only">Search inventory</span><Icon name="search" className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search your rental items…" className="w-full !pl-9"/></label><select aria-label="Filter inventory" value={condition} onChange={e=>setCondition(e.target.value)}><option value="all">All items</option><option value="attention">Needs attention</option><option value="visible">Visible on website</option></select><span className="text-xs text-slate-500">{items.filter(matches).length} items</span></div></div>
-      {showCatalog && (
-        <CatalogBrowser
-          onClose={() => setShowCatalog(false)}
-          onAdded={(result) => {
-            setShowCatalog(false);
-            const parts = [];
-            if (result.created.length > 0) parts.push(result.created.length + " item(s) added.");
-            if (result.skipped.length > 0) parts.push(result.skipped.length + " already in your inventory.");
-            setMessage(parts.join(" ") || "No items were added.");
-            load();
-          }}
-        />
-      )}
-      {showImport && (
-        <ImportCsvModal
-          onClose={() => setShowImport(false)}
-          onImported={(result) => {
-            setShowImport(false);
-            const parts: string[] = [];
-            if (result.created.length > 0) parts.push(result.created.length + " item(s) imported.");
-            if (result.skipped.length > 0) parts.push(result.skipped.length + " already in your inventory.");
-            if (result.errors.length > 0) parts.push(result.errors.length + " row(s) had errors and were skipped.");
-            setMessage(parts.join(" ") || "No items were imported.");
-            load();
-          }}
-        />
-      )}
-      {message && <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{message}</p>}
-
-      <details className="friendly-admin-card" open={categories.length===0}>
-        <summary className="cursor-pointer text-sm font-semibold text-slate-800">Add a rental category</summary>
-        <form onSubmit={addCategory} className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
-          <input
-            className="border rounded px-3 py-2"
-            placeholder="Category name"
-            value={newCategory.name}
-            onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-          />
-          <input
-            className="border rounded px-3 py-2"
-            placeholder="Description (optional)"
-            value={newCategory.description}
-            onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
-          />
-          <input
-            className="border rounded px-3 py-2"
-            placeholder="Picture URL (optional)"
-            value={newCategory.picture}
-            onChange={(e) => setNewCategory({ ...newCategory, picture: e.target.value })}
-          />
-          <input
-            type="file"
-            accept="image/*"
-            className="text-xs"
-            onChange={(e) => readImageFile(e.target.files && e.target.files[0], (dataUrl) => setNewCategory({ ...newCategory, picture: dataUrl }))}
-          />
-          <button className="friendly-admin-primary" type="submit">
-            Add Category
-          </button>
-        </form>
-      </details>
-
-      {categories.length === 0 && (
-        <p className="text-gray-500">
-          No categories yet. Add your first rental category above, or click "Add from Catalog" to start from a
-          professionally structured template instead of building everything from scratch.
-        </p>
-      )}
-
-      {categories.length>0&&visibleCategories.length===0&&<div className="tenant-panel"><EmptyState title="No matching rental items" description="Try another search or choose All items."/></div>}
-      <div className="space-y-6">
-        {visibleCategories.map((category) => {
-          const categoryItems = items.filter((i) => i.categoryId === category.id&&matches(i));
-          const form = itemFormFor(category.id);
-          return (
-            <div key={category.id} className="friendly-admin-card">
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <div><h2 className="font-semibold text-base text-slate-800">{category.name} <span className="ml-2 rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-500">{categoryItems.length}</span></h2>{category.description&&<p className="mt-1 text-xs text-slate-500">{category.description}</p>}</div>
-                <button
-                  onClick={() => deleteCategory(category.id)}
-                  className="text-sm text-red-600 hover:underline"
-                >
-                  Delete Category
-                </button>
-              </div>
-
-              <div className="friendly-admin-table-wrap"><table data-inventory-cards className="friendly-admin-table mb-4">
-                <thead>
-                  <tr className="text-gray-500 border-b">
-                    <th className="py-1">Photo</th>
-                    <th className="py-1">Item</th>
-                    <th className="py-1">Price</th>
-                    <th className="py-1">Quantity</th>
-                    <th className="py-1">Visible</th>
-                    <th className="py-1">Condition</th>
-                    <th className="py-1">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {categoryItems.map((item) => {
-                    const itemAddons = addons.filter((a) => a.itemId === item.id);
-                    const addonForm = addonFormFor(item.id);
-                    return editingItemId === item.id && editForm ? (
-                      <tr key={item.id} className="border-b last:border-0">
-                        <td className="py-2" colSpan={7}>
-                          <div className="grid grid-cols-1 md:grid-cols-6 gap-2 items-center">
-                            <input
-                              className="border rounded px-2 py-1"
-                              value={editForm.name}
-                              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                              placeholder="Name"
-                            />
-                            <input
-                              className="border rounded px-2 py-1"
-                              value={editForm.description}
-                              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                              placeholder="Description"
-                            />
-                            <input
-                              className="border rounded px-2 py-1"
-                              value={editForm.cost}
-                              onChange={(e) => setEditForm({ ...editForm, cost: e.target.value })}
-                              placeholder="Cost"
-                            />
-                            <input
-                              className="border rounded px-2 py-1"
-                              value={editForm.acquisitionCost}
-                              onChange={(e) => setEditForm({ ...editForm, acquisitionCost: e.target.value })}
-                              placeholder="Acquisition cost (optional)"
-                            />
-                            <input
-                              className="border rounded px-2 py-1"
-                              value={editForm.quantity}
-                              onChange={(e) => setEditForm({ ...editForm, quantity: e.target.value })}
-                              placeholder="Qty"
-                            />
-                            <input
-                              className="border rounded px-2 py-1"
-                              value={editForm.picture}
-                              onChange={(e) => setEditForm({ ...editForm, picture: e.target.value })}
-                              placeholder="Picture URL"
-                            />
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="text-xs"
-                              onChange={(e) => readImageFile(e.target.files && e.target.files[0], (dataUrl) => setEditForm({ ...editForm, picture: dataUrl }))}
-                            />
-                            <select
-                              className="border rounded px-2 py-1"
-                              value={editForm.status}
-                              onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                            >
-                              <option value="available">Available</option>
-                              <option value="damaged">Damaged</option>
-                              <option value="needs_repair">Needs Repair</option>
-                              <option value="missing">Missing</option>
-                              <option value="out_of_service">Out of Service</option>
-                              <option value="retired">Retired</option>
-                            </select>
-                            <input
-                              type="date"
-                              className="border rounded px-2 py-1 text-xs"
-                              value={editForm.lastInspectedAt}
-                              onChange={(e) => setEditForm({ ...editForm, lastInspectedAt: e.target.value })}
-                            />
-                            <input
-                              type="date"
-                              className="border rounded px-2 py-1 text-xs"
-                              value={editForm.blockBookingsUntil}
-                              onChange={(e) => setEditForm({ ...editForm, blockBookingsUntil: e.target.value })}
-                            />
-                            <input
-                              className="border rounded px-2 py-1 text-xs"
-                              placeholder="Restriction message (optional)"
-                              value={editForm.restrictionMessage}
-                              onChange={(e) => setEditForm({ ...editForm, restrictionMessage: e.target.value })}
-                            />
-                            <input
-                              className="border rounded px-2 py-1 text-xs"
-                              placeholder="Attention notes (optional)"
-                              value={editForm.attentionNotes}
-                              onChange={(e) => setEditForm({ ...editForm, attentionNotes: e.target.value })}
-                            />
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => saveEdit(item.id)}
-                                className="friendly-admin-primary !min-h-0 !px-3 !py-1"
-                                type="button"
-                              >
-                                Save
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setEditingItemId(null);
-                                  setEditForm(null);
-                                }}
-                                className="text-sm text-gray-500"
-                                type="button"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      <Fragment key={item.id}>
-                        <tr className="border-b last:border-0">
-                          <td className="py-1">
-                            {item.picture ? (
-                              <img src={item.picture} alt={item.name} className="h-10 w-10 object-cover rounded" />
-                            ) : (
-                              <span className="text-gray-400 text-xs">No image</span>
-                            )}
-                          </td>
-                          <td data-label="Item" className="py-1"><a href={"/dashboard/inventory/"+item.id} className="font-semibold text-[#1a6fd4] hover:underline">{item.name}</a></td>
-                          <td className="py-1">
-                            ${item.cost.toFixed(2)}
-                            {item.acquisitionCost != null && (
-                              <div className="text-xs text-gray-400">Cost: ${item.acquisitionCost.toFixed(2)}</div>
-                            )}
-                          </td>
-                          <td data-label="Quantity" className="py-1">{item.quantity}</td>
-                          <td className="py-1">
-                            <input
-                              type="checkbox"
-                              aria-label={"Show "+item.name+" on website"}
-                              checked={item.displayToCustomer}
-                              onChange={() => toggleVisible(item)}
-                            />
-                          </td>
-                          <td className="py-1">
-                            <StatusBadge status={item.status||"available"}/>
-                          </td>
-                          <td data-label="Actions" className="py-1 space-x-2">
-                            <button onClick={() => startEdit(item)} className="text-[#1a6fd4] hover:underline">
-                              Edit
-                            </button>
-                            <button onClick={() => deleteItem(item.id)} className="text-red-600 hover:underline">
-                              Delete
-                            </button>
-                            <button
-                              onClick={() =>
-                                setExpandedAddonItemId(expandedAddonItemId === item.id ? null : item.id)
-                              }
-                              className="text-[#1a6fd4] hover:underline"
-                            >
-                              Add-ons ({itemAddons.length})
-                            </button>
-                            <button
-                              onClick={() =>
-                                setExpandedUnitsItemId(expandedUnitsItemId === item.id ? null : item.id)
-                              }
-                              className="text-emerald-700 hover:underline"
-                            >
-                              Units
-                            </button>
-                          </td>
-                        </tr>
-                        {expandedAddonItemId === item.id && (
-                          <tr key={item.id + "-addons"} className="border-b last:border-0 bg-indigo-50">
-                            <td colSpan={7} className="py-3 px-2">
-                              <div className="text-xs font-semibold text-gray-600 mb-2">
-                                Add-ons for {item.name}
-                              </div>
-                              {itemAddons.length === 0 && (
-                                <p className="text-xs text-gray-400 mb-2">No add-ons yet.</p>
-                              )}
-                              <ul className="space-y-1 mb-3">
-                                {itemAddons.map((addon) => (
-                                  <li key={addon.id} className="flex items-center justify-between text-sm">
-                                    <span>
-                                      {addon.name} - ${addon.price.toFixed(2)}
-                                      {addon.isRequired ? " (required)" : ""}
-                                    </span>
-                                    <button
-                                      onClick={() => deleteAddon(addon.id)}
-                                      className="text-red-600 hover:underline text-xs"
-                                    >
-                                      Remove
-                                    </button>
-                                  </li>
-                                ))}
-                              </ul>
-                              <form
-                                onSubmit={(e) => addAddon(item.id, e)}
-                                className="grid grid-cols-1 md:grid-cols-4 gap-2"
-                              >
-                                <input
-                                  className="border rounded px-2 py-1"
-                                  placeholder="Add-on name"
-                                  value={addonForm.name}
-                                  onChange={(e) =>
-                                    setAddonFormFor(item.id, { ...addonForm, name: e.target.value })
-                                  }
-                                />
-                                <input
-                                  className="border rounded px-2 py-1"
-                                  placeholder="Price"
-                                  value={addonForm.price}
-                                  onChange={(e) =>
-                                    setAddonFormFor(item.id, { ...addonForm, price: e.target.value })
-                                  }
-                                />
-                                <label className="flex items-center gap-2 text-sm">
-                                  <input
-                                    type="checkbox"
-                                    checked={addonForm.isRequired}
-                                    onChange={(e) =>
-                                      setAddonFormFor(item.id, { ...addonForm, isRequired: e.target.checked })
-                                    }
-                                  />
-                                  Required
-                                </label>
-                                <button className="friendly-admin-primary !min-h-0 !px-3 !py-1" type="submit">
-                                  Add
-                                </button>
-                              </form>
-                            </td>
-                          </tr>
-                        )}
-                        {expandedUnitsItemId === item.id && (
-                          <tr key={item.id + "-units"} className="border-b last:border-0 bg-emerald-50">
-                            <td colSpan={7} className="py-3 px-2">
-                              <ItemUnitsPanel itemId={item.id} itemName={item.name} quantity={item.quantity} />
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
-                    );
-                  })}
-                  {categoryItems.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="py-2 text-gray-400 text-sm">
-                        No items in this category yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table></div>
-
-              <details className="mt-3 border-t border-slate-100 pt-4"><summary className="cursor-pointer text-sm font-semibold text-emerald-700">Add an item to {category.name}</summary><form
-                onSubmit={(e) => addItem(category.id, e)}
-                className="mt-4 grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-3"
-              >
-                <input
-                  className="border rounded px-2 py-1"
-                  placeholder="Item name"
-                  value={form.name}
-                  onChange={(e) => setItemFormFor(category.id, { ...form, name: e.target.value })}
-                />
-                <input
-                  className="border rounded px-2 py-1"
-                  placeholder="Description"
-                  value={form.description}
-                  onChange={(e) => setItemFormFor(category.id, { ...form, description: e.target.value })}
-                />
-                <input
-                  className="border rounded px-2 py-1"
-                  placeholder="Cost"
-                  value={form.cost}
-                  onChange={(e) => setItemFormFor(category.id, { ...form, cost: e.target.value })}
-                />
-                <input
-                  className="border rounded px-2 py-1"
-                  placeholder="Acquisition cost (optional)"
-                  value={form.acquisitionCost}
-                  onChange={(e) => setItemFormFor(category.id, { ...form, acquisitionCost: e.target.value })}
-                />
-                <input
-                  className="border rounded px-2 py-1"
-                  placeholder="Qty"
-                  value={form.quantity}
-                  onChange={(e) => setItemFormFor(category.id, { ...form, quantity: e.target.value })}
-                />
-                <input
-                  className="border rounded px-2 py-1"
-                  placeholder="Picture URL"
-                  value={form.picture}
-                  onChange={(e) => setItemFormFor(category.id, { ...form, picture: e.target.value })}
-                />
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="text-xs"
-                  onChange={(e) => readImageFile(e.target.files && e.target.files[0], (dataUrl) => setItemFormFor(category.id, { ...form, picture: dataUrl }))}
-                />
-                <button className="friendly-admin-primary !min-h-0 !px-3 !py-1" type="submit">
-                  Add Item
-                </button>
-              </form></details>
-            </div>
-          );
-        })}
-      </div>
+  return <div className="friendly-admin-page is-wide">
+    <div className="friendly-admin-head">
+      <div><h1>Items</h1><p>{total} rental item{total===1?"":"s"}</p></div>
+      <InventoryActions/>
     </div>
-  );
+
+    <div className="friendly-admin-tabs">
+      <span className="friendly-admin-tab is-active">Browse Mode</span>
+      <Link href="/dashboard/categories" className="friendly-admin-tab">Categories</Link>
+      <Link href="/dashboard/inventory/packages" className="friendly-admin-tab">Packages</Link>
+      <span className="friendly-admin-tab text-slate-400">Spreadsheet Mode</span>
+    </div>
+
+    <section className="friendly-admin-card accent-blue">
+      <form method="get" className="friendly-admin-filters">
+        <label className="min-w-[210px] flex-1"><span>Search</span><input name="q" defaultValue={q} placeholder="Search items..." className="w-full"/></label>
+        <label><span>Category</span><select name="category" defaultValue={categoryId}><option value="">All Categories (browse)</option>{categories.map(category=><option key={category.id} value={category.id}>{category.name} ({category._count.items})</option>)}</select></label>
+        <label><span>View</span><select name="view" defaultValue={view}><option value="all">All items</option><option value="attention">Needs attention</option><option value="visible">Visible on website</option><option value="hidden">Hidden from website</option></select></label>
+        <button type="submit" className="friendly-admin-secondary">Apply</button>
+        {(q||categoryId||view!=="all")&&<Link href="/dashboard/inventory" className="friendly-admin-secondary">Clear</Link>}
+        <span className="ml-auto text-xs text-slate-500">{items.length} of {total} records</span>
+      </form>
+    </section>
+
+    <section className="friendly-admin-card flush">
+      <div className="friendly-admin-table-wrap">
+        <table data-inventory-cards className="friendly-admin-table">
+          <thead className="bg-[#2d6a2d] !text-white"><tr><th className="!text-white">Photo</th><th className="!text-white">Name</th><th className="!text-white">Price</th><th className="!text-white">Qty</th><th className="!text-white">Category</th><th className="!text-white">Display</th><th className="!text-white">Condition</th><th className="!text-white">Actions</th></tr></thead>
+          <tbody>{items.map(item=><tr key={item.id}>
+            <td data-label="Photo">{item.picture?<img src={item.picture} alt="" className="h-10 w-10 rounded object-cover"/>:<span className="text-[10px] text-slate-400">No image</span>}</td>
+            <td data-label="Item"><Link href={"/dashboard/inventory/"+item.id} className="font-semibold">{item.name}</Link><div className="mt-1 text-[9px] text-slate-400">{item._count.addons} add-on{item._count.addons===1?"":"s"} · {item._count.units} tracked unit{item._count.units===1?"":"s"}</div></td>
+            <td data-label="Price" className="numeric">{money(item.cost)}{item.acquisitionCost!=null&&<div className="text-[9px] text-slate-400">Acq. {money(item.acquisitionCost)}</div>}</td>
+            <td data-label="Quantity" className="numeric">{item.quantity}</td>
+            <td data-label="Category">{item.category.name}</td>
+            <td data-label="Display" className="text-center">{item.displayToCustomer?"✓":"✗"}</td>
+            <td data-label="Condition"><span className={"friendly-admin-badge "+(item.status==="available"?"green":item.status==="missing"||item.status==="retired"?"red":"yellow")}>{item.status.replaceAll("_"," ")}</span></td>
+            <td data-label="Actions"><Link href={"/dashboard/inventory/"+item.id} className="text-xs font-semibold text-[#1a6fd4] hover:underline">Edit</Link></td>
+          </tr>)}
+          {!items.length&&<tr><td colSpan={8} className="friendly-admin-empty">No items found.</td></tr>}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <div className="friendly-admin-pager"><span>{total?((page-1)*100+1)+"–"+Math.min(page*100,total)+" of "+total:"0 items"}</span><div className="flex items-center gap-2">{page>1&&<Link href={href({page:String(page-1)})} className="friendly-admin-secondary">Previous</Link>}<span>Page {page} of {pages}</span>{page<pages&&<Link href={href({page:String(page+1)})} className="friendly-admin-secondary">Next</Link>}</div></div>
+  </div>;
 }
