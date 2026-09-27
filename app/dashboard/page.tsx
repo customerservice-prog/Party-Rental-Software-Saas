@@ -103,7 +103,7 @@ export default async function DashboardHomePage({searchParams:searchParamsPromis
   </div>
 
   <section className="tenant-panel phase3-payments">
-   <SectionHeading title="Monthly Payments Received" description="Recorded payments less refunds over the last 13 months" href="/dashboard/reports?tab=payments" label="Open payments report"/>
+   <SectionHeading title="Monthly Payments Received" description="Recorded payments less refunds over the last 13 months" href="/dashboard/reports/overview?tab=payments" label="Open payments report"/>
    <div className="phase3-payments-chart"><MonthlyPaymentsChart data={monthlyPayments}/></div>
   </section>
  </div>;
