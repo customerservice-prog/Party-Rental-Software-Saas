@@ -73,8 +73,7 @@ export default async function SchedulingPage({
           <p>Calendar view of event dates, deliveries, pickups, and closed days.</p>
         </div>
         <div className="friendly-admin-actions">
-          <Link href="/dashboard/orders" className="friendly-admin-secondary">View all orders</Link>
-          <Link href="/dashboard/orders/new" className="friendly-admin-primary">+ New Order</Link>
+          <Link href="/dashboard/orders/new" className="friendly-admin-primary">+ BOOK</Link>
         </div>
       </div>
 
