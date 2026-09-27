@@ -46,7 +46,7 @@ export default function OrderScheduleEditor({
     {message&&<p className={"px-3 pb-2 text-[10px] "+(message==="Schedule updated."?"text-green-700":"text-red-600")}>{message}</p>}
     {open&&<div className="grid gap-3 border-t border-slate-200 p-3">
       <label className="text-[10px] font-bold text-slate-500">Event date
-        <input type="date" className="friendly-admin-field mt-1 w-full" value={form.eventDate} onChange={e=>setForm({...form,eventDate:e.target.value,eventEndDate:form.eventEndDate<form.eventDate?e.target.value:form.eventEndDate})}/>
+        <input type="date" className="friendly-admin-field mt-1 w-full" value={form.eventDate} onChange={e=>setForm({...form,eventDate:e.target.value,eventEndDate:form.eventEndDate<e.target.value?e.target.value:form.eventEndDate})}/>
       </label>
       <label className="text-[10px] font-bold text-slate-500">End date
         <input type="date" min={form.eventDate} className="friendly-admin-field mt-1 w-full" value={form.eventEndDate} onChange={e=>setForm({...form,eventEndDate:e.target.value})}/>
