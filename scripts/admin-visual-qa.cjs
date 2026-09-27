@@ -109,19 +109,20 @@ async function main(){
    report.checks.push(viewport.name+': customer detail keeps contacts and credits in the main workspace');
    await page.goto('http://localhost:3000/dashboard');
    if(viewport.width>=1024){
-     await page.locator('summary').filter({hasText:'More'}).click();
-     const morePanel=page.locator('.tenant-parity-more .tenant-more-panel');
-     await morePanel.getByRole('link',{name:'Orders',exact:true}).waitFor();
-     await morePanel.getByRole('link',{name:'Inventory',exact:true}).waitFor();
-     await page.locator('summary').filter({hasText:'More'}).click();
+     const nav=page.getByRole('navigation',{name:'Tenant navigation'});
+     for(const label of ['Home','Edit Website','Admin','Scheduling','Customers','Do Not Rent','Delivery','Reports','Analytics','Marketing']) await nav.getByRole('link',{name:label,exact:true}).waitFor();
+     assert.equal(await page.locator('.tenant-parity-more').count(),0,'Desktop tenant navigation should not add a More tab that Friendly admin does not have');
    }else{
      await page.getByRole('button',{name:'Toggle menu'}).click();
      const mobileMenu=page.locator('#tenant-mobile-menu');
-     await mobileMenu.getByRole('link',{name:'Orders',exact:true}).waitFor();
-     await mobileMenu.getByRole('link',{name:'Inventory',exact:true}).waitFor();
+     for(const label of ['Home','Edit Website','Admin','Scheduling','Customers','Do Not Rent','Delivery','Reports','Analytics','Marketing']) await mobileMenu.getByRole('link',{name:label,exact:true}).waitFor();
      await page.getByRole('button',{name:'Toggle menu'}).click();
    }
-   report.checks.push(viewport.name+': Friendly-style navigation exposes tenant operations');
+   const allTools=page.locator('details').filter({hasText:'All tools'});
+   await allTools.locator('summary').click();
+   await allTools.getByRole('link',{name:'Orders',exact:true}).waitFor();
+   await allTools.getByRole('link',{name:'Items',exact:true}).waitFor();
+   report.checks.push(viewport.name+': Friendly-style ten-tab navigation plus Home all-tools hub rendered');
    await page.goto('http://localhost:3000/dashboard/website');
    await page.getByText('Website tools',{exact:true}).waitFor();
    await page.getByRole('link',{name:'Inventory',exact:true}).waitFor();
