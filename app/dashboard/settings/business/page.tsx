@@ -29,6 +29,7 @@ type ClosedDate = {
 };
 
 export default function SettingsPage() {
+  const [focusHash, setFocusHash] = useState("");
   const [profile, setProfile] = useState({
     name: "",
     contactEmail: "",
@@ -109,6 +110,13 @@ export default function SettingsPage() {
   });
   const [pricingMessage, setPricingMessage] = useState("");
   const [savingPricing, setSavingPricing] = useState(false);
+
+  useEffect(() => {
+    const syncHash=()=>setFocusHash(window.location.hash);
+    syncHash();
+    window.addEventListener("hashchange",syncHash);
+    return()=>window.removeEventListener("hashchange",syncHash);
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -455,9 +463,21 @@ export default function SettingsPage() {
   const sectionClass = "friendly-admin-card";
   const sectionTitleClass = "friendly-admin-card-title";
 
+  const focusedTitle:Record<string,string>={
+    "#company-info":"Company Info",
+    "#website":"Website Settings",
+    "#seo":"Search Engine Optimization",
+    "#order-pricing":"Order & Pricing Settings",
+    "#business-hours":"Business Hours",
+    "#closed-dates":"Closed Dates",
+    "#email":"Email Sending",
+    "#sms":"Text Messaging",
+    "#payments":"Payments",
+  };
+
   return (
-    <div className="friendly-admin-page">
-      <div className="friendly-admin-head"><div><h1>Business Settings</h1><p>Company, website, pricing, hours, messaging, and payment settings.</p></div></div>
+    <div className="friendly-admin-page business-settings-focus" data-focus={focusHash||"all"}>
+      <div className="friendly-admin-head"><div><h1>{focusedTitle[focusHash]||"Business Settings"}</h1><p>{focusHash?"Edit this setting for your rental business.":"Company, website, pricing, hours, messaging, and payment settings."}</p></div></div>
 
       <div className={sectionClass}>
         <h2 id="company-info" className={sectionTitleClass}>Profile</h2>
