@@ -87,13 +87,10 @@ export default function SettingsPage(){
     <h1 className="mb-6 text-xl font-bold text-[#1a1a1a]">Settings</h1>
 
     <div className="space-y-4">
-      {sections.map(section=><section key={section.title} className="friendly-admin-settings-section">
+      {sections.map(section=>({...section,items:section.items.filter(item=>item.href)})).filter(section=>section.items.length).map(section=><section key={section.title} className="friendly-admin-settings-section">
         <h2>{section.title}</h2>
         <div className="friendly-admin-settings-grid">
-          {section.items.map(item=>item.href
-            ?<Link key={item.label} href={item.href}>{item.label}</Link>
-            :<span key={item.label} className="text-slate-400" title="Not available in this tenant yet">{item.label}</span>
-          )}
+          {section.items.map(item=><Link key={item.label} href={item.href!}>{item.label}</Link>)}
         </div>
       </section>)}
     </div>
