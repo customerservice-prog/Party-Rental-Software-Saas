@@ -15,7 +15,8 @@ test('tenant inventory exposes dedicated new, item, and category workspaces', ()
   ]) assert.ok(fs.existsSync(path.join(root, file)), file+' should exist');
 
   const inventory = read('app/dashboard/inventory/page.tsx');
-  assert.match(inventory, /\/dashboard\/inventory\/new/);
+  const actions = read('app/dashboard/inventory/InventoryActions.tsx');
+  assert.match(actions, /\/dashboard\/inventory\/new/);
   assert.match(inventory, /\/dashboard\/categories/);
   assert.match(inventory, /\/dashboard\/inventory\/"\+item\.id/);
 
