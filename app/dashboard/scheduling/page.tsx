@@ -34,7 +34,7 @@ function serializeOrder(order: any) {
 export default async function SchedulingPage({
   searchParams: searchParamsPromise,
 }: {
-  searchParams: Promise<{ year?: string; month?: string }>;
+  searchParams: Promise<{ year?: string; month?: string; date?: string }>;
 }) {
   const searchParams = await searchParamsPromise;
 
@@ -80,6 +80,7 @@ export default async function SchedulingPage({
 
       <SchedulingCalendar
         year={year}
+        initialSelectedDay={typeof searchParams.date==="string"?searchParams.date:null}
         month={month}
         businessHours={businessHours}
         closedDates={closedDates.map((d) => d.date.toISOString())}
