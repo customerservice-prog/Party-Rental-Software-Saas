@@ -83,6 +83,7 @@ const sections:SettingSection[]=[
   {title:"Party Rental CRM Account",items:[
     {label:"Business Settings",href:"/dashboard/settings/business"},
     {label:"Plan & Billing",href:"/dashboard/settings/billing"},
+    {label:"Apps & Add-ons",href:"/dashboard/apps"},
     {label:"Sign-in Sessions",href:"/dashboard/sessions"},
     {label:"Staff Accounts",href:"/dashboard/staff"},
     {label:"Roles & Permissions",href:"/dashboard/roles"},
