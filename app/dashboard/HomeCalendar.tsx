@@ -32,6 +32,7 @@ const filters=[
   ["all","All Orders"],
 ] as const;
 type Filter=typeof filters[number][0];
+type JobFilter="all"|"delivery"|"pickup";
 
 const months=["January","February","March","April","May","June","July","August","September","October","November","December"];
 
@@ -52,8 +53,9 @@ function statusLabel(status:string){return status==="pending"?"Incomplete":statu
 export default function HomeCalendar({year,month,orders,todayKey}:{year:number;month:number;orders:CalendarOrder[];todayKey?:string}){
   const router=useRouter();
   const[filter,setFilter]=useState<Filter>("active");
+  const[jobFilter,setJobFilter]=useState<JobFilter>("all");
   const[selectedKey,setSelectedKey]=useState<string|null>(null);
-  const filtered=useMemo(()=>orders.filter(order=>matches(order,filter)),[orders,filter]);
+  const filtered=useMemo(()=>orders.filter(order=>matches(order,filter)&&(jobFilter==="all"||(jobFilter==="pickup"?order.deliveryType==="pickup":order.deliveryType!=="pickup"))),[orders,filter,jobFilter]);
   const info=useMemo(()=>{
     const map=new Map<string,{delivery:number;pickup:number}>();
     filtered.forEach(order=>{
@@ -89,7 +91,18 @@ export default function HomeCalendar({year,month,orders,todayKey}:{year:number;m
     </div>
 
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/70 px-3 py-2.5 sm:px-4">
-      <select aria-label="Calendar order status" value={filter} onChange={e=>setFilter(e.target.value as Filter)} className="min-w-[190px] rounded border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700">{filters.map(([key,label])=><option key={key} value={key}>{label}</option>)}</select>
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="text-[10px] font-bold text-slate-500">Status
+          <select aria-label="Calendar order status" value={filter} onChange={e=>setFilter(e.target.value as Filter)} className="ml-2 min-w-[180px] rounded border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700">{filters.map(([key,label])=><option key={key} value={key}>{label}</option>)}</select>
+        </label>
+        <label className="text-[10px] font-bold text-slate-500">Job type
+          <select aria-label="Calendar job type" value={jobFilter} onChange={e=>setJobFilter(e.target.value as JobFilter)} className="ml-2 rounded border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700">
+            <option value="all">All jobs</option>
+            <option value="delivery">Delivery / drop-off</option>
+            <option value="pickup">Customer pickup</option>
+          </select>
+        </label>
+      </div>
       <div className="flex items-center gap-3 text-[11px] font-bold text-slate-500">
         <span>{filtered.length} order{filtered.length===1?"":"s"}</span>
         <span className="flex items-center gap-1"><i className="h-2.5 w-2.5 rounded-full bg-emerald-500"/>Delivery</span>
@@ -109,7 +122,7 @@ export default function HomeCalendar({year,month,orders,todayKey}:{year:number;m
     {selectedKey&&<div className="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/50 p-4" onClick={()=>setSelectedKey(null)}>
       <div className="my-8 w-full max-w-5xl overflow-hidden rounded-lg bg-slate-50 shadow-2xl" onClick={event=>event.stopPropagation()}>
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
-          <div><h2 className="text-lg font-bold text-slate-900">Orders for {selectedDate?.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</h2><p className="mt-1 text-xs text-slate-500">{dayOrders.length} matching {dayOrders.length===1?"order":"orders"} · {filters.find(([key])=>key===filter)?.[1]}</p></div>
+          <div><h2 className="text-lg font-bold text-slate-900">Orders for {selectedDate?.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</h2><p className="mt-1 text-xs text-slate-500">{dayOrders.length} matching {dayOrders.length===1?"order":"orders"} · {filters.find(([key])=>key===filter)?.[1]} · {jobFilter==="all"?"All jobs":jobFilter==="pickup"?"Customer pickup":"Delivery / drop-off"}</p></div>
           <button onClick={()=>setSelectedKey(null)} className="px-2 text-2xl font-bold text-slate-400 hover:text-slate-700" aria-label="Close day orders">×</button>
         </div>
         <div className="p-4">
