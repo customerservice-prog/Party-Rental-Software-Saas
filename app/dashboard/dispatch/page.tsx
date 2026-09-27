@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {useSearchParams} from "next/navigation";
 import {
   STOP_STATUS_LABELS,
   ATTENTION_STATUSES,
@@ -46,7 +47,10 @@ function addDays(iso: string, days: number) {
 }
 
 export default function DispatchPage() {
-  const [date, setDate] = useState(todayIso());
+  const searchParams=useSearchParams();
+  const requestedDate=searchParams.get("date");
+  const initialDate=requestedDate&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate)?requestedDate:todayIso();
+  const [date, setDate] = useState(initialDate);
   const [data, setData] = useState<DispatchData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -69,6 +73,10 @@ export default function DispatchPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(()=>{
+    if(requestedDate&&/^\d{4}-\d{2}-\d{2}$/.test(requestedDate)&&requestedDate!==date)setDate(requestedDate);
+  },[requestedDate,date]);
 
   async function assign(orderId: string, driverId: string) {
     if (!driverId) return;
