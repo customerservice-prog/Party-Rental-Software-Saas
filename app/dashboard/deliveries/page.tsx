@@ -124,7 +124,7 @@ export default async function DeliveriesPage({searchParams:searchParamsPromise}:
         {["active","all","cancelled"].map(value=><Link key={value} href={queryHref(month,year,selectedDate,type,value)} className={"friendly-admin-secondary !min-h-0 !px-3 !py-1 "+(status===value?"!border-green-700 !bg-green-50 !text-green-800":"")}>{value==="active"?"Active":value==="all"?"All statuses":"Canceled"}</Link>)}
       </div>
 
-      <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">{WEEKDAYS.map((label,index)=><div key={index} className="py-2 text-center text-[10px] font-extrabold text-slate-500">{label}</div>)}</div>
+      <div className="grid grid-cols-7 border-b border-green-800 bg-[#2d6a2d]">{WEEKDAYS.map((label,index)=><div key={index} className="py-2 text-center text-[10px] font-extrabold text-white">{label}</div>)}</div>
       <div className="grid grid-cols-7">
         {cells.map((cell,index)=>{
           if(!cell)return <div key={"blank-"+index} className="min-h-[88px] border-b border-r border-slate-100 bg-slate-50/40"/>;
