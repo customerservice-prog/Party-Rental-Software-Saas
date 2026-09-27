@@ -101,10 +101,15 @@ export default async function DeliveriesPage({searchParams:searchParamsPromise}:
 
     <section className="friendly-admin-card !p-0 overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Link href={queryHref(prevMonth,prevYear,undefined,type,status)} className="friendly-admin-secondary !min-h-0 !px-3 !py-1">←</Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <form action="/dashboard/orders" method="get" className="flex items-center gap-2">
+            <input name="q" aria-label="Search orders or customers" placeholder="Name, phone, email, or order #" className="friendly-admin-field w-[220px] max-w-full"/>
+            <button type="submit" className="friendly-admin-secondary !min-h-0 !px-3 !py-1">Search &gt;&gt;</button>
+          </form>
+          <Link href={queryHref(prevMonth,prevYear,undefined,type,status)} className="friendly-admin-secondary !min-h-0 !px-3 !py-1">Prev</Link>
           <strong className="min-w-[150px] text-center text-sm">{MONTHS[month]} {year}</strong>
-          <Link href={queryHref(nextMonth,nextYear,undefined,type,status)} className="friendly-admin-secondary !min-h-0 !px-3 !py-1">→</Link>
+          <Link href={queryHref(nextMonth,nextYear,undefined,type,status)} className="friendly-admin-secondary !min-h-0 !px-3 !py-1">Next</Link>
+          <Link href={queryHref(now.getMonth(),now.getFullYear(),undefined,type,status)} className="friendly-admin-secondary !min-h-0 !px-3 !py-1">This Month</Link>
         </div>
         <div className="flex flex-wrap gap-2 text-xs">
           <span className="rounded bg-blue-50 px-2 py-1 font-semibold text-blue-700">{deliveryCount} deliveries</span>
