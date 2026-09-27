@@ -105,6 +105,25 @@ async function main(){
    const customerHref=await page.getByRole('link',{name:'CI Visual Customer',exact:true}).getAttribute('href');
    assert.ok(customerHref&&customerHref.startsWith('/dashboard/customers/'),'Customer detail link is missing');
    await inspect(customerHref,'tenant-customer-detail');
+   await page.getByText('Contacts, Credits & Rainchecks',{exact:true}).waitFor();
+   report.checks.push(viewport.name+': customer detail keeps contacts and credits in the main workspace');
+   await page.goto('http://localhost:3000/dashboard');
+   if(viewport.width>=1024){
+     await page.locator('summary').filter({hasText:'More'}).click();
+     await page.getByRole('link',{name:'Orders',exact:true}).waitFor();
+     await page.getByRole('link',{name:'Inventory',exact:true}).waitFor();
+     await page.keyboard.press('Escape').catch(()=>{});
+   }else{
+     await page.getByRole('button',{name:'Toggle menu'}).click();
+     await page.getByRole('link',{name:'Orders',exact:true}).waitFor();
+     await page.getByRole('link',{name:'Inventory',exact:true}).waitFor();
+     await page.getByRole('button',{name:'Toggle menu'}).click();
+   }
+   report.checks.push(viewport.name+': Friendly-style navigation exposes tenant operations');
+   await page.goto('http://localhost:3000/dashboard/website');
+   await page.getByText('Website tools',{exact:true}).waitFor();
+   await page.getByRole('link',{name:'Inventory',exact:true}).waitFor();
+   report.checks.push(viewport.name+': website builder exposes real management tools');
    await page.goto('http://localhost:3000/dashboard/orders');
    const orderHref=await page.getByRole('link',{name:'CI-ORDER-1001',exact:true}).getAttribute('href');
    assert.ok(orderHref&&orderHref.startsWith('/dashboard/orders/'),'Order detail link is missing');
