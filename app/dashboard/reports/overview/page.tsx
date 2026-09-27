@@ -62,7 +62,7 @@ const params = new URLSearchParams();
 params.set("tab", tabKey);
 if (fromParam) params.set("from", fromParam);
 if (toParam) params.set("to", toParam);
-return `/dashboard/reports?${params.toString()}`;
+return `/dashboard/reports/overview?${params.toString()}`;
 }
 
 const [
