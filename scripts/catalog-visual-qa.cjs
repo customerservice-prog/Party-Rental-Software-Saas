@@ -39,7 +39,7 @@ async function main(){
    assert.ok(copied.every(i=>i.picture==='/logo.png'&&i.description.includes('copied')&&i.displayToCustomer===false));
    const table=page.locator('table[data-inventory-cards]').first();await table.waitFor();
    if(viewport.width<640){const dimensions=await table.evaluate(el=>({width:el.clientWidth,content:el.scrollWidth}));assert.ok(dimensions.content<=dimensions.width+1,'Populated mobile inventory overflows');assert.ok(await table.locator('td[data-label="Actions"]').count());}
-   assert.ok(await page.getByRole('img',{name:'CI Catalog Chair',exact:true}).isVisible());
+   await page.getByRole('img',{name:'CI Catalog Chair',exact:true}).waitFor({state:'visible'});
    await page.screenshot({path:`${out}/${viewport.width}-populated-inventory.png`,fullPage:true});
    await table.getByRole('link',{name:'CI Catalog Chair',exact:true}).click();await page.waitForURL('**/dashboard/inventory/**');
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);assert.equal(overflow,false,'Item workspace overflows');
