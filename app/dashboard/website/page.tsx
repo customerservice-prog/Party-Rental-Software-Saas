@@ -330,7 +330,7 @@ export default function WebsiteEditorPage() {
   }
 
   return (
-    <div className="-m-6 flex h-[calc(100vh-4rem)] flex-col friendly-legacy-page !max-w-none !p-0">
+    <div className="website-editor-shell flex h-[calc(100vh-4rem)] w-full min-w-0 max-w-full flex-col overflow-hidden friendly-legacy-page !max-w-none !p-0">
       <input
         ref={fileInputRef}
         type="file"
@@ -340,7 +340,7 @@ export default function WebsiteEditorPage() {
       />
 
       {/* Global toolbar */}
-      <div className="flex flex-wrap items-center gap-3 border-b bg-white px-4 py-2 shadow-sm">
+      <div className="flex min-w-0 max-w-full flex-wrap items-center gap-3 border-b bg-white px-4 py-2 shadow-sm max-sm:px-3">
         <h1 className="text-sm font-semibold text-gray-900">Website Builder</h1>
 
         <span
@@ -363,7 +363,7 @@ export default function WebsiteEditorPage() {
           {saveStatus === "error" && "Error saving - retry by editing again"}
         </span>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex min-w-0 max-w-full flex-wrap items-center gap-2 max-sm:ml-0 max-sm:w-full">
           <button
             type="button"
             onClick={undo}
@@ -381,7 +381,7 @@ export default function WebsiteEditorPage() {
             Redo
           </button>
 
-          <div className="flex items-center rounded border">
+          <div className="flex min-w-0 items-center rounded border">
             {(["desktop", "tablet", "mobile"] as Device[]).map((d) => (
               <button
                 key={d}
@@ -468,7 +468,7 @@ export default function WebsiteEditorPage() {
       )}
 
       {/* Canvas */}
-      <div className="flex-1 overflow-auto bg-gray-100 p-6" onClick={() => setSelectedId(null)}>
+      <div className="min-w-0 max-w-full flex-1 overflow-auto bg-gray-100 p-6 max-sm:p-2" onClick={() => setSelectedId(null)}>
         <div
           className="mx-auto min-h-full bg-white shadow"
           style={{ width: DEVICE_WIDTH[device], maxWidth: "100%" }}
