@@ -21,6 +21,9 @@ type OrderLite = {
   taxAmount: number;
   totalAmount: number;
   amountPaid: number;
+  deliveryAddress: string | null;
+  internalNotes: string | null;
+  items: Array<{ name: string; quantity: number; price: number }>;
   contractSigned: boolean;
 };
 
@@ -118,10 +121,24 @@ export default function SchedulingCalendar({
       .filter((order) => matchesFilter(order, filter))
       .filter((order)=>jobFilter==="all"||(jobFilter==="pickup"?order.deliveryType==="pickup":order.deliveryType!=="pickup"))
       .forEach((order) => {
-        const key = dateKey(order[groupField] as string);
-        const list = map.get(key) || [];
-        list.push(order);
-        map.set(key, list);
+        const keys:string[]=[];
+        if(groupField==="createdAt"){
+          keys.push(dateKey(order.createdAt));
+        }else{
+          const startKey=dateKey(order.eventDate),endKey=dateKey(order.eventEndDate||order.eventDate);
+          let cursor=new Date(startKey+"T12:00:00Z"),guard=0;
+          const endDate=new Date(endKey+"T12:00:00Z");
+          while(cursor<=endDate&&guard<370){
+            keys.push(cursor.toISOString().slice(0,10));
+            cursor=new Date(cursor.getTime()+86400000);
+            guard++;
+          }
+        }
+        for(const key of keys){
+          const list = map.get(key) || [];
+          list.push(order);
+          map.set(key, list);
+        }
       });
     return map;
   }, [activeOrders, filter, groupField, jobFilter]);
@@ -279,9 +296,12 @@ export default function SchedulingCalendar({
                 day: "numeric",
               })}
             </h2>
-            <button onClick={() => setSelectedDay(null)} className="text-sm text-gray-500 hover:underline">
-              Close
-            </button>
+            <div className="flex items-center gap-2">
+              <Link href={`/dashboard/orders/new?date=${selectedDay}`} className="friendly-admin-primary">+ BOOK</Link>
+              <button onClick={() => setSelectedDay(null)} className="text-sm text-gray-500 hover:underline">
+                Close
+              </button>
+            </div>
           </div>
 
           {selectedOrders.length === 0 && (
@@ -308,6 +328,11 @@ export default function SchedulingCalendar({
                       {new Date(order.eventDate).toLocaleString()}
                       {order.eventEndDate ? " - " + new Date(order.eventEndDate).toLocaleString() : ""}
                     </div>
+                    {order.deliveryAddress && order.deliveryType!=="pickup" && <div className="rounded-md bg-slate-50 px-2 py-1.5 text-xs text-slate-600"><b>Delivery:</b> {order.deliveryAddress}</div>}
+                    {order.items.length>0 && <ul className="space-y-1 rounded-md border border-slate-100 bg-white p-2 text-xs text-slate-700">
+                      {order.items.map((item,index)=><li key={index} className="flex items-center justify-between gap-3"><span>{item.name} × {item.quantity}</span><span className="text-slate-400">{currency(item.price*item.quantity)}</span></li>)}
+                    </ul>}
+                    {order.internalNotes && <div className="whitespace-pre-wrap rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900"><b>Internal notes:</b> {order.internalNotes}</div>}
 
                     <div className="flex gap-3 text-xs">
                       {order.customerPhone && (

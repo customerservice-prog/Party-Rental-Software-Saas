@@ -51,12 +51,22 @@ export default async function CustomersPage({searchParams:searchParamsPromise}:{
   const restrictionAddresses=new Set(restrictions.map(r=>r.address?.trim().toLowerCase()).filter(Boolean));
 
   const customers=rows.map(customer=>{
-    let totalBooked=0,balance=0,lastOrder:Date|null=null,latestAt=customer.createdAt,latestType="Customer added";
+    const nonCanceled=customer.orders.filter(order=>!["canceled","cancelled"].includes(order.status.toLowerCase()));
+    const paidBookingDates=new Set(nonCanceled
+      .filter(order=>order.amountPaid>0&&["active","confirmed","completed"].includes(order.status.toLowerCase()))
+      .map(order=>order.eventDate.toISOString().slice(0,10)));
+    const bookingOrders=nonCanceled.filter(order=>{
+      const status=order.status.toLowerCase();
+      const convertedDraft=(status==="incomplete"||status==="pending")&&order.amountPaid<=0&&paidBookingDates.has(order.eventDate.toISOString().slice(0,10));
+      return !convertedDraft;
+    });
+    const bookingIds=new Set(bookingOrders.map(order=>order.id));
+    const excludedDraftCount=nonCanceled.length-bookingOrders.length;
+    let totalPaid=0,balance=0,lastOrder:Date|null=null,latestAt=customer.createdAt,latestType="Customer added";
     for(const order of customer.orders){
       const status=order.status.toLowerCase();
-      const booked=["active","confirmed","completed"].includes(status);
-      if(booked){
-        totalBooked+=order.totalAmount;
+      if(bookingIds.has(order.id)){
+        totalPaid+=Math.max(0,order.amountPaid);
         balance+=Math.max(0,order.totalAmount-order.amountPaid);
       }
       if(!lastOrder||ts(order.eventDate)>ts(lastOrder))lastOrder=order.eventDate;
@@ -71,7 +81,7 @@ export default async function CustomersPage({searchParams:searchParamsPromise}:{
     const emailRestricted=customer.email&&restrictionEmails.has(customer.email.trim().toLowerCase());
     const phoneRestricted=customer.phone&&restrictionPhones.has(customer.phone.replace(/\D/g,""));
     const addressRestricted=customer.address&&restrictionAddresses.has(customer.address.trim().toLowerCase());
-    return {...customer,totalBooked,balance,lastOrder,latestAt,latestType,restricted:Boolean(emailRestricted||phoneRestricted),addressRestricted:Boolean(!emailRestricted&&!phoneRestricted&&addressRestricted)};
+    return {...customer,orderCount:bookingOrders.length,totalPaid,balance,excludedDraftCount,lastOrder,latestAt,latestType,restricted:Boolean(emailRestricted||phoneRestricted),addressRestricted:Boolean(!emailRestricted&&!phoneRestricted&&addressRestricted)};
   }).sort((a,b)=>ts(b.latestAt)-ts(a.latestAt)||a.lastName.localeCompare(b.lastName)||a.firstName.localeCompare(b.firstName));
 
   const total=customers.length,pages=Math.max(1,Math.ceil(total/50)),page=Math.min(pages,Math.max(1,Math.floor(Number(searchParams.page)||1)));
@@ -104,14 +114,14 @@ export default async function CustomersPage({searchParams:searchParamsPromise}:{
     <section className="friendly-admin-card flush">
       <div className="friendly-admin-table-wrap">
         <table className="friendly-admin-table">
-          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th className="numeric"># Orders</th><th className="numeric">Total Booked</th><th className="numeric">Balance Due</th><th>Latest Activity</th></tr></thead>
+          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th className="numeric"># Orders</th><th className="numeric">Total Paid</th><th className="numeric">Balance Due</th><th>Latest Activity</th></tr></thead>
           <tbody>{pageCustomers.map(customer=><tr key={customer.id}>
             <td><Link href={"/dashboard/customers/"+customer.id}>{customer.firstName} {customer.lastName}</Link>{customer.restricted&&<span className="ml-2 friendly-admin-badge red">Do Not Rent</span>}{customer.addressRestricted&&<span className="ml-2 friendly-admin-badge yellow">Restricted Address</span>}</td>
             <td>{customer.email||"—"}</td>
             <td>{customer.phone||"—"}</td>
-            <td className="numeric">{customer.orders.length}</td>
-            <td className="numeric">{money(customer.totalBooked)}</td>
-            <td className={"numeric "+(customer.balance>0?"!text-red-600 font-semibold":"")}>{money(customer.balance)}</td>
+            <td className="numeric">{customer.orderCount}</td>
+            <td className="numeric">{money(customer.totalPaid)}</td>
+            <td className={"numeric "+(customer.balance>0?"!text-red-600 font-semibold":"")}>{money(customer.balance)}{customer.excludedDraftCount>0&&<div className="mt-1 text-[9px] font-normal text-slate-400">{customer.excludedDraftCount} converted checkout{customer.excludedDraftCount===1?"":"s"} excluded</div>}</td>
             <td><div className="font-medium text-slate-700">{customer.latestType}</div><time dateTime={customer.latestAt.toISOString()} className="text-[10px] text-slate-400">{customer.latestAt.toLocaleString("en-US",{timeZone:org.timezone||"America/New_York",month:"short",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"})}</time></td>
           </tr>)}
           {!pageCustomers.length&&<tr><td colSpan={7} className="friendly-admin-empty">No customers found.</td></tr>}</tbody>

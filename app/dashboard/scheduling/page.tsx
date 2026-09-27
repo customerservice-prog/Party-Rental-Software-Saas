@@ -27,6 +27,9 @@ function serializeOrder(order: any) {
     taxAmount: order.taxAmount,
     totalAmount: order.totalAmount,
     amountPaid: order.amountPaid,
+    deliveryAddress: order.deliveryAddress || null,
+    internalNotes: order.internalNotes || null,
+    items: order.items.map((line: any) => ({ name: line.item.name, quantity: line.quantity, price: line.price })),
     contractSigned: Boolean(order.contract && order.contract.signedAt),
   };
 }
@@ -54,13 +57,20 @@ export default async function SchedulingPage({
       where: { organizationId: organization.id, date: { gte: start, lt: end } },
     }),
     prisma.order.findMany({
-      where: { organizationId: organization.id, eventDate: { gte: start, lt: end } },
-      include: { customer: true, contract: true },
+      where: {
+        organizationId: organization.id,
+        eventDate: { lt: end },
+        OR: [
+          { eventEndDate: { gte: start } },
+          { eventEndDate: null, eventDate: { gte: start } },
+        ],
+      },
+      include: { customer: true, contract: true, items: { include: { item: true } } },
       orderBy: { eventDate: "asc" },
     }),
     prisma.order.findMany({
       where: { organizationId: organization.id, createdAt: { gte: start, lt: end } },
-      include: { customer: true, contract: true },
+      include: { customer: true, contract: true, items: { include: { item: true } } },
       orderBy: { createdAt: "asc" },
     }),
   ]);

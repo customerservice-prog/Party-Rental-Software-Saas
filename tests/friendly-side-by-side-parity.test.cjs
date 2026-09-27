@@ -250,3 +250,25 @@ test('inventory and delivery preserve Friendly green operational headers',()=>{
   assert.match(delivery,/bg-\[#2d6a2d\]/);
   assert.match(delivery,/text-white/);
 });
+
+
+test('customer money and scheduling day cards match Friendly operational meaning',()=>{
+  const customers=read('app/dashboard/customers/page.tsx');
+  const scheduling=read('app/dashboard/scheduling/page.tsx');
+  const calendar=read('app/dashboard/scheduling/SchedulingCalendar.tsx');
+  const newOrder=read('app/dashboard/orders/new/page.tsx');
+  assert.match(customers,/Total Paid/);
+  assert.doesNotMatch(customers,/Total Booked/);
+  assert.match(customers,/excludedDraftCount/);
+  assert.match(customers,/converted checkout/);
+  assert.match(scheduling,/internalNotes: order\.internalNotes/);
+  assert.match(scheduling,/items: order\.items\.map/);
+  assert.match(scheduling,/eventEndDate: \{ gte: start \}/);
+  assert.match(calendar,/order\.deliveryAddress/);
+  assert.match(calendar,/order\.internalNotes/);
+  assert.match(calendar,/order\.items\.map/);
+  assert.match(calendar,/guard<370/);
+  assert.match(calendar,/\/dashboard\/orders\/new\?date=/);
+  assert.match(newOrder,/requestedDate/);
+  assert.match(newOrder,/useState\(requestedDate\)/);
+});
