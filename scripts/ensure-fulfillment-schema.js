@@ -328,6 +328,32 @@ async function main() {
     )
   `);
 
+  // Tenant marketplace installations. The app catalog lives in source code,
+  // while this table records each business's accepted price, provisioning
+  // identity and eventual Stripe subscription-item linkage.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "TenantAppInstallation" (
+      "id" TEXT PRIMARY KEY,
+      "organizationId" TEXT NOT NULL REFERENCES "Organization"("id") ON DELETE CASCADE,
+      "appCode" TEXT NOT NULL,
+      "status" TEXT NOT NULL DEFAULT 'not_installed',
+      "billingInterval" TEXT NOT NULL DEFAULT 'monthly',
+      "priceCents" INTEGER NOT NULL DEFAULT 0,
+      "stripeSubscriptionItemId" TEXT,
+      "externalTenantId" TEXT,
+      "externalTenantSlug" TEXT,
+      "externalEmbedKey" TEXT,
+      "externalStatus" TEXT,
+      "errorMessage" TEXT,
+      "activatedAt" TIMESTAMP(3),
+      "canceledAt" TIMESTAMP(3),
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "TenantAppInstallation_org_app_unique" ON "TenantAppInstallation" ("organizationId","appCode")`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "TenantAppInstallation_app_status_idx" ON "TenantAppInstallation" ("appCode","status")`);
+
   // Staff-only order notes are additive and nullable so every existing order
   // remains unchanged. Production preparation runs this before DMMF parity
   // checks, avoiding unsafe broad schema synchronization.
