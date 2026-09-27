@@ -100,11 +100,14 @@ export default async function MarketingPage() {
 
   const TABS = [
     { label: "Overview", href: "/dashboard/marketing", active: true },
-    { label: "Campaigns", href: "/dashboard/message-templates" },
+    { label: "Automatic marketing", href: "/dashboard/automations" },
+    { label: "Campaign library", href: "/dashboard/message-templates" },
     { label: "Audiences", href: "/dashboard/customers" },
-    { label: "Automations", href: "/dashboard/automations" },
     { label: "Performance", href: "/dashboard/analytics" },
-    { label: "Settings", href: "/dashboard/settings" },
+    { label: "Send history", href: "/dashboard/messages" },
+    { label: "Review queue", href: "/dashboard/automations/schedule" },
+    { label: "Seasonal calendar", href: "/dashboard/scheduling" },
+    { label: "Settings", href: "/dashboard/settings/business#email" },
   ];
 
   const sectionStyle = {
@@ -136,11 +139,11 @@ export default async function MarketingPage() {
       <div className="friendly-admin-head">
         <div>
           <h1>Marketing</h1>
-          <p>{organization.name}&apos;s campaigns, audiences, and automations in one place.</p>
+          <p>Bring customers back and see which campaigns and automations lead to bookings.</p>
         </div>
         <div className="friendly-admin-actions">
-          <Link href="/dashboard/message-templates" className="friendly-admin-primary">Campaigns</Link>
-          <Link href="/dashboard/settings" className="friendly-admin-secondary">Settings</Link>
+          <Link href="/dashboard/message-templates" className="friendly-admin-primary">Campaign Library</Link>
+          <Link href="/dashboard/settings/business#email" className="friendly-admin-secondary">Settings</Link>
         </div>
       </div>
 
