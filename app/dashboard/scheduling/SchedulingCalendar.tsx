@@ -78,6 +78,7 @@ function currency(amount: number) {
 export default function SchedulingCalendar({
   year,
   month,
+  initialSelectedDay,
   businessHours,
   closedDates,
   ordersByEventDate,
@@ -85,6 +86,7 @@ export default function SchedulingCalendar({
 }: {
   year: number;
   month: number;
+  initialSelectedDay: string | null;
   businessHours: BusinessHour[];
   closedDates: string[];
   ordersByEventDate: OrderLite[];
@@ -92,7 +94,7 @@ export default function SchedulingCalendar({
 }) {
   const router = useRouter();
   const [filter, setFilter] = useState<FilterKey>("all");
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [selectedDay, setSelectedDay] = useState<string | null>(initialSelectedDay);
   const [taskDrafts, setTaskDrafts] = useState<Record<string, string>>({});
   const [savingTaskFor, setSavingTaskFor] = useState<string | null>(null);
 
