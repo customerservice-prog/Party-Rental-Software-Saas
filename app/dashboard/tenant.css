@@ -534,3 +534,52 @@
   .print-document .friendly-admin-table{font-size:10px!important}
   .print-document a{color:inherit!important;text-decoration:none!important}
 }
+
+
+/* Friendly admin parity: tenant top navigation */
+.tenant-parity-nav{position:relative;display:flex;height:80px;align-items:center;justify-content:space-between;gap:8px;padding:0 12px;background:#2d6a2d;border-bottom:3px solid #4CAF50;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.tenant-parity-brand{display:flex;width:64px;flex:0 0 auto;align-items:center;gap:8px;overflow:hidden}
+.tenant-parity-logo{display:flex;height:48px;max-width:140px;align-items:center;justify-content:flex-start}
+.tenant-parity-logo img{display:block;max-height:48px;max-width:140px;object-fit:contain}
+.tenant-parity-mark{display:flex;height:44px;width:44px;flex:0 0 auto;align-items:center;justify-content:center;border-radius:6px;background:#fff;color:#2d6a2d}
+.tenant-parity-name{display:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:800;color:#fff}
+.tenant-parity-desktop{display:none;min-width:0;flex:1;align-items:stretch;justify-content:space-around}
+.tenant-parity-link{display:flex;min-width:0;flex:1;flex-direction:column;align-items:center;justify-content:center;border-radius:4px;padding:4px 5px;color:#fff;font-size:12px;line-height:16px;text-align:center;transition:background .15s,color .15s}
+.tenant-parity-link svg{height:24px;width:24px}
+.tenant-parity-link span{margin-top:4px;white-space:nowrap}
+.tenant-parity-link:hover{background:#257025}
+.tenant-parity-link.is-active{color:#f5c518}
+.tenant-parity-more{position:relative;display:flex;min-width:0;flex:1}
+.tenant-parity-more>summary{width:100%;height:100%;list-style:none;cursor:pointer}
+.tenant-parity-more>summary::-webkit-details-marker{display:none}
+.tenant-parity-more .tenant-more-panel{top:calc(100% + 3px);right:0}
+.tenant-parity-account{display:none;flex:0 0 auto;align-items:center;gap:10px}
+.tenant-parity-account>span{max-width:190px;font-size:13px;line-height:18px;color:#fff}
+.tenant-parity-account button{border:1px solid #4CAF50;border-radius:4px;padding:8px 12px;font-size:13px;color:#fff}
+.tenant-parity-account button:hover{background:#257025}
+.tenant-parity-mobile-toggle{display:flex;align-items:center;justify-content:center;padding:8px;color:#fff}
+.tenant-parity-mobile{position:absolute;top:77px;left:0;right:0;z-index:60;max-height:calc(100vh - 80px);overflow-y:auto;border-top:1px solid #2d6a2d;background:#fff;box-shadow:0 10px 25px rgba(0,0,0,.18)}
+.tenant-parity-mobile-links{display:flex;flex-direction:column;padding:8px 0}
+.tenant-parity-mobile-links a{display:flex;align-items:center;gap:12px;border-bottom:1px solid #f0f0f0;padding:12px 20px;font-size:14px;color:#333}
+.tenant-parity-mobile-links a.is-active{background:#f0f7f0;color:#2d6a2d;font-weight:700}
+.tenant-parity-mobile-account{border-top:1px solid #e5e7eb;padding:12px 20px;font-size:12px;color:#5b625d}
+.tenant-parity-mobile-logout{margin:0 20px 16px;border-radius:5px;background:#dc2626;padding:9px 12px;font-size:13px;font-weight:700;color:#fff}
+@media(min-width:1024px){
+ .tenant-parity-nav{gap:8px;padding:0 12px}
+ .tenant-parity-brand{width:70px}
+ .tenant-parity-desktop{display:flex}
+ .tenant-parity-account{display:flex}
+ .tenant-parity-mobile-toggle,.tenant-parity-mobile{display:none}
+}
+@media(min-width:1280px){
+ .tenant-parity-nav{gap:16px;padding:0 24px}
+ .tenant-parity-brand{width:80px}
+ .tenant-parity-link{padding-left:8px;padding-right:8px;font-size:13px}
+ .tenant-parity-account{gap:14px}
+ .tenant-parity-account>span{max-width:230px;font-size:14px}
+}
+@media(min-width:1536px){
+ .tenant-parity-brand{width:auto;max-width:170px}
+ .tenant-parity-name{display:block}
+ .tenant-parity-link{padding-left:12px;padding-right:12px;font-size:14px}
+}
