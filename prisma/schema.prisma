@@ -97,6 +97,33 @@ model Organization {
   blockedBookingAttempts   BlockedBookingAttempt[]
   meetings                 Meeting[]
   website                  Website?
+  appInstallations         TenantAppInstallation[]
+}
+
+// Paid/optional marketplace apps installed for a tenant. The static app
+// catalog lives in source code; this stores the accepted recurring price,
+// external provisioned workspace, and eventual Stripe subscription-item link.
+model TenantAppInstallation {
+  id                       String   @id @default(cuid())
+  organizationId           String
+  organization             Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  appCode                  String
+  status                   String   @default("not_installed")
+  billingInterval          String   @default("monthly")
+  priceCents               Int      @default(0)
+  stripeSubscriptionItemId String?
+  externalTenantId         String?
+  externalTenantSlug       String?
+  externalEmbedKey         String?
+  externalStatus           String?
+  errorMessage             String?  @db.Text
+  activatedAt              DateTime?
+  canceledAt               DateTime?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@unique([organizationId, appCode])
+  @@index([appCode, status])
 }
 
 // The tenant's own subscription to OUR platform (billing us, not their customers).
