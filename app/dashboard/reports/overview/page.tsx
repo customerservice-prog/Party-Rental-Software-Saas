@@ -239,7 +239,7 @@ const taxOrders = openOrders.filter((o) => (o.taxAmount || 0) > 0.009).sort((a, 
 const methodLabels: Record<string, string> = { card: "Card", cash: "Cash", check: "Check", other: "Other" };
 
 return (
-<div>
+<div className="friendly-admin-page is-wide">
 <div className="flex items-center justify-between mb-6">
 <h1 className="text-2xl font-bold text-gray-900">Reports &amp; Analytics</h1>
 <div className="flex flex-wrap gap-2">
