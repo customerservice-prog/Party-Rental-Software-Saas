@@ -9,7 +9,7 @@ export async function POST(request:NextRequest){
   const organization=await requireCurrentOrganization(); let actor;
   try{actor=await requirePermission(organization.id,"orders.manage")}catch(err){return authzErrorResponse(err)}
   const body=await request.json();
-  const{customerId,firstName,lastName,email,phone,eventDate,eventEndDate,deliveryType,deliveryAddress,status,amountPaid}=body;
+  const{customerId,firstName,lastName,email,phone,address,city,state,zip,eventDate,eventEndDate,deliveryType,deliveryAddress,status,amountPaid}=body;
   const raw:{itemId:string;quantity:number}[]=Array.isArray(body.items)?body.items.filter((li:any)=>li&&typeof li.itemId==="string").map((li:any)=>({itemId:li.itemId,quantity:typeof li.quantity==="number"&&li.quantity>0?Math.floor(li.quantity):1})):[];
   const merged=new Map<string,number>(); for(const li of raw)merged.set(li.itemId,(merged.get(li.itemId)||0)+li.quantity);
   const lineItems=Array.from(merged,([itemId,quantity])=>({itemId,quantity}));
@@ -19,7 +19,7 @@ export async function POST(request:NextRequest){
   const rangeEnd=eventEndDate?new Date(eventEndDate):rangeStart; if(isNaN(rangeEnd.getTime())||rangeEnd<rangeStart)return NextResponse.json({error:"Invalid event end date"},{status:400});
   let customer=null;
   if(customerId&&typeof customerId==="string")customer=await prisma.customer.findFirst({where:{id:customerId,organizationId:organization.id}});
-  if(!customer){if(!firstName||!lastName||!email)return NextResponse.json({error:"Select a customer or provide first name, last name, and email"},{status:400});customer=await prisma.customer.findFirst({where:{organizationId:organization.id,email:{equals:String(email).trim(),mode:"insensitive"}}});if(!customer)customer=await prisma.customer.create({data:{organizationId:organization.id,firstName:String(firstName).trim(),lastName:String(lastName).trim(),email:String(email).trim().toLowerCase(),phone:phone||null,address:deliveryAddress||null}})}
+  if(!customer){if(!firstName||!lastName||!email)return NextResponse.json({error:"Select a customer or provide first name, last name, and email"},{status:400});customer=await prisma.customer.findFirst({where:{organizationId:organization.id,email:{equals:String(email).trim(),mode:"insensitive"}}});if(!customer)customer=await prisma.customer.create({data:{organizationId:organization.id,firstName:String(firstName).trim(),lastName:String(lastName).trim(),email:String(email).trim().toLowerCase(),phone:phone||null,address:address||deliveryAddress||null,city:city||null,state:state||null,zip:zip||null}})}
   const items=await prisma.item.findMany({where:{id:{in:lineItems.map(x=>x.itemId)},organizationId:organization.id}}),itemMap=new Map(items.map(i=>[i.id,i]));
   const resolved=lineItems.map(li=>{const item=itemMap.get(li.itemId);return item?{item,quantity:li.quantity}:null}).filter((x):x is {item:(typeof items)[number];quantity:number}=>x!==null);
   if(resolved.length!==lineItems.length)return NextResponse.json({error:"One or more selected rental items could not be found"},{status:400});
