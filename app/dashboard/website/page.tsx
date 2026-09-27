@@ -427,6 +427,16 @@ export default function WebsiteEditorPage() {
         </div>
       </div>
 
+      <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 border-b bg-slate-50 px-4 py-2 text-xs">
+        <span className="mr-1 font-semibold text-slate-600">Website tools</span>
+        <a href="/dashboard/pages" className="friendly-admin-secondary !min-h-0 !px-3 !py-1">Website Pages</a>
+        <a href="/dashboard/settings/business#website" className="friendly-admin-secondary !min-h-0 !px-3 !py-1">Images & Branding</a>
+        <a href="/dashboard/inventory" className="friendly-admin-secondary !min-h-0 !px-3 !py-1">Inventory</a>
+        <a href="/dashboard/categories" className="friendly-admin-secondary !min-h-0 !px-3 !py-1">Categories</a>
+        <a href="/dashboard/inventory/packages" className="friendly-admin-secondary !min-h-0 !px-3 !py-1">Packages</a>
+        <a href="/dashboard/settings" className="friendly-admin-secondary !min-h-0 !px-3 !py-1">Admin Settings</a>
+      </div>
+
       {/* Section toolbar - only shown once a section is selected */}
       {selectedSection && (
         <div className="flex flex-wrap items-center gap-2 border-b bg-green-50 px-4 py-2 text-xs">
