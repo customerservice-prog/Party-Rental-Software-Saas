@@ -53,10 +53,17 @@ export default async function CustomersPage({searchParams:searchParamsPromise}:{
   const customers=rows.map(customer=>{
     let totalBooked=0,balance=0,lastOrder:Date|null=null,latestAt=customer.createdAt,latestType="Customer added";
     for(const order of customer.orders){
-      totalBooked+=order.totalAmount;
-      balance+=Math.max(0,order.totalAmount-order.amountPaid);
+      const status=order.status.toLowerCase();
+      const booked=["active","confirmed","completed"].includes(status);
+      if(booked){
+        totalBooked+=order.totalAmount;
+        balance+=Math.max(0,order.totalAmount-order.amountPaid);
+      }
       if(!lastOrder||ts(order.eventDate)>ts(lastOrder))lastOrder=order.eventDate;
-      if(ts(order.createdAt)>ts(latestAt)){latestAt=order.createdAt;latestType=order.status==="quote"?"Quote":"Order";}
+      if(ts(order.createdAt)>ts(latestAt)){
+        latestAt=order.createdAt;
+        latestType=status==="quote"?"Quote":status==="incomplete"||status==="pending"?"Incomplete checkout":"Order";
+      }
       for(const payment of order.payments){
         if(ts(payment.createdAt)>ts(latestAt)){latestAt=payment.createdAt;latestType=payment.type==="refund"?"Refund":"Payment";}
       }
