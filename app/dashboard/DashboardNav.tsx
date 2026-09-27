@@ -71,7 +71,7 @@ export default function DashboardNav({showSettings,orgName="Your rental business
   <div className="sticky top-0 z-50">
    {supportBanner}
    <header className="tenant-parity-nav">
-    <Link href="/dashboard" className="tenant-parity-brand" aria-label="Tenant home">
+    <Link href="/" target="_blank" rel="noopener noreferrer" className="tenant-parity-brand" aria-label={"Open "+orgName+" website"}>
      {logoUrl?<span className="tenant-parity-logo"><img src={logoUrl} alt={orgName}/></span>:<><span className="tenant-parity-mark"><Icon name="box" className="h-5 w-5"/></span><span className="tenant-parity-name">{orgName}</span></>}
     </Link>
 
