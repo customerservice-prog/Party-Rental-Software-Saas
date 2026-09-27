@@ -19,6 +19,7 @@ const primary:Item[]=[
  item("/deliveries","Delivery","truck"),
  item("/reports","Reports","chart"),
  item("/analytics","Analytics","chart"),
+ item("/apps","Apps","sparkle"),
  item("/marketing","Marketing","sparkle"),
 ];
 
