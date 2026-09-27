@@ -64,8 +64,12 @@ async function main(){
     ['/dashboard/reports/overview','reports-detail'],
     ['/dashboard/analytics','analytics'],
     ['/dashboard/marketing','marketing'],
+    ['/dashboard/website','website-builder'],
     ['/dashboard/settings','settings-hub'],
     ['/dashboard/settings/business','settings-business'],
+    ['/dashboard/settings/business#company-info','settings-company-info'],
+    ['/dashboard/settings/business#order-pricing','settings-order-pricing'],
+    ['/dashboard/settings/business#closed-dates','settings-closed-dates'],
    ])await inspect(route,'tenant-'+label);
    await page.goto('http://localhost:3000/dashboard');
    const populatedDay=page.getByRole('button',{name:/Open orders for/}).filter({has:page.locator('text=1 delivery')}).first();
