@@ -92,7 +92,7 @@ export default async function DeliveriesPage({searchParams:searchParamsPromise}:
 
     <div className="mb-4 flex flex-wrap gap-2">
       <Link href="/dashboard/dispatch" className="friendly-admin-secondary">Assign Drivers</Link>
-      <Link href="/dashboard/dispatch" className="friendly-admin-secondary">Truck / Route Tracker</Link>
+      <Link href={selectedDate?"/dashboard/deliveries/truck-tracker?date="+selectedDate:"/dashboard/deliveries/truck-tracker"} className="friendly-admin-secondary">Truck / Route Tracker</Link>
       <Link href="/dashboard/deliveries/print-contracts" target="_blank" className="friendly-admin-secondary">Print Contracts</Link>
       <Link href="/dashboard/deliveries/print-invoices" target="_blank" className="friendly-admin-secondary">Print Invoices</Link>
       <Link href="/dashboard/deliveries/packing-list" target="_blank" className="friendly-admin-secondary">Packing List</Link>
