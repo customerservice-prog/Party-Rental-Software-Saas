@@ -1,13 +1,17 @@
 "use client";
 import {useEffect,useMemo,useState,FormEvent} from "react";
+import {useSearchParams} from "next/navigation";
 
 type Restriction={id:string;name:string|null;email:string|null;phone:string|null;address:string|null;reason:string|null;isActive:boolean;createdAt:string};
 
 export default function DoNotRentManager(){
- const[restrictions,setRestrictions]=useState<Restriction[]>([]),[loading,setLoading]=useState(true),[query,setQuery]=useState(""),[showAdd,setShowAdd]=useState(false),[error,setError]=useState("");
- const[form,setForm]=useState({name:"",email:"",phone:"",address:"",reason:""});
+ const searchParams=useSearchParams();
+ const initialQuery=searchParams.get("q")||"";
+ const requestedAdd=searchParams.get("add")==="1";
+ const[restrictions,setRestrictions]=useState<Restriction[]>([]),[loading,setLoading]=useState(true),[query,setQuery]=useState(initialQuery),[showAdd,setShowAdd]=useState(requestedAdd),[error,setError]=useState("");
+ const[form,setForm]=useState({name:searchParams.get("name")||"",email:searchParams.get("email")||"",phone:searchParams.get("phone")||"",address:searchParams.get("address")||"",reason:""});
  async function loadRestrictions(q=""){setLoading(true);try{const res=await fetch(q?"/api/do-not-rent?q="+encodeURIComponent(q):"/api/do-not-rent");const data=await res.json();setRestrictions(data.restrictions||[]);}finally{setLoading(false);}}
- useEffect(()=>{loadRestrictions();},[]);
+ useEffect(()=>{loadRestrictions(initialQuery);},[initialQuery]);
  async function handleCreate(e:FormEvent){e.preventDefault();setError("");if(!form.name.trim()&&!form.email.trim()&&!form.phone.trim()&&!form.address.trim()){setError("Provide at least a name, email, phone, or address to restrict");return;}const res=await fetch("/api/do-not-rent",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:form.name||null,email:form.email||null,phone:form.phone||null,address:form.address||null,reason:form.reason||null})});const data=await res.json();if(!res.ok){setError(data.error||"Failed to add restriction");return;}setForm({name:"",email:"",phone:"",address:"",reason:""});setShowAdd(false);await loadRestrictions(query);}
  async function toggleActive(r:Restriction){await fetch("/api/do-not-rent",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:r.id,isActive:!r.isActive})});await loadRestrictions(query);}
  async function handleDelete(id:string){if(!confirm("Delete this restriction?"))return;await fetch("/api/do-not-rent?id="+id,{method:"DELETE"});await loadRestrictions(query);}
