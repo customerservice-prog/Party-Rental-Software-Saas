@@ -78,6 +78,8 @@ async function main(){
     ['/dashboard/settings/business#company-info','settings-company-info'],
     ['/dashboard/settings/business#order-pricing','settings-order-pricing'],
     ['/dashboard/settings/business#closed-dates','settings-closed-dates'],
+    ['/dashboard/settings/google-integration','settings-google-integration-gap'],
+    ['/dashboard/settings/navigation-editor','settings-navigation-editor'],
    ])await inspect(route,'tenant-'+label);
    await page.goto('http://localhost:3000/dashboard');
    const populatedDay=page.getByRole('button',{name:/Open orders for/}).filter({has:page.locator('text=1 delivery')}).first();
