@@ -122,3 +122,17 @@ test('Settings hub mirrors Friendly navigation with real destinations instead of
   assert.match(dynamic,/Not supported in this tenant CRM yet/);
   assert.match(dynamic,/does not pretend the feature exists/);
 });
+
+
+test('Delivery uses a real dedicated truck tracker instead of relabeling Dispatch',()=>{
+  const delivery=read('app/dashboard/deliveries/page.tsx');
+  const tracker=read('app/dashboard/deliveries/truck-tracker/page.tsx');
+  assert.match(delivery,/\/dashboard\/deliveries\/truck-tracker/);
+  assert.doesNotMatch(delivery,/href="\/dashboard\/dispatch" className="friendly-admin-secondary">Truck \/ Route Tracker/);
+  assert.match(tracker,/Truck \/ Route Tracker/);
+  assert.match(tracker,/Driver runs/);
+  assert.match(tracker,/Assigned stops/);
+  assert.match(tracker,/Unassigned orders/);
+  assert.match(tracker,/driverRun/);
+  assert.match(tracker,/Fulfillment/);
+});
