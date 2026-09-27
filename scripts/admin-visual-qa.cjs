@@ -14,7 +14,15 @@ async function main(){
    page.on('pageerror',error=>report.errors.push(`${viewport.name}: ${error.message}`));
    page.on('response',response=>{if(response.url().startsWith('http://localhost:3000')&&response.status()>=500)report.errors.push(`${viewport.name}: HTTP ${response.status()} ${response.url()}`)});
    async function inspect(route,label){
-    const response=await page.goto('http://localhost:3000'+route);assert.ok(response&&response.status()<400,`${route}: HTTP ${response?.status()}`);
+    const target='http://localhost:3000'+route;
+    const response=await page.goto(target);
+    if(response)assert.ok(response.status()<400,`${route}: HTTP ${response.status()}`);
+    else {
+      const expected=new URL(target);
+      const actual=new URL(page.url());
+      assert.equal(actual.pathname,expected.pathname,`${route}: navigation did not reach expected path`);
+      assert.equal(actual.hash,expected.hash,`${route}: navigation did not reach expected hash`);
+    }
     await page.waitForTimeout(350);
     const overflow=await page.evaluate(()=>({width:innerWidth,document:document.documentElement.scrollWidth}));
     assert.ok(overflow.document<=overflow.width+1,`${viewport.name}: horizontal page overflow on ${route}: ${JSON.stringify(overflow)}`);
