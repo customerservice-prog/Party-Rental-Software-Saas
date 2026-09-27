@@ -634,3 +634,26 @@
 @media(min-width:1024px){
   .friendly-admin-settings-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+
+/* Side-by-side parity pass: Friendly home + reports scale */
+.reports-parity-head{margin-bottom:20px}
+.reports-parity-head h1{font-size:32px!important;line-height:1.1!important}
+.phase3-main{gap:24px}
+.phase3-primary-column,.phase3-rail{gap:16px}
+.phase3-kpi{padding:24px}
+.phase3-kpi span{font-size:16px}
+.phase3-kpi strong{font-size:36px}
+.phase3-dashboard .phase2-widget-head{padding:14px 16px}
+.phase3-dashboard .phase2-widget-head h2{font-size:15px}
+.phase3-dashboard .phase2-weather-now{padding:16px}
+.phase3-payments{margin-top:24px}
+@media(max-width:900px){
+  .phase3-main{gap:16px}
+}
+@media(max-width:640px){
+  .reports-parity-head h1{font-size:28px!important}
+  .phase3-kpi{padding:18px}
+  .phase3-kpi span{font-size:13px}
+  .phase3-kpi strong{font-size:30px}
+}
